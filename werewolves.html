@@ -1,0 +1,59 @@
+<head>
+  <title>Werewolves and Villagers</title>
+</head>
+
+<body>
+  {{#if equals gameState 1}}
+    <div class="container">
+      <header>
+        <h1>Players (Ready/Total): {{playerCounter}}</h1>
+
+        {{> loginButtons}}
+
+        {{#if currentUser}}
+          <br>
+          {{#if joined}}
+            <button class="leave-game">Leave Game</button>
+            <button class="{{#if ready}}set-nready{{else}}set-ready{{/if}}">
+              {{#if ready}}
+                Not Ready
+              {{else}}
+                Ready
+              {{/if}}
+            </button>
+          {{else}}
+            <button class="join-game">Join Game</button>
+          {{/if}}
+        {{/if}}
+      </header>
+
+      <ul>
+        {{#each players}}
+          {{> player}}
+        {{/each}}
+      </ul>
+
+      {{#if joined}}
+        <ul>
+          {{#each roles}}
+            {{> role}}
+          {{/each}}
+        </ul>
+      {{/if}}
+    </div>
+  {{/if}}
+</body>
+
+<template name="player">
+  <li class="{{#if ready}}ready{{/if}}">{{name}}</li>
+</template>
+
+<template name="role">
+  <li class="vote-status">
+    <button class="vote-down {{#if equals vote -1}}sel{{/if}}">-</button>
+    <button class="vote-neutral {{#if equals vote 0}}sel{{/if}}">o</button>
+    <button class="vote-up {{#if equals vote 1}}sel{{/if}}">+</button>
+
+    <span class="role-name {{#if roleEnabled}}enabled{{/if}}">{{name}}</span>
+  </li>
+</template>
