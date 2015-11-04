@@ -14,7 +14,7 @@ Roles = new Mongo.Collection("roles");
 // name: The human readable name of the role
 // votes: Store the number of votes the role got for later calculations
 // enabled: After calculating the votes, is this role going to be in game?
-// critical: A boolean that determines if this is a neccessary role (e.g. Villager and Werewolf)
+// critical: A boolean that determines if this is a necessary role (e.g. Villager and Werewolf)
 //           If this is true, then they are not voted on and not part of that calculation.
 
 RoleVotes = new Mongo.Collection("votes");
@@ -51,14 +51,8 @@ if (Meteor.isClient) {
     },
 
     joined: function() {
-      var player = Players.findOne({userId: Meteor.user()._id});
-      if (player == undefined) {
-        return false;
-      } else if (player.alive) {
-        return true;
-      } else {
-        return false;
-      }
+  var player = Players.findOne({userId: Meteor.user()._id});
+      return player != undefined ? player.alive : false;
     },
 
     ready: function() {
@@ -133,11 +127,7 @@ if (Meteor.isClient) {
       var player = getPlayer()._id;
       var vote = RoleVotes.findOne({playerId: player, roleId: this._id});
 
-      if (vote) {
-        return vote.vote;
-      }
-
-      return 0;
+      return vote ? vote.vote : 0;
     },
     "roleEnabled": function() {
       votesDep.depend();
@@ -236,11 +226,7 @@ function getVote(roleId) {
   var player = getPlayer()._id;
   var vote = RoleVotes.findOne({playerId: player, roleId: roleId});
 
-  if (vote) {
-    return vote.vote;
-  } else {
-    return 2;
-  }
+  return vote ? vote.vote : 2;
 }
 
 function getPlayer() {
