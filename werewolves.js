@@ -13,6 +13,7 @@ Players = new Mongo.Collection("players");
 Roles = new Mongo.Collection("roles");
 // name: The human readable name of the role
 // votes: Store the number of votes the role got for later calculations
+// order: The order that the votes puts the role relative to the others
 // enabled: After calculating the votes, is this role going to be in game?
 // critical: A boolean that determines if this is a necessary role (e.g. Villager and Werewolf)
 //           If this is true, then they are not voted on and not part of that calculation.
@@ -29,7 +30,7 @@ var gameState = 1;
 
 var votesDep = new Tracker.Dependency;
 
-if (Meteor.isClient) { 
+if (Meteor.isClient) {
   Template.body.helpers({
     players: function() {
       return Players.find({alive: true});
@@ -40,7 +41,7 @@ if (Meteor.isClient) {
     },
 
     playerCounter: function() {
-      var playersTotal = Players.find({}).count();
+      var playersTotal = Players.find({alive: true}).count();
       var playersReady = Players.find({ready: true}).count();
 
       return String(playersReady) + "/" + String(playersTotal);
@@ -77,6 +78,9 @@ if (Meteor.isClient) {
           ready: false
         });
       }
+
+      // As the enabled roles vote count is dependant on the number of people, we need to do a recount.
+      countVotes();
     },
     "click .leave-game": function() {
       var player = getPlayer();
@@ -104,20 +108,20 @@ if (Meteor.isClient) {
   Template.role.events({
     "click .vote-up": function() {
       if (getVote(this._id) != 1) {
-        changeVote(this._id, 1);
         console.log("Voted up: " + Roles.findOne(this._id).name);
+        changeVote(this._id, 1);
       }
     },
     "click .vote-neutral": function() {
       if (getVote(this._id) != 0) {
-        changeVote(this._id, 0);
         console.log("Voted neutral: " + Roles.findOne(this._id).name);
+        changeVote(this._id, 0);
       }
     },
     "click .vote-down": function() {
       if (getVote(this._id) != -1) {
-        changeVote(this._id, -1);
         console.log("Voted down: " + Roles.findOne(this._id).name);
+        changeVote(this._id, -1);
       }
     }
   });
@@ -132,41 +136,9 @@ if (Meteor.isClient) {
     "roleEnabled": function() {
       votesDep.depend();
 
-      var votes = RoleVotes.find({roleId: this._id});
-      var tally = 0;
+      var role = Roles.findOne(this._id);
 
-      console.log("Number of votes: " + votes.count());
-
-      votes.forEach(function (vote) {
-        tally += vote.vote;
-      });
-
-      console.log("Processing role votes for " + Roles.findOne(this._id).name);
-      console.log("Adding votes, tally: " + tally);
-
-      // Add the tally to the role, for further use
-      Roles.update(this._id, {$set: {votes: tally}});
-
-      // This creates a sorted roles list based on the tallies
-      // However it should only be called when necessary!!!
-      // TODO: put this in it's own thing, or rethink how to do this sorting!
-
-      //var talliedRoles = Roles.find({}, {sort: {votes: -1}});
-      //
-      //console.log("Begin tally sorted list");
-      //talliedRoles.forEach(function(role) {
-      //  console.log(role.name + " got " + role.votes + " votes.");
-      //});
-
-      // This will need to get more complicated.
-      // For few people, not all can be enabled.
-      if (tally > 0) {
-        Roles.update(this._id, {$set: {enabled: true}});
-        return true;
-      } else {
-        Roles.update(this._id, {$set: {enabled: false}});
-        return false;
-      }
+      return role.enabled;
     }
   });
 }
@@ -207,6 +179,7 @@ function addTestPlayer(name) {
   });
 }
 
+// Note: The order that the roles are added will determine their tiebreaker order (when counting votes)
 function addRole(name, critical) {
   Roles.insert({
     name: name,
@@ -219,7 +192,8 @@ function addRole(name, critical) {
 function changeVote(roleId, newVote) {
   var player = getPlayer()._id;
   var vote = RoleVotes.findOne({playerId: player, roleId: roleId});
-  
+
+  // Check to see if an entry for this players vote exists, if so update it, else make one.
   if (vote) {
     RoleVotes.update(vote._id, {$set: {vote: newVote}});
   } else {
@@ -230,7 +204,63 @@ function changeVote(roleId, newVote) {
     });
   }
 
+  // As the vote count for this role has now changed, recount the vote for this role
+  var votes = RoleVotes.find({roleId: roleId});
+  var tally = 0;
+
+  votes.forEach(function (vote) {
+    tally += vote.vote;
+  });
+
+  // Update the vote count to the role
+  Roles.update(roleId, {$set: {votes: tally}});
+
+  // Some debug console logs
+  console.log("Processing role votes for " + Roles.findOne(roleId).name);
+  console.log("Adding votes, tally: " + tally);
+
+  countVotes();
+
   votesDep.changed();
+}
+
+function countVotes() {
+  // We only want to do this for non critical roles.
+  var talliedRoles = Roles.find({critical: false}, {sort: {votes: -1}});
+
+  var count = 1;
+  talliedRoles.forEach(function(role) {
+    Roles.update(role._id, {$set: {order: count}});
+    count += 1;
+    //console.log(role.name + " got " + role.votes + " votes.");
+  });
+
+  // This is the calculation that determines is the role is enabled or not.
+  var numVillagers = Players.find({alive: true}).count() - numWerewolves();
+
+  console.log("Number of villagers that can take on a role = " + numVillagers);
+
+  Roles.find({critical: false}).forEach(function(role) {
+    console.log(role.name + "'s order is " + role.order);
+
+    var enabled = false;
+    // To be enabled, the role must have a positive vote score, and have a high enough order
+    if (role.votes > 0) {
+      if (role.order <= numVillagers) {
+        enabled = true;
+      }
+    }
+
+    Roles.update(role._id, {$set: {enabled: enabled}});
+  });
+}
+
+// This currently just works in the lobby (as it uses 'alive' to determine if the player has joined).
+function numWerewolves() {
+  // Get the number of players that have joined in the lobby
+  var numPlayers = Players.find({alive: true}).count();
+
+  return Math.floor(numPlayers / 3);
 }
 
 function getVote(roleId) {
