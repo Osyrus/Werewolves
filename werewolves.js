@@ -139,7 +139,6 @@ if (Meteor.isClient) {
 
       votes.forEach(function (vote) {
         tally += vote.vote;
-        console.log("Voted: " + vote.playerId);
       });
 
       console.log("Processing role votes for " + Roles.findOne(this._id).name);
@@ -148,9 +147,20 @@ if (Meteor.isClient) {
       // Add the tally to the role, for further use
       Roles.update(this._id, {$set: {votes: tally}});
 
+      // This creates a sorted roles list based on the tallies
+      // However it should only be called when necessary!!!
+      // TODO: put this in it's own thing, or rethink how to do this sorting!
+
+      //var talliedRoles = Roles.find({}, {sort: {votes: -1}});
+      //
+      //console.log("Begin tally sorted list");
+      //talliedRoles.forEach(function(role) {
+      //  console.log(role.name + " got " + role.votes + " votes.");
+      //});
+
       // This will need to get more complicated.
       // For few people, not all can be enabled.
-      if (tally >= 0) {
+      if (tally > 0) {
         Roles.update(this._id, {$set: {enabled: true}});
         return true;
       } else {
@@ -179,6 +189,7 @@ if (Meteor.isServer) {
     addRole("Witch", false);
     addRole("Seer", false);
     addRole("Knight", false);
+    addRole("Saint", false);
 
     // Clear the votes upon server restart
     RoleVotes.remove({});
