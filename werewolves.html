@@ -45,7 +45,9 @@
 </body>
 
 <template name="player">
-  <li class="{{#if ready}}ready{{/if}}">{{name}}</li>
+  <li class="player-list">
+      <span class="player-name {{#if ready}}ready{{/if}}">{{name}}</span>
+  </li>
 </template>
 
 <template name="role">

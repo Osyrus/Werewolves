@@ -2,10 +2,43 @@
 body {
     font-family: sans-serif;
     background: darkgrey;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    min-height: 100%;
+    background: lightslategrey;
+}
+
+header {
+    background: darkslategrey;
+    padding: 20px 15px 15px 15px;
+    position: relative;
+}
+
+h1 {
+    font-size: 2em;
+    margin: 0;
+    margin-bottom: 10px;
+    display: inline-block;
+    margin-right: 1em;
+    color: whitesmoke;
 }
 
 #login-buttons {
     display: block;
+    color: antiquewhite;
+}
+
+ul {
+    margin: 0;
+    padding: 0;
 }
 
 li {
@@ -13,8 +46,9 @@ li {
     color: orange;
 }
 
-li.ready {
-    color: green;
+li.player-list {
+    list-style-type: none;
+    padding: 10px 15px;
 }
 
 li.vote-status {
@@ -49,6 +83,15 @@ span.role-name {
 }
 
 span.role-name.enabled {
+    background: green;
+}
+
+span.player-name {
+    padding: 8px 15px;
+    background: darkorange;
+}
+
+span.player-name.ready {
     background: green;
 }
 
