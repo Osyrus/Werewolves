@@ -7,6 +7,7 @@ Players = new Mongo.Collection("players");
 // status: This will hold information about a players status, for
 //         example, if they are cursed/silenced/saved etc...
 // alive: A boolean setting the player to be alive or dead
+// joined: A boolean for if the player has joined the game or not
 // ready: A boolean used while in the lobby to indicate readyness to
 //        start the game
 
@@ -28,12 +29,19 @@ var gameState = 1;
 // 1: List the players and let the users become players, this is essentially the lobby
 // 2: 
 
+// These are the dependency trackers to make sure things are reactive
 var votesDep = new Tracker.Dependency;
+var startGameCountDep = new Tracker.Dependency;
+
+// Countdown timers for various things
+var startGameCountdown = new ReactiveCountdown(5);
+var startingGame = false;
+var startPaused = false;
 
 if (Meteor.isClient) {
   Template.body.helpers({
     players: function() {
-      return Players.find({alive: true});
+      return Players.find({joined: true});
     },
 
     roles: function() {
@@ -41,7 +49,7 @@ if (Meteor.isClient) {
     },
 
     playerCounter: function() {
-      var playersTotal = Players.find({alive: true}).count();
+      var playersTotal = Players.find({joined: true}).count();
       var playersReady = Players.find({ready: true}).count();
 
       return String(playersReady) + "/" + String(playersTotal);
@@ -52,14 +60,33 @@ if (Meteor.isClient) {
     },
 
     joined: function() {
-  var player = Players.findOne({userId: Meteor.user()._id});
-      return player != undefined ? player.alive : false;
+      var player = Players.findOne({userId: Meteor.user()._id});
+      return player != undefined ? player.joined : false;
     },
 
     ready: function() {
       var player = Players.findOne({userId: Meteor.user()._id});
 
       return player.ready;
+    },
+
+    allReady: function() {
+      return allReady();
+    },
+
+    counting: function() {
+      startGameCountDep.depend();
+      return startGameCountdown.get() > 0;
+    },
+
+    countdown: function() {
+      startGameCountDep.depend();
+      return startGameCountdown.get();
+    },
+
+    startPaused: function() {
+      startGameCountDep.depend();
+      return (startGameCountdown.get() > 0) && !startingGame;
     }
   });
 
@@ -67,15 +94,15 @@ if (Meteor.isClient) {
     "click .join-game": function() {
       var player = getPlayer();
       if (player) {
-        Players.update(player._id, {$set: {alive: true}});
+        Players.update(player._id, {$set: {joined: true}});
       } else {
         Players.insert({
           userId: Meteor.user()._id,
-          name: Meteor.user().username,
-          role: 0,
+          name:   Meteor.user().username,
+          role:   0,
           status: 0,
-          alive: true,
-          ready: false
+          joined: true,
+          ready:  false
         });
       }
 
@@ -84,9 +111,10 @@ if (Meteor.isClient) {
     },
     "click .leave-game": function() {
       var player = getPlayer();
-      Players.update(player._id, {$set: {alive: false}});
+      Players.update(player._id, {$set: {joined: false}});
       Players.update(player._id, {$set: {ready: false}});
     },
+
     "click .set-ready": function() {
       var player = getPlayer();
       Players.update(player._id, {$set: {ready: true}});
@@ -94,6 +122,10 @@ if (Meteor.isClient) {
     "click .set-nready": function() {
       var player = getPlayer();
       Players.update(player._id, {$set: {ready: false}});
+    },
+
+    "click .start-game": function() {
+      startGameClick();
     }
   });
 
@@ -107,19 +139,19 @@ if (Meteor.isClient) {
 
   Template.role.events({
     "click .vote-up": function() {
-      if (getVote(this._id) != 1) {
+      if (getVote(this._id) != 1 && !getPlayer().ready) {
         console.log("Voted up: " + Roles.findOne(this._id).name);
         changeVote(this._id, 1);
       }
     },
     "click .vote-neutral": function() {
-      if (getVote(this._id) != 0) {
+      if (getVote(this._id) != 0 && !getPlayer().ready) {
         console.log("Voted neutral: " + Roles.findOne(this._id).name);
         changeVote(this._id, 0);
       }
     },
     "click .vote-down": function() {
-      if (getVote(this._id) != -1) {
+      if (getVote(this._id) != -1 && !getPlayer().ready) {
         console.log("Voted down: " + Roles.findOne(this._id).name);
         changeVote(this._id, -1);
       }
@@ -139,6 +171,9 @@ if (Meteor.isClient) {
       var role = Roles.findOne(this._id);
 
       return role.enabled;
+    },
+    "cantVote": function() {
+      return getPlayer().ready;
     }
   });
 }
@@ -168,15 +203,26 @@ if (Meteor.isServer) {
   });
 }
 
-function addTestPlayer(name) {
-  Players.insert({
-    userId: 7,
-    name: name,
-    role: 0,
-    status: 0,
-    alive: true,
-    ready: false
-  });
+function startGameClick() {
+  if (startGameCountdown.get() != undefined && startingGame) {
+    startingGame = false;
+    startPaused = true;
+    startGameCountdown.stop();
+    startGameCountdown.start(function() {
+      startPaused = false;
+    }, function() {
+      startGameCountDep.changed();
+    });
+  } else if (allReady() && !startingGame && !startPaused) {
+    startingGame = true;
+    startGameCountdown.start(function () {
+      gameState = 2;
+    }, function() {
+      startGameCountDep.changed();
+    });
+  }
+
+  startGameCountDep.changed();
 }
 
 // Note: The order that the roles are added will determine their tiebreaker order (when counting votes)
@@ -236,7 +282,7 @@ function countVotes() {
   });
 
   // This is the calculation that determines is the role is enabled or not.
-  var numVillagers = Players.find({alive: true}).count() - numWerewolves();
+  var numVillagers = Players.find({joined: true}).count() - numWerewolves();
 
   console.log("Number of villagers that can take on a role = " + numVillagers);
 
@@ -258,7 +304,7 @@ function countVotes() {
 // This currently just works in the lobby (as it uses 'alive' to determine if the player has joined).
 function numWerewolves() {
   // Get the number of players that have joined in the lobby
-  var numPlayers = Players.find({alive: true}).count();
+  var numPlayers = Players.find({joined: true}).count();
 
   return Math.floor(numPlayers / 3);
 }
@@ -272,4 +318,23 @@ function getVote(roleId) {
 
 function getPlayer() {
   return Players.findOne({userId: Meteor.user()._id});
+}
+
+function allReady() {
+  var playersTotal = Players.find({joined: true}).count();
+  var playersReady = Players.find({ready: true}).count();
+
+  return playersReady == playersTotal;
+}
+
+function addTestPlayer(name) {
+  Players.insert({
+    userId: 7,
+    name: name,
+    role: 0,
+    status: 0,
+    alive: true,
+    joined: true,
+    ready: true
+  });
 }

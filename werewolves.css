@@ -101,9 +101,33 @@ button.sel {
     text-decoration: none;
 }
 
+button.sel.vote-neutral {
+    background: #356094;
+}
 button.sel.vote-down {
     background: darkred;
 }
 button.sel.vote-up {
     background: green;
+}
+
+button.done {
+    background: dimgray;
+    border: solid 1px dimgrey;
+}
+
+button.start-game {
+    background: dimgrey;
+}
+
+button.start-game.all-ready {
+    background: green;
+}
+
+button.start-game.counting {
+    background: darkred;
+}
+
+button.start-game.counting.paused {
+    background: darkorange;
 }

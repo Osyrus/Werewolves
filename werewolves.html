@@ -21,6 +21,20 @@
                 Ready
               {{/if}}
             </button>
+            <button class="start-game
+                {{#if allReady}}all-ready{{/if}}
+                {{#if counting}}counting{{/if}}
+                {{#if startPaused}}paused{{/if}}">
+              {{#if counting}}
+                {{# if startPaused}}
+                  {{countdown}} Start Game
+                {{else}}
+                  {{countdown}} Cancel
+                {{/if}}
+              {{else}}
+                Start Game
+              {{/if}}
+            </button>
           {{else}}
             <button class="join-game">Join Game</button>
           {{/if}}
@@ -52,9 +66,9 @@
 
 <template name="role">
   <li class="vote-status">
-    <button class="vote-down {{#if equals vote -1}}sel{{/if}}">-</button>
-    <button class="vote-neutral {{#if equals vote 0}}sel{{/if}}">o</button>
-    <button class="vote-up {{#if equals vote 1}}sel{{/if}}">+</button>
+      <button class="vote-down {{#if equals vote -1}}sel{{/if}} {{#if cantVote}}done{{/if}}">-</button>
+      <button class="vote-neutral {{#if equals vote 0}}sel{{/if}} {{#if cantVote}}done{{/if}}">o</button>
+      <button class="vote-up {{#if equals vote 1}}sel{{/if}} {{#if cantVote}}done{{/if}}">+</button>
 
     <span class="role-name {{#if roleEnabled}}enabled{{/if}}">{{name}}</span>
   </li>
