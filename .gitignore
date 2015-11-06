@@ -1,5 +1,9 @@
+# Local meteor files
 .meteor/local
 .meteor/meteorite
+
+# Webstorms directory
+.idea
 
 # =========================
 # Operating System Files
