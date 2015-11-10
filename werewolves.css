@@ -127,7 +127,3 @@ button.start-game.all-ready {
 button.start-game.counting {
     background: darkred;
 }
-
-button.start-game.counting.paused {
-    background: darkorange;
-}

@@ -3,8 +3,8 @@
 </head>
 
 <body>
-  {{#if equals gameState 1}}
-    <div class="container">
+  <div class="container">
+    {{#if lobby}}
       <header>
         <h1>Players (Ready/Total): {{playerCounter}}</h1>
 
@@ -23,14 +23,9 @@
             </button>
             <button class="start-game
                 {{#if allReady}}all-ready{{/if}}
-                {{#if counting}}counting{{/if}}
-                {{#if startPaused}}paused{{/if}}">
+                {{#if counting}}counting{{/if}}">
               {{#if counting}}
-                {{# if startPaused}}
-                  {{countdown}} Start Game
-                {{else}}
-                  {{countdown}} Cancel
-                {{/if}}
+                {{countdown}} Cancel
               {{else}}
                 Start Game
               {{/if}}
@@ -54,8 +49,14 @@
           {{/each}}
         </ul>
       {{/if}}
-    </div>
-  {{/if}}
+    {{/if}}
+
+    {{#if loadingScreen}}
+      <header>
+        <h1>Loading game</h1>
+      </header>
+    {{/if}}
+  </div>
 </body>
 
 <template name="player">
