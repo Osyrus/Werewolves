@@ -24,19 +24,18 @@ RoleVotes = new Mongo.Collection("votes");
 // playerId: The player that made the vote
 // vote: The value of the vote that the player made for this role
 
-// Game state is used for switching out the HTML shown to the client
-var gameState = 1;
-// 1: List the players and let the users become players, this is essentially the lobby
-// 2: 
+GameVariables = new Mongo.Collection("gameVars");
+// id: The variable name
+// name: The human readable variable name
+// value: The value of the variable
+// enabled: Is the value currently important?
 
 // These are the dependency trackers to make sure things are reactive
 var votesDep = new Tracker.Dependency;
-var startGameCountDep = new Tracker.Dependency;
+var startDep = new Tracker.Dependency;
 
-// Countdown timers for various things
-var startGameCountdown = new ReactiveCountdown(5);
-var startingGame = false;
-var startPaused = false;
+// Stuff for the start game countdown
+serverStartTime = 0; // The time the game will start, to display the countdown to.
 
 if (Meteor.isClient) {
   Template.body.helpers({
@@ -55,8 +54,16 @@ if (Meteor.isClient) {
       return String(playersReady) + "/" + String(playersTotal);
     },
 
-    gameState: function() {
-      return gameState;
+    lobby: function() {
+      var currentGameMode = GameVariables.findOne("gameMode").value;
+
+      return currentGameMode == "lobby";
+    },
+
+    loadingScreen: function() {
+      var currentGameMode = GameVariables.findOne("gameMode").value;
+
+      return currentGameMode == "loadingGame";
     },
 
     joined: function() {
@@ -75,18 +82,29 @@ if (Meteor.isClient) {
     },
 
     counting: function() {
-      startGameCountDep.depend();
-      return startGameCountdown.get() > 0;
-    },
+      startDep.depend();
 
+      if (TimeSync.serverTime() <= GameVariables.findOne("timeToStart").value) {
+        return true;
+      }
+
+      if (GameVariables.findOne("timeToStart").enabled) {
+        console.log("Calling start game method");
+        Meteor.call("startGame");
+      }
+
+      return false;
+    },
     countdown: function() {
-      startGameCountDep.depend();
-      return startGameCountdown.get();
-    },
+      startDep.depend();
 
-    startPaused: function() {
-      startGameCountDep.depend();
-      return (startGameCountdown.get() > 0) && !startingGame;
+      var timeToStart = GameVariables.findOne("timeToStart").value;
+
+      if (TimeSync.serverTime() <= timeToStart) {
+        return Math.floor((timeToStart - TimeSync.serverTime())/1000);// Convert to seconds from ms
+      }
+
+      return 0;
     }
   });
 
@@ -106,6 +124,9 @@ if (Meteor.isClient) {
         });
       }
 
+      // Reset the start game countdown
+      GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
+
       // As the enabled roles vote count is dependant on the number of people, we need to do a recount.
       countVotes();
     },
@@ -113,6 +134,12 @@ if (Meteor.isClient) {
       var player = getPlayer();
       Players.update(player._id, {$set: {joined: false}});
       Players.update(player._id, {$set: {ready: false}});
+
+      // Reset the start game countdown
+      GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
+
+      // Number of people in the game changed, so need a recount
+      countVotes();
     },
 
     "click .set-ready": function() {
@@ -122,10 +149,28 @@ if (Meteor.isClient) {
     "click .set-nready": function() {
       var player = getPlayer();
       Players.update(player._id, {$set: {ready: false}});
+
+      // Reset the start game countdown
+      GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
     },
 
     "click .start-game": function() {
-      startGameClick();
+      if (TimeSync.isSynced()) {
+        // Check to see if there is already a countdown
+        if (TimeSync.serverTime() < GameVariables.findOne("timeToStart").value) {
+          GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
+        } else {
+          // If there is no countdown, start one
+          var date      = new Date();
+          var startTime = date.valueOf() + 5100; // start 5 seconds from now (magic number, I know...)
+
+          GameVariables.update("timeToStart", {$set: {value: TimeSync.serverTime(startTime, 500), enabled: true}}); // Update every half second
+        }
+
+        startDep.changed();
+      } else {
+        TimeSync.resync();
+      }
     }
   });
 
@@ -200,30 +245,22 @@ if (Meteor.isServer) {
 
     // Clear the votes upon server restart
     RoleVotes.remove({});
+
+    // The reactive and synced game variables
+    GameVariables.remove({});
+
+    GameVariables.insert({_id: "timeToStart", name: "Seconds until game start", value: 0, enabled: false});
+    GameVariables.insert({_id: "gameMode", name: "The current game mode", value: "lobby", enabled: true});
   });
 }
 
-function startGameClick() {
-  if (startGameCountdown.get() != undefined && startingGame) {
-    startingGame = false;
-    startPaused = true;
-    startGameCountdown.stop();
-    startGameCountdown.start(function() {
-      startPaused = false;
-    }, function() {
-      startGameCountDep.changed();
-    });
-  } else if (allReady() && !startingGame && !startPaused) {
-    startingGame = true;
-    startGameCountdown.start(function () {
-      gameState = 2;
-    }, function() {
-      startGameCountDep.changed();
-    });
+Meteor.methods({
+  // This is called when a client thinks it's time to start the game
+  startGame: function() {
+    GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
+    GameVariables.update("gameMode", {$set: {value: "loadingGame"}});
   }
-
-  startGameCountDep.changed();
-}
+});
 
 // Note: The order that the roles are added will determine their tiebreaker order (when counting votes)
 function addRole(name, critical) {

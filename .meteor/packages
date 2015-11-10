@@ -21,4 +21,5 @@ insecure                # Allow all DB writes from clients (for prototyping)
 accounts-ui
 accounts-password
 deps
-flyandi:reactive-countdown
+mizzao:timesync
+reactive-var
