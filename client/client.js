@@ -18,18 +18,6 @@ Template.body.helpers({
     return String(playersReady) + "/" + String(playersTotal);
   },
 
-  lobby: function() {
-    var currentGameMode = GameVariables.findOne("gameMode").value;
-
-    return currentGameMode == "lobby";
-  },
-
-  loadingScreen: function() {
-    var currentGameMode = GameVariables.findOne("gameMode").value;
-
-    return currentGameMode == "loadingGame";
-  },
-
   joined: function() {
     var player = Players.findOne({userId: Meteor.user()._id});
     return player != undefined ? player.joined : false;
@@ -69,6 +57,27 @@ Template.body.helpers({
     }
 
     return 0;
+  },
+
+  // These are the helpers that tell the html which screen to show
+  lobby: function() {
+    var currentGameMode = GameVariables.findOne("gameMode").value;
+
+    return currentGameMode == "lobby";
+  },
+  inGame: function() {
+    var currentGameMode = GameVariables.findOne("gameMode").value;
+
+    return currentGameMode == "inGame";
+  },
+  whoAmIScreen: function() {
+    var currentGameMode = GameVariables.findOne("gameMode").value;
+
+    if (currentGameMode == "inGame") {
+      return !Session.get("seenRole");
+    }
+
+    return false;
   }
 });
 

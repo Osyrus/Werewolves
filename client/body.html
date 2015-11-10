@@ -47,10 +47,16 @@
       {{/if}}
     {{/if}}
 
-    {{#if loadingScreen}}
-      <header>
-        <h1>Loading game</h1>
-      </header>
+    {{#if inGame}}
+      {{#if whoAmIScreen}}
+        <header>
+          <h1>The game has started!</h1>
+        </header>
+
+        {{> whoAmI}}
+
+
+      {{/if}}
     {{/if}}
   </div>
 </body>

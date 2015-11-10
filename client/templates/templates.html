@@ -13,3 +13,11 @@
     <span class="role-name {{#if roleEnabled}}enabled{{/if}}">{{name}}</span>
   </li>
 </template>
+
+<template name="whoAmI">
+  <span class="titleSpan">Hi {{username}}, you are a...</span>
+  <br>
+  <span class="role-title">{{rolename}}</span>
+  <br>
+  <span class="description">{{roleDescription}}</span>
+</template>
