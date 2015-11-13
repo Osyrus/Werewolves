@@ -45,6 +45,7 @@ function addTestPlayer(name) {
     status: 0,
     alive: true,
     joined: true,
-    ready: true
+    ready: true,
+    rank: 0
   });
 }

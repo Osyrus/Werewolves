@@ -87,14 +87,7 @@ Template.body.events({
     if (player) {
       Players.update(player._id, {$set: {joined: true}});
     } else {
-      Players.insert({
-        userId: Meteor.user()._id,
-        name:   Meteor.user().username,
-        role:   0,
-        status: 0,
-        joined: true,
-        ready:  false
-      });
+      Meteor.call("addPlayer", Meteor.user());
     }
 
     // Reset the start game countdown
@@ -192,6 +185,15 @@ Template.role.helpers({
   },
   "cantVote": function() {
     return getPlayer().ready;
+  }
+});
+
+Template.whoAmI.helpers({
+  "username": function() {
+    return Meteor.user().username;
+  },
+  "rolename": function() {
+    return Roles.findOne(Meteor.call("getRoleId", Meteor.user())).name;
   }
 });
 
