@@ -7,8 +7,7 @@ Meteor.methods({
       status: 0,
       alive: true,
       joined: true,
-      ready:  false,
-      rank: 0
+      ready:  false
     });
   },
   // This is called when a client thinks it's time to start the game
@@ -28,28 +27,27 @@ Meteor.methods({
     // Find all the non critical enabled roles
     enabledRoles = Roles.find({enabled: true, critical: false});
 
-    // Add their ids to a javascript array
+    // This is the array that will hold the roles to assign
     var roleIds = [];
+    // This for loop adds all the werewolves
+    for (var i = 0; i < numWW; i++) {
+      roleIds.push(wwId);
+    }
+    // This Mongo for each loop adds the enabled non-critical roles
     enabledRoles.forEach(function(role) {
       roleIds.push(role._id);
     });
+    // This for loop adds the remaining villagers
+    for (var i = 0; i < (numPlayers - roleIds.length); i++) {
+      roleIds.push(vId);
+    }
 
-    // Assign the werewol(ves/f) randomly to the necessary number of people
-    Players.find({joined: true}).forEach(function(player) {
-      player.rank = Math.random();
-    });
+    // Now use the Knuth shuffle function on the array
+    arrayShuffle(roleIds);
 
-    var wwAdded = 0;
-    Players.find({joined: true}, {sort: {rank: -1}}).map(function(player) {
-      // Add werewolves
-      if (wwAdded < numWW) {
-        player.role = wwId;
-        wwAdded++;
-      } else if (roleIds.length > 0) {
-        player.role = roleIds.pop();
-      } else {
-        player.role = vId;
-      }
+    // Map these roles onto the players
+    Players.find({joined: true}).map(function(player, index, cursor) {
+      player.role = roleIds[index];
 
       console.log("Player " + player.name + " given " + Roles.findOne(player.role).name);
     });
@@ -58,3 +56,20 @@ Meteor.methods({
     return Roles.findOne(Players.findOne({userId: user._id}).role);
   }
 });
+
+function arrayShuffle(array) {
+  var currentIndex = array.length
+    , temporaryValue
+    , randomIndex;
+
+  while (0 !== currentIndex) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
