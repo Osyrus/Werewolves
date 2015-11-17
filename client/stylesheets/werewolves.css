@@ -31,6 +31,22 @@ h1 {
     color: whitesmoke;
 }
 
+h2 {
+    font-size: 2em;
+    margin-right: 0;
+    margin-left: 10px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    display: inline-block;
+    color: black;
+}
+h2.player-role-name {
+    margin-left: 5px;
+}
+h2.player-role-name.ww {
+    color: darkred;
+}
+
 #login-buttons {
     display: block;
     color: antiquewhite;

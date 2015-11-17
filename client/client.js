@@ -193,15 +193,22 @@ Template.whoAmI.helpers({
     return Meteor.user().username;
   },
   "roleName": function() {
-    Meteor.call("getRoleId", Meteor.user(), function(error, result) {
-      if (error) {
-        console.log(error);
-      } else {
-        Session.set("roleGiven", result);
-      }
-    });
+    if (GameVariables.findOne("gameMode").value == "inGame") {
+      Meteor.call("getRoleId", Meteor.user(), function (error, result) {
+        if (error) {
+          console.log(error);
+        } else {
+          Session.set("roleGiven", result);
+        }
+      });
 
-    return Roles.findOne(Session.get("roleGiven")).name;
+      return Roles.findOne(Session.get("roleGiven")).name;
+    } else {
+      return "";
+    }
+  },
+  "roleIsWW": function() {
+    return Roles.findOne(Session.get("roleGiven")).name == "Werewolf";
   }
 });
 
