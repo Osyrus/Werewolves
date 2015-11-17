@@ -189,11 +189,19 @@ Template.role.helpers({
 });
 
 Template.whoAmI.helpers({
-  "username": function() {
+  "playerName": function() {
     return Meteor.user().username;
   },
-  "rolename": function() {
-    return Roles.findOne(Meteor.call("getRoleId", Meteor.user())).name;
+  "roleName": function() {
+    Meteor.call("getRoleId", Meteor.user(), function(error, result) {
+      if (error) {
+        console.log(error);
+      } else {
+        Session.set("roleGiven", result);
+      }
+    });
+
+    return Roles.findOne(Session.get("roleGiven")).name;
   }
 });
 
