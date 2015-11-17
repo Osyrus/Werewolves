@@ -22,4 +22,3 @@ accounts-ui
 accounts-password
 deps
 mizzao:timesync
-reactive-var
