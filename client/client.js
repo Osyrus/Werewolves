@@ -92,6 +92,7 @@ Template.body.events({
 
     // Reset the start game countdown
     GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
+    Session.set("seenRole", false);
 
     // As the enabled roles vote count is dependant on the number of people, we need to do a recount.
     countVotes();
@@ -137,6 +138,14 @@ Template.body.events({
     } else {
       TimeSync.resync();
     }
+  },
+
+  "click .seen-role": function() {
+    Session.set("seenRole", true);
+  },
+
+  "click .whoami": function() {
+    Session.set("seenRole", false);
   }
 });
 
@@ -209,6 +218,21 @@ Template.whoAmI.helpers({
   },
   "roleIsWW": function() {
     return Roles.findOne(Session.get("roleGiven")).name == "Werewolf";
+  },
+  "roleRevealed": function() {
+    return Session.get("revealPressed");
+  }
+});
+
+Template.whoAmI.events({
+  "mousedown .revealRole": function(event) {
+    event.preventDefault();
+    Session.set("revealPressed", true);
+    console.log("Reveal pressed");
+  },
+  "mouseup .revealRole": function(event) {
+    event.preventDefault();
+    Session.set("revealPressed", false);
   }
 });
 

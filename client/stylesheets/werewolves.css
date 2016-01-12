@@ -40,12 +40,6 @@ h2 {
     display: inline-block;
     color: black;
 }
-h2.player-role-name {
-    margin-left: 5px;
-}
-h2.player-role-name.ww {
-    color: darkred;
-}
 
 #login-buttons {
     display: block;
@@ -64,7 +58,6 @@ li {
 
 li.player-list {
     list-style-type: none;
-    padding: 10px 15px;
 }
 
 li.vote-status {
@@ -95,6 +88,7 @@ button, span {
     -moz-user-select:none;
     -ms-user-select:none;
     user-select:none;
+    display: inline-block;
 }
 
 span.role-name {
@@ -107,12 +101,38 @@ span.role-name.enabled {
 }
 
 span.player-name {
-    padding: 8px 15px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    margin-left: 5px;
     background: darkorange;
 }
 
 span.player-name.ready {
     background: green;
+}
+
+span.player-role-intro {
+    background: darkblue;
+    margin-left: 5px;
+    margin-top: 5px;
+    font-size: x-large;
+}
+
+span.player-role-name {
+    background: darkblue;
+    margin-left: 5px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    font-size: xx-large;
+    visibility: hidden;
+}
+
+span.player-role-name.revealed {
+    visibility: visible;
+}
+
+span.player-role-name.revealed.ww {
+    background: darkred;
 }
 
 button.sel {
@@ -136,6 +156,13 @@ button.done {
     border: solid 1px dimgrey;
 }
 
+button.seen-role {
+    background: darkgreen;
+    margin-left: 5px;
+    margin-top: 2px;
+    font-size: xx-large;
+}
+
 button.start-game {
     background: dimgrey;
 }
@@ -146,4 +173,15 @@ button.start-game.all-ready {
 
 button.start-game.counting {
     background: darkred;
+}
+
+button.revealRole {
+    background: forestgreen;
+    font-size: x-large;
+    margin-left: 5px;
+}
+
+button.revealRole.revealed {
+    background: darkgreen;
+    border: inset;
 }

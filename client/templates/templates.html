@@ -15,6 +15,9 @@
 </template>
 
 <template name="whoAmI">
-  <h2 class="player-role-intro">Hi {{playerName}}, you are a </h2>
-  <h2 class="player-role-name {{#if roleIsWW}}ww{{/if}}">{{roleName}}</h2>
+  <span class="player-role-intro">{{playerName}}, you are a...</span>
+  <br>
+  <span class="player-role-name {{#if roleIsWW}}ww{{/if}} {{#if roleRevealed}}revealed{{/if}}">{{roleName}}</span>
+  <br>
+  <button class="revealRole {{#if roleRevealed}}revealed{{/if}}">Hold to Reveal Role</button>
 </template>
