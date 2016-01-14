@@ -122,26 +122,24 @@ Template.body.events({
   },
 
   "click .start-game": function() {
-    if (TimeSync.isSynced()) {
-      // Check to see if there is already a countdown
-      if (TimeSync.serverTime() < GameVariables.findOne("timeToStart").value) {
-        GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
+    if (allReady()) {
+      if (TimeSync.isSynced()) {
+        // Check to see if there is already a countdown
+        if (TimeSync.serverTime() < GameVariables.findOne("timeToStart").value) {
+          GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
+        } else {
+          // If there is no countdown, start one
+          var date = new Date();
+          var startTime = date.valueOf() + 5100; // start 5 seconds from now (magic number, I know...)
+
+          GameVariables.update("timeToStart", {$set: {value: TimeSync.serverTime(startTime, 500), enabled: true}}); // Update every half second
+        }
+
+        startDep.changed();
       } else {
-        // If there is no countdown, start one
-        var date      = new Date();
-        var startTime = date.valueOf() + 5100; // start 5 seconds from now (magic number, I know...)
-
-        GameVariables.update("timeToStart", {$set: {value: TimeSync.serverTime(startTime, 500), enabled: true}}); // Update every half second
+        TimeSync.resync();
       }
-
-      startDep.changed();
-    } else {
-      TimeSync.resync();
     }
-  },
-
-  "click .seen-role": function() {
-    Session.set("seenRole", true);
   },
 
   "click .whoami": function() {
@@ -233,6 +231,25 @@ Template.whoAmI.events({
   "mouseup .revealRole": function(event) {
     event.preventDefault();
     Session.set("revealPressed", false);
+  },
+  "click .seen-role": function() {
+    Session.set("seenRole", true);
+  }
+});
+
+Template.dayNightCycle.helpers({
+  "dayCycle": function() {
+    Meteor.call("currentCycle", function (error, result) {
+      if (error) {
+        console.log(error);
+      } else {
+        Session.set("cycleNumber", result);
+      }
+    });
+
+    var cycleNum = Session.get("cycleNumber");
+
+    return (!(cycleNum % 2 == 0));
   }
 });
 

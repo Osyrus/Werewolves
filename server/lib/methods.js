@@ -15,6 +15,7 @@ Meteor.methods({
     // Set the variables dealing with the game starting
     GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
     GameVariables.update("gameMode", {$set: {value: "inGame"}});
+    GameVariables.update("cycleNumber", {$set: {value: 1}});
 
     if (!GameVariables.findOne("rolesAssigned").value) {
 
@@ -60,6 +61,9 @@ Meteor.methods({
   },
   "getRoleId": function(user) {
     return Roles.findOne(Players.findOne({userId: user._id}).role);
+  },
+  "currentCycle": function() {
+    return GameVariables.findOne("cycleNumber").value;
   }
 });
 

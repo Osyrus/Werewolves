@@ -15,9 +15,37 @@
 </template>
 
 <template name="whoAmI">
+  <header>
+    <h1>Role screen</h1>
+  </header>
+
   <span class="player-role-intro">{{playerName}}, you are a...</span>
   <br>
   <span class="player-role-name {{#if roleIsWW}}ww{{/if}} {{#if roleRevealed}}revealed{{/if}}">{{roleName}}</span>
   <br>
   <button class="revealRole {{#if roleRevealed}}revealed{{/if}}">Hold to Reveal Role</button>
+
+  <br>
+
+  <button class="seen-role">OK</button>
+</template>
+
+<template name="dayNightCycle">
+  {{#if dayCycle}}
+    <header>
+      <h1>It is day time</h1>
+
+      <br>
+
+      <button class="whoami">My Role</button>
+    </header>
+  {{else}}
+    <header>
+      <h1>It is night time</h1>
+
+      <br>
+
+      <button class="whoami">My Role</button>
+    </header>
+  {{/if}}
 </template>

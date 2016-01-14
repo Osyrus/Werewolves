@@ -26,6 +26,7 @@ Meteor.startup(function () {
   GameVariables.insert({_id: "timeToStart", name: "Seconds until game start", value: 0, enabled: false});
   GameVariables.insert({_id: "gameMode", name: "The current game mode", value: "lobby", enabled: true});
   GameVariables.insert({_id: "rolesAssigned", name: "Have the roles been assigned to players?", value: false, enabled: true});
+  GameVariables.insert({_id: "cycleNumber", name: "The current cycle number (day/night combined)", value: 0, enabled: true});
 });
 
 // Note: The order that the roles are added will determine their tiebreaker order (when counting votes)
