@@ -50,12 +50,23 @@
     {{#if inGame}}
       {{#if whoAmIScreen}}
         <header>
-          <h1>The game has started!</h1>
+          <h1>Role screen</h1>
         </header>
 
         {{> whoAmI}}
 
+        <br>
 
+        <button class="seen-role">OK</button>
+
+      {{else}}
+        <header>
+          <h1>It is day time</h1>
+
+          <br>
+
+          <button class="whoami">My Role</button>
+        </header>
       {{/if}}
     {{/if}}
   </div>
