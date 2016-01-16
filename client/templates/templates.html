@@ -31,46 +31,55 @@
 </template>
 
 <template name="dayNightCycle">
-  {{#if dayCycle}}
-    <header>
-      <h1>It is day time</h1>
-
-      <br>
-
-      <button class="whoami">My Role</button>
-      {{#if voting}}
-        <span class="majority {{#if majorityReached}}reached{{/if}}">{{majorityText}}</span>
-      {{/if}}
-    </header>
-
-    {{#if nominating}}
-      <div class="list-group">
-        {{#each targets}}
-          {{> nominateTarget}}
-        {{/each}}
-      </div>
-      <button class="cancel">Cancel</button>
-    {{else}}
-      {{#if voting}}
-        <button class="vote do-lynch {{#if votingFor}}selected{{/if}}">Lynch {{lynchTarget}}!</button>
-        <span class="vote players-for"><i>Also for: {{playersVotingFor}}</i></span>
-        <button class="vote dont-lynch {{#if votingAgainst}}selected{{/if}}">Don't Lynch {{lynchTarget}}!</button>
-        <span class="vote players-against"><i>Also against: {{playersVotingAgainst}}</i></span>
-        <button class="vote abstain {{#if abstaining}}selected{{/if}}">Abstain</button>
-      {{else}}
-        <button class="lynch nominate">Nominate to Lynch</button>
-        <br>
-        <button class="lynch do-nothing {{#if doingNothing}}selected{{/if}}">Do nothing</button>
-      {{/if}}
-    {{/if}}
+  {{#if showEvents}}
+    <ul class="list-group">
+      {{#each events}}
+        {{> eventDisplay}}
+      {{/each}}
+    </ul>
+    <button class="ok">OK</button>
   {{else}}
-    <header>
-      <h1>It is night time</h1>
+    {{#if dayCycle}}
+      <header>
+        <h1>It is day time</h1>
 
-      <br>
+        <br>
 
-      <button class="whoami">My Role</button>
-    </header>
+        <button class="whoami">My Role</button>
+        {{#if voting}}
+          <span class="majority {{#if majorityReached}}reached{{/if}}">{{majorityText}}</span>
+        {{/if}}
+      </header>
+
+      {{#if nominating}}
+        <div class="list-group">
+          {{#each targets}}
+            {{> nominateTarget}}
+          {{/each}}
+        </div>
+        <button class="cancel">Cancel</button>
+      {{else}}
+        {{#if voting}}
+          <button class="vote do-lynch {{#if votingFor}}selected{{/if}}">Lynch {{lynchTarget}}!</button>
+          <span class="vote players-for"><i>Also for: {{playersVotingFor}}</i></span>
+          <button class="vote dont-lynch {{#if votingAgainst}}selected{{/if}}">Don't Lynch {{lynchTarget}}!</button>
+          <span class="vote players-against"><i>Also against: {{playersVotingAgainst}}</i></span>
+          <button class="vote abstain {{#if abstaining}}selected{{/if}}">Abstain</button>
+        {{else}}
+          <button class="lynch nominate">Nominate to Lynch</button>
+          <br>
+          <button class="lynch do-nothing {{#if doingNothing}}selected{{/if}}">Do nothing</button>
+        {{/if}}
+      {{/if}}
+    {{else}}
+      <header>
+        <h1>It is night time</h1>
+
+        <br>
+
+        <button class="whoami">My Role</button>
+      </header>
+    {{/if}}
   {{/if}}
 </template>
 
@@ -79,5 +88,7 @@
 </template>
 
 <template name="eventDisplay">
-
+  <li class="list-group-item">
+    <span class="event-text {{type}}">{{text}}</span>
+  </li>
 </template>

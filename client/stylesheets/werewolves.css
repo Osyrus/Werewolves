@@ -267,3 +267,17 @@ span.vote.players-for {
 span.vote.players-against {
     background: mediumblue;
 }
+
+span.event-text {
+    margin-left: 2%;
+    width: 96%;
+    font-size: large;
+}
+
+span.event-text.vDeath {
+    background: darkred;
+}
+
+span.event-text.wwDeath {
+    background: darkred;
+}

@@ -310,6 +310,17 @@ Template.dayNightCycle.helpers({
     }
 
     return majorityText;
+  },
+  "showEvents": function() {
+    var currentCycle = GameVariables.findOne("cycleNumber").value;
+
+    var events = EventList.find({cycleNumber: (currentCycle - 1)});
+
+    return (events.count() > 0 && !getPlayer().seenNewEvents);
+  },
+  "events": function() {
+    var currentCycle = GameVariables.findOne("cycleNumber").value;
+    return EventList.find({cycleNumber: (currentCycle - 1)});
   }
 });
 
@@ -329,6 +340,9 @@ Template.dayNightCycle.events({
     if (allPlayersDoingNothing()) {
       Meteor.call("doingNothingToday");
     }
+  },
+  "click .ok": function(event) {
+    Players.update(getPlayer()._id, {$set: {seenNewEvents: true}});
   },
   "click .cancel": function(event) {
     // Get the list of people looking at the selection screen

@@ -89,14 +89,16 @@ Meteor.methods({
       var targetsRole = Roles.findOne(target.role);
 
       var targetDiedText = target.name + " has been lynched!";
-      var deathType = "";
-      if (targetsRole.name != "Werewolf") {
+      if (targetsRole.name != "Werewolf" && targetsRole.name != "Villager")
         targetDiedText += " They were the " + targetsRole.name;
-        deathType = "vDeath";
-      } else {
-        targetDiedText += " They were a Werewolf!";
+      else
+        targetDiedText += " They were a " + targetsRole.name;
+
+      var deathType = "";
+      if (targetsRole.name == "Werewolf")
         deathType = "wwDeath";
-      }
+      else
+        deathType = "vDeath";
 
       EventList.insert({type: deathType, cycleNumber: cycleNumber, text: targetDiedText});
 
@@ -120,7 +122,8 @@ Meteor.methods({
     GameVariables.update("voteDirection", {$set: {value: false, enabled: false}});
     GameVariables.update("lynchVote", {$set: {value: [0, 0], enabled: false}});
     // Set all the players back to neutral
-    Players.forEach(function(player) {
+    var players = Players.find({alive: true});
+    players.forEach(function(player) {
       Players.update(player._id, {$set: {doNothing: false}});
     });
   },
@@ -136,7 +139,13 @@ Meteor.methods({
 });
 
 function moveToNextCycle() {
+  var players = Players.find({alive: true});
 
+  players.forEach(function(player) {
+    Players.update(player._id, {$set: {seenNewEvents: false}});
+  });
+
+  GameVariables.update("cycleNumber", {$inc: {value: 1}});
 }
 
 function arrayShuffle(array) {
