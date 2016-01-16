@@ -250,8 +250,202 @@ Template.dayNightCycle.helpers({
     var cycleNum = Session.get("cycleNumber");
 
     return (!(cycleNum % 2 == 0));
+  },
+  "nominating": function() {
+    // Get the list of people looking at the selection screen
+    var playersNominating = GameVariables.findOne("playersNominating").value;
+    // If the clients player is in the list, the index will be 0 onwards, else it will be -1
+    return playersNominating.indexOf(getPlayer()._id) >= 0;
+  },
+  "doingNothing": function() {
+    return getPlayer().doNothing;
+  },
+  "targets": function() {
+    return Players.find({joined: true, alive: true});
+  },
+  "voting": function() {
+    return GameVariables.findOne("lynchVote").enabled;
+  },
+  "lynchTarget": function() {
+    return Players.findOne(GameVariables.findOne("lynchVote").value).name;
+  },
+  "playersVotingFor": function() {
+    return generateVoteString(1);
+  },
+  "playersVotingAgainst": function() {
+    return generateVoteString(2);
+  },
+  "votingFor": function() {
+    return (Players.findOne(getPlayer()._id).voteChoice == 1);
+  },
+  "votingAgainst": function() {
+    return (Players.findOne(getPlayer()._id).voteChoice == 2);
+  },
+  "abstaining": function() {
+    return (Players.findOne(getPlayer()._id).voteChoice == 0);
+  },
+  "nominator": function() {
+    return Players.findOne(GameVariables.findOne("lynchVote").value[1]).name;
+  },
+  "majorityReached": function() {
+    votesDep.depend();
+
+    return GameVariables.findOne("timeToVoteExecution").enabled;
+  },
+  "majorityText": function() {
+    votesDep.depend();
+
+    var timeToExecute = GameVariables.findOne("timeToVoteExecution").value;
+    var voteDirection = GameVariables.findOne("voteDirection").value;
+    var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
+
+    var majorityText = "Majority reached ";
+    majorityText += voteDirection ? "to lynch " : "not to lynch ";
+    majorityText += target.name + "!";
+
+    if (TimeSync.serverTime() <= timeToExecute) {
+      majorityText += " In: " + Math.floor((timeToExecute - TimeSync.serverTime())/1000);// Convert to seconds from ms
+    } else if (GameVariables.findOne("timeToVoteExecution").enabled) {
+      Meteor.call("executeVote");
+    }
+
+    return majorityText;
   }
 });
+
+Template.dayNightCycle.events({
+  "click .lynch.nominate": function(event) {
+    // Get the list of people looking at the selection screen
+    var playersNominating = GameVariables.findOne("playersNominating").value;
+    // Add the current player (who pushed the button) to this list
+    playersNominating.push(getPlayer()._id);
+    // Update the list back to global space
+    GameVariables.update("playersNominating", {$set: {value: playersNominating}});
+    Players.update(getPlayer()._id, {$set: {doNothing: false}});
+  },
+  "click .lynch.do-nothing": function(event) {
+    Players.update(getPlayer()._id, {$set: {doNothing: true}});
+
+    if (allPlayersDoingNothing()) {
+      Meteor.call("doingNothingToday");
+    }
+  },
+  "click .cancel": function(event) {
+    // Get the list of people looking at the selection screen
+    var playersNominating = GameVariables.findOne("playersNominating").value;
+    // Remove the current player from this list
+    var playerIndex = playersNominating.indexOf(getPlayer()._id);
+    playersNominating.splice(playerIndex, 1);
+    // Update the list back to global space
+    GameVariables.update("playersNominating", {$set: {value: playersNominating}});
+  },
+  "click .vote.do-lynch": function(event) {
+    Players.update(getPlayer()._id, {$set: {voteChoice: 1}});
+    checkLynchVotes();
+  },
+  "click .vote.dont-lynch": function(event) {
+    Players.update(getPlayer()._id, {$set: {voteChoice: 2}});
+    checkLynchVotes();
+  },
+  "click .vote.abstain": function(event) {
+    Players.update(getPlayer()._id, {$set: {voteChoice: 0}});
+    checkLynchVotes();
+  }
+});
+
+Template.nominateTarget.events({
+  "click .nominatePlayer": function(event) {
+    // Get the lynch target player
+    var nominatedPlayer = Players.findOne(this._id);
+    var nominator = getPlayer();
+    // Kill the array holding the number of players looking at the nominate selection screen
+    GameVariables.update("playersNominating", {$set: {value: []}});
+    // Set all the players votes back to zero for the impending vote
+    var players = getAlivePlayers();
+    players.forEach(function(player) {
+      // Don't do this yet, for testing purposes (the bots can have set votes
+      //Players.update(player._id, {$set: {voteChoice: 2}});
+    });
+    // Set the variable to move to the yes/no vote
+    GameVariables.update("lynchVote", {$set: {value: [nominatedPlayer._id, nominator._id], enabled: true}});
+    // The nominator starts voting to lynch the target
+    Players.update(nominator._id, {$set: {voteChoice: 1}});
+  }
+});
+
+function checkLynchVotes() {
+  // This is the function that will check to see if a majority has been reached yet
+  var players = getAlivePlayers();
+
+  // The number of voters is all the alive players, minus the target
+  var numVoters = players.count() -1;
+  var voteTally = 0;
+
+  players.forEach(function(player) {
+    if (player.voteChoice == 1) {
+      voteTally++;
+    } else if (player.voteChoice == 2) {
+      voteTally--;
+    }
+  });
+
+  console.log("Vote Tally: " + voteTally);
+  console.log("Num voters: " + numVoters);
+
+  // Has a majority been reached?
+  if (Math.abs(voteTally) > Math.floor(numVoters/2)) {
+    // Which direction are we going to execute this vote?
+    var votingFor = voteTally > 0;
+
+    console.log("Majority reached");
+    console.log(votingFor);
+
+    if (TimeSync.isSynced()) {
+      var date = new Date();
+      var startTime = date.valueOf() + 5100; // start 5 seconds from now (magic number, I know...)
+
+      GameVariables.update("timeToVoteExecution", {$set: {value: TimeSync.serverTime(startTime, 500), enabled: true}}); // Update every half second
+
+      GameVariables.update("voteDirection", {$set: {value: votingFor, enabled: true}});
+      //startDep.changed();
+    } else {
+      TimeSync.resync();
+    }
+  } else {
+    GameVariables.update("timeToVoteExecution", {$set: {value: 0, enabled: false}});
+  }
+
+  votesDep.changed();
+}
+
+function allPlayersDoingNothing() {
+  var players = getAlivePlayers();
+
+  var doingNothingToday = true;
+
+  players.forEach(function(player) {
+    if (!player.doNothing)
+      doingNothingToday = false;
+  });
+
+  return doingNothingToday;
+}
+
+function generateVoteString(voteType) {
+  var players = getAlivePlayers();
+
+  var voteList = "";
+
+  players.forEach(function(player) {
+    if (player.voteChoice == voteType) {
+      voteList += ", " + Players.findOne(player._id).name;
+    }
+  });
+
+  voteList = voteList.substr(2);
+
+  return voteList;
+}
 
 function changeVote(roleId, newVote) {
   var player = getPlayer()._id;
@@ -336,6 +530,10 @@ function getVote(roleId) {
 
 function getPlayer() {
   return Players.findOne({userId: Meteor.user()._id});
+}
+
+function getAlivePlayers() {
+  return Players.find({alive: true});
 }
 
 function allReady() {

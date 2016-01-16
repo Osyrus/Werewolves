@@ -7,7 +7,9 @@ Meteor.methods({
       status: 0,
       alive: true,
       joined: true,
-      ready:  false
+      ready:  false,
+      voteChoice: 0,
+      doNothing: false
     });
   },
   // This is called when a client thinks it's time to start the game
@@ -16,6 +18,9 @@ Meteor.methods({
     GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
     GameVariables.update("gameMode", {$set: {value: "inGame"}});
     GameVariables.update("cycleNumber", {$set: {value: 1}});
+
+    // Clear the event list on starting a new game
+    EventList.remove({});
 
     if (!GameVariables.findOne("rolesAssigned").value) {
 
@@ -64,8 +69,75 @@ Meteor.methods({
   },
   "currentCycle": function() {
     return GameVariables.findOne("cycleNumber").value;
+  },
+  "executeVote": function() {
+    // The countdown has elapsed, execute the vote decision!!
+    var cycleNumber = GameVariables.findOne("cycleNumber").value;
+    var voteDirection = GameVariables.findOne("voteDirection").value;
+    var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
+
+    if (voteDirection) {
+      // This means the day is over, so make an event for that
+
+      var dayEndedOnLynchText = "The vote is complete and with that marks the end of the day.";
+
+      EventList.insert({type: "info", cycleNumber: cycleNumber, text: dayEndedOnLynchText});
+
+      // Lynch the target!!
+      Players.update(target._id, {$set: {alive: false}});
+
+      var targetsRole = Roles.findOne(target.role);
+
+      var targetDiedText = target.name + " has been lynched!";
+      var deathType = "";
+      if (targetsRole.name != "Werewolf") {
+        targetDiedText += " They were the " + targetsRole.name;
+        deathType = "vDeath";
+      } else {
+        targetDiedText += " They were a Werewolf!";
+        deathType = "wwDeath";
+      }
+
+      EventList.insert({type: deathType, cycleNumber: cycleNumber, text: targetDiedText});
+
+      // We should also check if the target is the saint, as they take the nominator with them
+      if (targetsRole.name == "Saint") {
+        var nominator = Players.findOne(GameVariables.findOne("lynchVote").value[1]);
+
+        Players.update(nominator._id, {$set: {alive: false}});
+
+        var nominatorDiedText = nominator.name + " has been struck down by the heavens because ";
+        nominatorDiedText += target.name + " was a Saint!";
+
+        EventList.insert({type: "vDeath", cycleNumber: cycleNumber, text: nominatorDiedText});
+      }
+
+      moveToNextCycle();
+    }
+
+    // Reset the related global variables
+    GameVariables.update("timeToVoteExecution", {$set: {value: 0, enabled: false}});
+    GameVariables.update("voteDirection", {$set: {value: false, enabled: false}});
+    GameVariables.update("lynchVote", {$set: {value: [0, 0], enabled: false}});
+    // Set all the players back to neutral
+    Players.forEach(function(player) {
+      Players.update(player._id, {$set: {doNothing: false}});
+    });
+  },
+  "doingNothingToday": function() {
+    var cycleNumber = GameVariables.findOne("cycleNumber").value;
+
+    var didNothingText = "The day moves into night with the villagers choosing not to lynch anyone.";
+
+    EventList.insert({type: "info", cycleNumber: cycleNumber, text: didNothingText});
+
+    moveToNextCycle();
   }
 });
+
+function moveToNextCycle() {
+
+}
 
 function arrayShuffle(array) {
   var currentIndex = array.length

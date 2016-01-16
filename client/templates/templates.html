@@ -38,7 +38,31 @@
       <br>
 
       <button class="whoami">My Role</button>
+      {{#if voting}}
+        <span class="majority {{#if majorityReached}}reached{{/if}}">{{majorityText}}</span>
+      {{/if}}
     </header>
+
+    {{#if nominating}}
+      <div class="list-group">
+        {{#each targets}}
+          {{> nominateTarget}}
+        {{/each}}
+      </div>
+      <button class="cancel">Cancel</button>
+    {{else}}
+      {{#if voting}}
+        <button class="vote do-lynch {{#if votingFor}}selected{{/if}}">Lynch {{lynchTarget}}!</button>
+        <span class="vote players-for"><i>Also for: {{playersVotingFor}}</i></span>
+        <button class="vote dont-lynch {{#if votingAgainst}}selected{{/if}}">Don't Lynch {{lynchTarget}}!</button>
+        <span class="vote players-against"><i>Also against: {{playersVotingAgainst}}</i></span>
+        <button class="vote abstain {{#if abstaining}}selected{{/if}}">Abstain</button>
+      {{else}}
+        <button class="lynch nominate">Nominate to Lynch</button>
+        <br>
+        <button class="lynch do-nothing {{#if doingNothing}}selected{{/if}}">Do nothing</button>
+      {{/if}}
+    {{/if}}
   {{else}}
     <header>
       <h1>It is night time</h1>
@@ -48,4 +72,12 @@
       <button class="whoami">My Role</button>
     </header>
   {{/if}}
+</template>
+
+<template name="nominateTarget">
+  <button class="nominatePlayer list-group-item">{{name}}</button>
+</template>
+
+<template name="eventDisplay">
+
 </template>
