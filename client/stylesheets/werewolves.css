@@ -226,6 +226,12 @@ button.lynch.selected {
     background: mediumblue;
 }
 
+button.ok {
+    margin-left: 2%;
+    width: 96%;
+    background: darkgreen;
+}
+
 button.cancel {
     margin-left: 2%;
     background: darkblue;
@@ -280,4 +286,16 @@ span.event-text.vDeath {
 
 span.event-text.wwDeath {
     background: darkred;
+}
+
+button.ok.waiting {
+    background: dimgrey;
+}
+
+h3.werewolf {
+    color: darkred;
+}
+
+h3.passive {
+    color: green;
 }

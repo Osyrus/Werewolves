@@ -9,7 +9,11 @@ Meteor.methods({
       joined: true,
       ready:  false,
       voteChoice: 0,
-      doNothing: false
+      doNothing: false,
+      seenNewEvents: false,
+      seenNightResults: true,
+      nightActionDone: false,
+      effect: "none"
     });
   },
   // This is called when a client thinks it's time to start the game
@@ -135,14 +139,34 @@ Meteor.methods({
     EventList.insert({type: "info", cycleNumber: cycleNumber, text: didNothingText});
 
     moveToNextCycle();
+  },
+  "endNightCycle": function() {
+    console.log("End night cycle has been called.");
+
+    var cycleNumber = GameVariables.findOne("cycleNumber").value;
+
+    var nightEndText = "The night has ended...";
+    EventList.insert({type: "info", cycleNumber: cycleNumber, text: nightEndText});
+
+    // Here is where the night cycle needs to be computed
+
+    // Need to kill whoever the werewolves picked UNLESS they have the "save" effect, or are the Saint
+      // Need to generate an event based on that
+
+    // Need to generate an event for what the witch has done
+
+    moveToNextCycle();
   }
 });
 
 function moveToNextCycle() {
   var players = Players.find({alive: true});
 
+  // Reset all the variables for the players, to be ready for the next day/night cycle
   players.forEach(function(player) {
     Players.update(player._id, {$set: {seenNewEvents: false}});
+    Players.update(player._id, {$set: {doNothing: false}});
+    //Players.update(player._id, {$set: {nightActionDone: false}}); (Testing purposes)
   });
 
   GameVariables.update("cycleNumber", {$inc: {value: 1}});

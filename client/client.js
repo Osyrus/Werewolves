@@ -311,6 +311,11 @@ Template.dayNightCycle.helpers({
 
     return majorityText;
   },
+  "showNightResults": function() {
+    var player = getPlayer();
+
+    return !player.seenNightResults;
+  },
   "showEvents": function() {
     var currentCycle = GameVariables.findOne("cycleNumber").value;
 
@@ -341,7 +346,8 @@ Template.dayNightCycle.events({
       Meteor.call("doingNothingToday");
     }
   },
-  "click .ok": function(event) {
+  "click .events.ok": function(event) {
+    // Update that the player has seen the events
     Players.update(getPlayer()._id, {$set: {seenNewEvents: true}});
   },
   "click .cancel": function(event) {
@@ -527,7 +533,6 @@ function countVotes() {
   });
 }
 
-// This currently just works in the lobby (as it uses 'alive' to determine if the player has joined).
 function numWerewolves() {
   // Get the number of players that have joined in the lobby
   var numPlayers = Players.find({joined: true}).count();
@@ -540,14 +545,6 @@ function getVote(roleId) {
   var vote = RoleVotes.findOne({playerId: player, roleId: roleId});
 
   return vote ? vote.vote : 2;
-}
-
-function getPlayer() {
-  return Players.findOne({userId: Meteor.user()._id});
-}
-
-function getAlivePlayers() {
-  return Players.find({alive: true});
 }
 
 function allReady() {

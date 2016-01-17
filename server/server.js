@@ -53,6 +53,10 @@ function addTestPlayer(name, vote) {
     joined: true,
     ready: true,
     voteChoice: vote,
-    doNothing: false
+    doNothing: true,
+    seenNewEvents: false,
+    seenNightResults: true,
+    nightActionDone: true,
+    effect: "none"
   });
 }
