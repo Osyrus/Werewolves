@@ -4,7 +4,7 @@ Meteor.startup(function () {
 
   addTestPlayer("Fred", 1);
   addTestPlayer("Steve", 1);
-  addTestPlayer("Bob", 0);
+  //addTestPlayer("Bob", 0);
 
   // Create the roles
   Roles.remove({});
@@ -39,7 +39,8 @@ function addRole(name, critical) {
     name: name,
     votes: 0,
     enabled: critical,
-    critical: critical
+    critical: critical,
+    target: 0
   });
 }
 
@@ -57,6 +58,7 @@ function addTestPlayer(name, vote) {
     seenNewEvents: false,
     seenNightResults: true,
     nightActionDone: true,
-    effect: "none"
+    effect: "none",
+    bot: true
   });
 }

@@ -2,6 +2,8 @@
 var votesDep = new Tracker.Dependency;
 var startDep = new Tracker.Dependency;
 
+nightViewDep = new Tracker.Dependency;
+
 Template.body.helpers({
   players: function() {
     return Players.find({joined: true});
@@ -63,7 +65,19 @@ Template.body.helpers({
   lobby: function() {
     var currentGameMode = GameVariables.findOne("gameMode").value;
 
-    return currentGameMode == "lobby";
+    if (Meteor.user() != null) {
+      var player = Players.findOne({userId: Meteor.user()._id});
+
+      if (player == undefined) {
+        return true;
+      } else if (!player.joined) {
+        return true;
+      } else {
+        return currentGameMode == "lobby";
+      }
+    } else {
+      return true;
+    }
   },
   inGame: function() {
     var currentGameMode = GameVariables.findOne("gameMode").value;
@@ -83,19 +97,22 @@ Template.body.helpers({
 
 Template.body.events({
   "click .join-game": function() {
-    var player = getPlayer();
-    if (player) {
-      Players.update(player._id, {$set: {joined: true}});
-    } else {
-      Meteor.call("addPlayer", Meteor.user());
+    if (GameVariables.findOne("gameMode").value == "lobby") {
+      var player = getPlayer();
+
+      if (player) {
+        Players.update(player._id, {$set: {joined: true}});
+      } else {
+        Meteor.call("addPlayer", Meteor.user());
+      }
+
+      // Reset the start game countdown
+      GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
+      Session.set("seenRole", false);
+
+      // As the enabled roles vote count is dependant on the number of people, we need to do a recount.
+      countVotes();
     }
-
-    // Reset the start game countdown
-    GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
-    Session.set("seenRole", false);
-
-    // As the enabled roles vote count is dependant on the number of people, we need to do a recount.
-    countVotes();
   },
   "click .leave-game": function() {
     var player = getPlayer();
@@ -239,13 +256,7 @@ Template.whoAmI.events({
 
 Template.dayNightCycle.helpers({
   "dayCycle": function() {
-    Meteor.call("currentCycle", function (error, result) {
-      if (error) {
-        console.log(error);
-      } else {
-        Session.set("cycleNumber", result);
-      }
-    });
+    getCurrentCycle();
 
     var cycleNum = Session.get("cycleNumber");
 
@@ -312,9 +323,21 @@ Template.dayNightCycle.helpers({
     return majorityText;
   },
   "showNightResults": function() {
+    nightViewDep.depend();
+
     var player = getPlayer();
 
-    return !player.seenNightResults;
+    // Also need to show this if everyone hasn't finished seeing their results
+    //getCurrentCycle();
+
+    var cycleNum = GameVariables.findOne("cycleNumber").value;
+    var nightTime = cycleNum % 2 == 0;
+
+    if (!player.seenNightResults) {
+      return true;
+    }
+
+    return (nightTime && player.nightActionDone);
   },
   "showEvents": function() {
     var currentCycle = GameVariables.findOne("cycleNumber").value;
@@ -552,4 +575,14 @@ function allReady() {
   var playersReady = Players.find({ready: true}).count();
 
   return playersReady == playersTotal;
+}
+
+function getCurrentCycle() {
+  Meteor.call("currentCycle", function (error, result) {
+    if (error) {
+      console.log(error);
+    } else {
+      Session.set("cycleNumber", result);
+    }
+  });
 }

@@ -148,6 +148,10 @@ span.majority.reached {
     visibility: visible;
 }
 
+button.game-running {
+    background: dimgrey;
+}
+
 button.sel {
     background: #356094;
     border: solid 1px #2A4E77;
@@ -288,11 +292,15 @@ span.event-text.wwDeath {
     background: darkred;
 }
 
+span.event-text.warning {
+    background: darkorange;
+}
+
 button.ok.waiting {
     background: dimgrey;
 }
 
-h3.werewolf {
+h3.aggressive {
     color: darkred;
 }
 

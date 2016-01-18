@@ -1,3 +1,5 @@
+var seerDep = new Tracker.Dependency;
+
 Template.nightTime.helpers({
   "passive": function() {
     getRoleType();
@@ -40,67 +42,48 @@ Template.playerSelectionList.helpers({
 Template.playerSelection.events({
   "click .select-player": function(event) {
     var targetId = this._id;
-    Session.set("targetId", targetId);
-
     var target = Players.findOne(targetId);
 
-    getRoleType();
+    // Changing to a more server-side system
+    Meteor.call("getRoleId", Meteor.user(), function(error, result) {
+      if (error) {
+        console.log(error);
+      } else {
+        var role = Roles.findOne(result);
+        var name = String(role.name).toLowerCase();
 
-    var contentText = "Are you sure that you want to ";
-    var titleText = "";
+        var contentText = "Are you sure that you want to ";
+        var titleText = "";
 
-    if (Session.equals("roleType", "doctor")) {
-      titleText = "Save " + target.name + "?";
-      contentText += " save " + target.name + " from the werewolves?";
-    } else if (Session.equals("roleType", "witch")) {
-      titleText = "Silence " + target.name + "?";
-      contentText += " silence " + target.name + ", preventing them from speaking during the next day?";
-    } else if (Session.equals("roleType", "seer")) {
-      titleText = "View " + target.name + "?";
-      contentText += " gaze into the soul of " + target.name + " and see if they are a Werewolf?";
-    }
+        if (name == "doctor") {
+          titleText = "Save " + target.name + "?";
+          contentText += " save " + target.name + " from the werewolves?";
+        } else if (name == "witch") {
+          titleText = "Silence " + target.name + "?";
+          contentText += " silence " + target.name + ", preventing them from speaking during the next day?";
+        } else if (name == "seer") {
+          titleText = "View " + target.name + "?";
+          contentText += " gaze into the soul of " + target.name + " and see if they are a Werewolf?";
+          seerDep.changed();
+        }
 
-    var modalData = {
-      title: titleText,
-      content: contentText
-    };
+        Meteor.call("setRoleTarget", role._id, target._id);
 
-    Modal.show("areYouSureDialog", modalData);
+        var modalData = {
+          title: titleText,
+          content: contentText
+        };
+
+        Modal.show("areYouSureDialog", modalData);
+      }
+    });
   }
 });
 
 Template.areYouSureDialog.events({
   "click .sure": function() {
-    // Execute the action that the players says they are sure about
-    var targetId = Session.get("targetId");
-    var target = Players.findOne(targetId);
-
     Modal.hide("areYouSureDialog");
     finishedNightAction();
-
-    if (Session.equals("roleType", "doctor")) {
-      // This is where the doctors effect is added
-      Players.update(targetId, {$set: {effect: "save"}});
-
-      console.log("Doctor has selected " + target.name);
-    } else if (Session.equals("roleType", "witch")) {
-      // This is where the witches effect is added
-      Players.update(targetId, {$set: {effect: "silence"}});
-
-      console.log("Witch has selected " + target.name);
-    } else if (Session.equals("roleType", "seer")) {
-      // This is where the seer finds out their answer
-      Meteor.call("getRoleId", target, function(error, result) {
-        if (error) {
-          console.log(error);
-        } else {
-          var role = String(Roles.findOne(result).name).toLowerCase();
-          Session.set("targetsRole", role);
-        }
-      });
-
-      console.log("Seer has selected " + target.name);
-    }
   }
 });
 
@@ -112,26 +95,42 @@ Template.nightResults.events({
 
 Template.nightResults.helpers({
   "nightInfo": function() {
-    var player = getPlayer();
-    getRoleType();
+    seerDep.depend();
 
+    var player = getPlayer();
     var info = {
-      title: "Error",
-      body: "How did that happen?",
-      tag: "none"
+      title: "Call failed",
+      body: "What the hell?",
+      tag: ""
     };
 
-    if (player.nightActionDone) {
-      if (Session.equals("roleType", "doctor")) {
-        info = getDoctorResults();
-      } else if (Session.equals("roleType", "witch")) {
-        info = getWitchResults();
-      } else if (Session.equals("roleType", "seer")) {
-        info = getSeerResults();
-      }
-    }
+    Meteor.call("getRoleFromId", player._id, function(error, role) {
+      if (error) {
+        console.log(error);
 
-    return info;
+        info = {
+          title: "Error",
+          body: "How did that happen?",
+          tag: "none"
+        };
+      } else {
+        if (player.nightActionDone) {
+          var name = String(role.name).toLowerCase();
+
+          if (name == "doctor") {
+            info = getDoctorResults(role.target);
+          } else if (name == "witch") {
+            info = getWitchResults(role.target);
+          } else if (name == "seer") {
+            info = getSeerResults(role.target);
+          }
+        }
+      }
+
+      Session.set("nightInfo", info);
+    });
+
+    return Session.get("nightInfo");
   },
   "okButton": function() {
     var player = getPlayer();
@@ -150,8 +149,8 @@ Template.nightResults.helpers({
   }
 });
 
-function getDoctorResults() {
-  var target = Players.findOne(Session.get("targetId"));
+function getDoctorResults(targetId) {
+  var target = Players.findOne(targetId);
 
   var doctorTitle = "You have chosen to save " + target.name;
   var doctorContent = target.name + " cannot be killed this night by the werewolves, thanks to your skills.";
@@ -164,12 +163,12 @@ function getDoctorResults() {
   }
 }
 
-function getWitchResults() {
-  var target = Players.findOne(Session.get("targetId"));
+function getWitchResults(targetId) {
+  var target = Players.findOne(targetId);
 
   var witchTitle = "You have chosen to silence " + target.name;
   var witchContent = target.name + " will not be able to talk tomorrow, as you hexxed them during the night.";
-  var witchTag = "werewolf";
+  var witchTag = "aggressive";
 
   return {
     title: witchTitle,
@@ -178,28 +177,44 @@ function getWitchResults() {
   }
 }
 
-function getSeerResults() {
-  var target = Players.findOne(Session.get("targetId"));
-
-  var seerTitle = "";
-  var seerContent = "You have gazed into their soul and found ";
-  var seerTag = "";
-
-  if (Session.equals("targetsRole", "werewolf")) {
-    seerTitle = target.name + " is a Werewolf!";
-    seerContent += "that " + target.name + " is a Werewolf!";
-    seerTag = "werewolf";
-  } else {
-    seerTitle = target.name + " is not a Werewolf";
-    seerContent += target.name + " is pure of heart, and not a Werewolf.";
-    seerTag = "passive";
-  }
-
-  return {
-    title: seerTitle,
-    body: seerContent,
-    tag: seerTag
+function getSeerResults(targetId) {
+  var target = Players.findOne(targetId);
+  var results = {
+    title: "",
+    body: "",
+    tag: ""
   };
+
+  Meteor.call("getRoleFromId", targetId, function(error, role) {
+    if (error) {
+      console.log(error);
+
+      results.title = "Error";
+      results.body = error.response;
+    } else {
+      var seerTitle = "";
+      var seerContent = "You have gazed into their soul and found ";
+      var seerTag = "";
+
+      if (role.name == "Werewolf") {
+        seerTitle = target.name + " is a Werewolf!";
+        seerContent += "that " + target.name + " is a Werewolf!";
+        seerTag = "aggressive";
+      } else {
+        seerTitle = target.name + " is not a Werewolf";
+        seerContent += target.name + " is pure of heart, and not a Werewolf.";
+        seerTag = "passive";
+      }
+
+      results.title = seerTitle;
+      results.body = seerContent;
+      results.tag = seerTag;
+    }
+
+    Session.set("seerResults", results);
+  });
+
+  return Session.get("seerResults");
 }
 
 function finishedNightAction() {

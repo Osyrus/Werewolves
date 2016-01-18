@@ -13,7 +13,8 @@ Meteor.methods({
       seenNewEvents: false,
       seenNightResults: true,
       nightActionDone: false,
-      effect: "none"
+      effect: "none",
+      bot: false
     });
   },
   // This is called when a client thinks it's time to start the game
@@ -71,6 +72,9 @@ Meteor.methods({
   "getRoleId": function(user) {
     return Roles.findOne(Players.findOne({userId: user._id}).role);
   },
+  "getRoleFromId": function(playerId) {
+    return Roles.findOne(Players.findOne(playerId).role);
+  },
   "currentCycle": function() {
     return GameVariables.findOne("cycleNumber").value;
   },
@@ -125,10 +129,12 @@ Meteor.methods({
     GameVariables.update("timeToVoteExecution", {$set: {value: 0, enabled: false}});
     GameVariables.update("voteDirection", {$set: {value: false, enabled: false}});
     GameVariables.update("lynchVote", {$set: {value: [0, 0], enabled: false}});
-    // Set all the players back to neutral
+    // Prepare players for night time / reset for day
     var players = Players.find({alive: true});
     players.forEach(function(player) {
       Players.update(player._id, {$set: {doNothing: false}});
+      if (!player.bot)
+        Players.update(player._id, {$set: {nightActionDone: false}});
     });
   },
   "doingNothingToday": function() {
@@ -137,6 +143,13 @@ Meteor.methods({
     var didNothingText = "The day moves into night with the villagers choosing not to lynch anyone.";
 
     EventList.insert({type: "info", cycleNumber: cycleNumber, text: didNothingText});
+
+    // Prepare players for night time
+    var players = Players.find({alive: true});
+    players.forEach(function(player) {
+      if (!player.bot)
+        Players.update(player._id, {$set: {nightActionDone: false}});
+    });
 
     moveToNextCycle();
   },
@@ -153,9 +166,57 @@ Meteor.methods({
     // Need to kill whoever the werewolves picked UNLESS they have the "save" effect, or are the Saint
       // Need to generate an event based on that
 
+    // Get the werewol(f/ves) target id
+    var werewolf = Roles.findOne({name: "Werewolf"});
+    var werewolfTargetId = werewolf.target;
+    // Get the doctors target id
+    var doctorsTargetId = Roles.findOne({name: "Doctor"}).target;
+    // Get the saints id
+    var saint = Players.findOne({role: Roles.findOne({name: "Saint"})._id});
+    var saintsId = 0;
+    if (saint != undefined) {
+      saintsId = saint._id;
+    }
+
+    // Now lets check if the werewolves are indeed allowed to kill their target
+    if (werewolfTargetId != doctorsTargetId && werewolfTargetId != saintsId && werewolfTargetId != 0) {
+      // It seems this player is doomed
+      var target = Players.findOne(werewolfTargetId);
+
+      // Sorry mate...
+      Players.update(werewolfTargetId, {$set: {alive: false}});
+
+      // Now lets inform everyone
+      var wwKillText = target.name + " has been killed during the night!";
+      EventList.insert({type: "vDeath", cycleNumber: cycleNumber, text: wwKillText});
+    } else {
+      // Phew, that player sure is happy about this outcome...
+
+      // Better let everybody know the good news
+      var noDeathText = "Nobody was killed during the night";
+      EventList.insert({type: "info", cycleNumber: cycleNumber, text: noDeathText});
+    }
+    // Now to reset the werewolf target
+    Roles.update(werewolf._id, {$set: {target: 0}});
+
     // Need to generate an event for what the witch has done
+    var witchesTargetId = Roles.findOne({name: "Witch"}).target;
+    var witchesTarget = Players.findOne(witchesTargetId);
+    // Now to generate some text and the event
+    if (witchesTarget != undefined) {
+      var witchesText = witchesTarget.name + " was hexxed during the night, and can't speak today!";
+      EventList.insert({type: "warning", cycleNumber: cycleNumber, text: witchesText});
+    }
 
     moveToNextCycle();
+  },
+  "setRoleTarget": function(roleId, targetId) {
+    Roles.update(roleId, {$set: {target: targetId}});
+  },
+  "getRoleTarget": function(roleName) {
+    var role = Roles.findOne({name: roleName});
+
+    return Players.findOne(role.target);
   }
 });
 
@@ -165,8 +226,11 @@ function moveToNextCycle() {
   // Reset all the variables for the players, to be ready for the next day/night cycle
   players.forEach(function(player) {
     Players.update(player._id, {$set: {seenNewEvents: false}});
-    Players.update(player._id, {$set: {doNothing: false}});
-    //Players.update(player._id, {$set: {nightActionDone: false}}); (Testing purposes)
+
+    if (!player.bot) {
+      //Players.update(player._id, {$set: {nightActionDone: false}});
+      Players.update(player._id, {$set: {doNothing: false}});
+    }
   });
 
   GameVariables.update("cycleNumber", {$inc: {value: 1}});

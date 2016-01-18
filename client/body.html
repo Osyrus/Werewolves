@@ -27,7 +27,11 @@
               {{/if}}
             </button>
           {{else}}
-            <button class="join-game">Join Game</button>
+            {{#if inGame}}
+              <button class="game-running">Game in Progress</button>
+            {{else}}
+              <button class="join-game">Join Game</button>
+            {{/if}}
           {{/if}}
         {{/if}}
       </header>
@@ -45,9 +49,7 @@
           {{/each}}
         </ul>
       {{/if}}
-    {{/if}}
-
-    {{#if inGame}}
+    {{else}} {{#if inGame}}
       {{#if whoAmIScreen}}
 
         {{> whoAmI}}
@@ -57,6 +59,6 @@
         {{> dayNightCycle}}
 
       {{/if}}
-    {{/if}}
+    {{/if}} {{/if}}
   </div>
 </body>
