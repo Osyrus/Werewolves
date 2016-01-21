@@ -1,0 +1,110 @@
+<template name="nightTime">
+  <header>
+    <h1>It is night time</h1>
+
+    <br>
+
+    <button class="whoami">My Role</button>
+  </header>
+
+  <!-- This is where the players are given their individual screens -->
+  {{#if selecting}}
+    {{#if passive}}
+      {{> passiveScreen}}
+    {{else}} {{#if werewolf}}
+      {{> werewolfScreen}}
+    {{else}} {{#if doctor}}
+      {{> doctorScreen}}
+    {{else}} {{#if witch}}
+      {{> witchScreen}}
+    {{else}} {{#if seer}}
+      {{> seerScreen}}
+    {{/if}} {{/if}} {{/if}} {{/if}} {{/if}}
+  {{/if}}
+</template>
+
+<template name="passiveScreen">
+  <span>The villager/passive player screen</span>
+  <span>The idea here is that there will be some mini-game to play before being allowed to move on.</span>
+
+  <button class="btn btn-default js-done">Dismiss</button>
+</template>
+
+<template name="werewolfScreen">
+  <span>The Werewolf screen</span>
+</template>
+
+<template name="doctorScreen">
+  <span>The Doctor screen</span>
+
+  {{> playerSelectionList}}
+</template>
+
+<template name="witchScreen">
+  <span>The Witch screen</span>
+
+  {{> playerSelectionList}}
+</template>
+
+<template name="seerScreen">
+  <div class="panel panel-default">
+    <div class="panel-body">
+      <h4>You are the seer, select someone find if they are a werewolf.</h4>
+    </div>
+  </div>
+
+  {{> playerSelectionList}}
+</template>
+
+<template name="nightResults">
+  <header>
+    <h1>Your actions this night</h1>
+  </header>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title {{nightInfo.tag}}">
+        {{nightInfo.title}}
+      </h3>
+    </div>
+
+    <div class="panel-body">
+      {{nightInfo.body}}
+    </div>
+  </div>
+
+  <button class="ok results {{okButton.tag}}">{{okButton.text}}</button>
+</template>
+
+<template name="playerSelectionList">
+  <div class="list-group">
+    {{#each otherPlayers}}
+      {{> playerSelection}}
+    {{/each}}
+  </div>
+</template>
+
+<template name="playerSelection">
+  <button type="button" class="list-group-item select-player">{{name}}</button>
+</template>
+
+<template name="areYouSureDialog">
+  <div class="modal fade">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-header">{{title}}</h4>
+        </div>
+
+        <div class="modal-body">
+          <p>{{content}}</p>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
+          <button type="button" class="btn btn-primary sure">I'm Sure</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

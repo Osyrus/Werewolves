@@ -21,13 +21,17 @@
                 {{#if allReady}}all-ready{{/if}}
                 {{#if counting}}counting{{/if}}">
               {{#if counting}}
-                {{countdown}} Cancel
+                Cancel ({{countdown}})
               {{else}}
                 Start Game
               {{/if}}
             </button>
           {{else}}
-            <button class="join-game">Join Game</button>
+            {{#if inGame}}
+              <button class="game-running">Game in Progress</button>
+            {{else}}
+              <button class="join-game">Join Game</button>
+            {{/if}}
           {{/if}}
         {{/if}}
       </header>
@@ -45,29 +49,16 @@
           {{/each}}
         </ul>
       {{/if}}
-    {{/if}}
-
-    {{#if inGame}}
+    {{else}} {{#if inGame}}
       {{#if whoAmIScreen}}
-        <header>
-          <h1>Role screen</h1>
-        </header>
 
         {{> whoAmI}}
 
-        <br>
-
-        <button class="seen-role">OK</button>
-
       {{else}}
-        <header>
-          <h1>It is day time</h1>
 
-          <br>
+        {{> dayNightCycle}}
 
-          <button class="whoami">My Role</button>
-        </header>
       {{/if}}
-    {{/if}}
+    {{/if}} {{/if}}
   </div>
 </body>

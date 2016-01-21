@@ -15,9 +15,78 @@
 </template>
 
 <template name="whoAmI">
+  <header>
+    <h1>Role screen</h1>
+  </header>
+
   <span class="player-role-intro">{{playerName}}, you are a...</span>
   <br>
   <span class="player-role-name {{#if roleIsWW}}ww{{/if}} {{#if roleRevealed}}revealed{{/if}}">{{roleName}}</span>
   <br>
   <button class="revealRole {{#if roleRevealed}}revealed{{/if}}">Hold to Reveal Role</button>
+
+  <br>
+
+  <button class="seen-role">OK</button>
+</template>
+
+<template name="dayNightCycle">
+  {{#if showNightResults}}
+    {{> nightResults}}
+  {{else}}
+    {{#if showEvents}}
+      <ul class="list-group"> <!-- Think about perhaps using bootstrap panels here -->
+        {{#each events}}
+          {{> eventDisplay}}
+        {{/each}}
+      </ul>
+      <button class="ok events">OK</button>
+    {{else}}
+      {{#if dayCycle}}
+        <header>
+          <h1>It is day time</h1>
+
+          <br>
+
+          <button class="whoami">My Role</button>
+          {{#if voting}}
+            <span class="majority {{#if majorityReached}}reached{{/if}}">{{majorityText}}</span>
+          {{/if}}
+        </header>
+
+        {{#if nominating}}
+          <div class="list-group">
+            {{#each targets}}
+              {{> nominateTarget}}
+            {{/each}}
+          </div>
+          <button class="cancel">Cancel</button>
+        {{else}}
+          {{#if voting}}
+            <button class="vote do-lynch {{#if votingFor}}selected{{/if}}">Lynch {{lynchTarget}}!</button>
+            <span class="vote players-for"><i>Also for: {{playersVotingFor}}</i></span>
+            <button class="vote dont-lynch {{#if votingAgainst}}selected{{/if}}">Don't Lynch {{lynchTarget}}!</button>
+            <span class="vote players-against"><i>Also against: {{playersVotingAgainst}}</i></span>
+            <button class="vote abstain {{#if abstaining}}selected{{/if}}">Abstain</button>
+          {{else}}
+            <button class="lynch nominate">Nominate to Lynch</button>
+            <br>
+            <button class="lynch do-nothing {{#if doingNothing}}selected{{/if}}">Do nothing</button>
+          {{/if}}
+        {{/if}}
+      {{else}}
+        {{> nightTime}}
+      {{/if}}
+    {{/if}}
+  {{/if}}
+</template>
+
+<template name="nominateTarget">
+  <button class="nominatePlayer list-group-item">{{name}}</button>
+</template>
+
+<template name="eventDisplay">
+  <li class="list-group-item">
+    <span class="event-text {{type}}">{{text}}</span>
+  </li>
 </template>
