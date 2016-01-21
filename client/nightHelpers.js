@@ -33,6 +33,12 @@ Template.nightTime.helpers({
   }
 });
 
+Template.passiveScreen.events({
+  "click .js-done": function(event) {
+    finishedNightAction();
+  }
+});
+
 Template.playerSelectionList.helpers({
   "otherPlayers": function() {
     return Players.find({alive: true, _id: {$not: getPlayer()._id}});
@@ -99,8 +105,8 @@ Template.nightResults.helpers({
 
     var player = getPlayer();
     var info = {
-      title: "Call failed",
-      body: "What the hell?",
+      title: "Loading...",
+      body: "Patience young padawan...",
       tag: ""
     };
 
@@ -109,9 +115,9 @@ Template.nightResults.helpers({
         console.log(error);
 
         info = {
-          title: "Error",
-          body: "How did that happen?",
-          tag: "none"
+          title: "Get role method call failed",
+          body: "That's a shame...",
+          tag: ""
         };
       } else {
         if (player.nightActionDone) {
@@ -123,6 +129,8 @@ Template.nightResults.helpers({
             info = getWitchResults(role.target);
           } else if (name == "seer") {
             info = getSeerResults(role.target);
+          } else if (name == "villager") {
+            info = getVillagerResults();
           }
         }
       }
@@ -174,6 +182,19 @@ function getWitchResults(targetId) {
     title: witchTitle,
     body: witchContent,
     tag: witchTag
+  }
+}
+
+function getVillagerResults() {
+  var villagerTitle = "You went to bed";
+  var villagerContent = "Not having anything in particular to do at night time, you went to bed.";
+  villagerContent += " Hopefully nothing bad happens while you're asleep...";
+  var villagerTag = "passive";
+
+  return {
+    title: villagerTitle,
+    body: villagerContent,
+    tag: villagerTag
   }
 }
 
