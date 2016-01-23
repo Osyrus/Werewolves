@@ -33,6 +33,27 @@ Template.nightTime.helpers({
   }
 });
 
+Template.werewolvesTargetList.helpers({
+  "werewolfTargets": function(events) {
+    // TODO: Fetch all the players that are alive, but not the werewolves themselves
+
+    // Make a new data structure for each one that only passes their _id and name
+    // Then add to that structure a boolean for if any werewolves have targeted them (targeted)
+    // Also add a string for any of them that are targeted that is a comma separated list of the werewolves
+    // that have targeted them (werewolvesTargeting)
+  }
+});
+
+Template.werewolfTarget.events({
+  "click .js-select-target": function() {
+    // TODO: Set the werewolf's new target
+
+    // This is where the werewolf who clicked this, needs to have their target set to the selected player
+    // This should update a reactive variable that will make every other werewolves screen update the target list
+    // to show that this particular werewolf's selection has changed.
+  }
+});
+
 Template.passiveScreen.events({
   "click .js-done": function(event) {
     finishedNightAction();
