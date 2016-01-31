@@ -32,6 +32,8 @@
 
 <template name="werewolfScreen">
   <span>The Werewolf screen</span>
+
+  {{> werewolvesTargetList}}
 </template>
 
 <template name="doctorScreen">
@@ -88,23 +90,16 @@
   <button type="button" class="list-group-item select-player">{{name}}</button>
 </template>
 
-<template name="areYouSureDialog">
-  <div class="modal fade">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h4 class="modal-header">{{title}}</h4>
-        </div>
-
-        <div class="modal-body">
-          <p>{{content}}</p>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
-          <button type="button" class="btn btn-primary sure">I'm Sure</button>
-        </div>
-      </div>
-    </div>
+<template name="werewolvesTargetList">
+  <div class="list-group">
+    {{#each werewolfTargets}}
+      {{> werewolfTarget}}
+    {{/each}}
   </div>
+</template>
+
+<template name="werewolfTarget">
+  <button class="list-group-item js-select-target {{#if targeted}}targeted{{/if}}">
+    {{targetName}}{{#if targeted}} ({{werewolvesTargeting}}){{/if}}
+  </button>
 </template>
