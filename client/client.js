@@ -283,6 +283,18 @@ Template.dayNightCycle.helpers({
   "voting": function() {
     return GameVariables.findOne("lynchVote").enabled;
   },
+  votingTitle: function() {
+    var voteDetails = GameVariables.findOne("lynchVote");
+
+    if (voteDetails.enabled) {
+      var target = Players.findOne(voteDetails.value[0]);
+      var nominator = Players.findOne(voteDetails.value[1]);
+
+      return target.name + " has been nominated by " + nominator.name + ". Please cast your votes!";
+    } else {
+      return "Not voting yet..."
+    }
+  },
   "lynchTarget": function() {
     return Players.findOne(GameVariables.findOne("lynchVote").value).name;
   },
@@ -307,9 +319,13 @@ Template.dayNightCycle.helpers({
   "majorityReached": function() {
     votesDep.depend();
 
-    return GameVariables.findOne("timeToVoteExecution").enabled;
+    if (GameVariables.findOne("timeToVoteExecution").enabled) {
+      return "reached";
+    } else {
+      return "";
+    }
   },
-  "majorityText": function() {
+  "majority": function() {
     votesDep.depend();
 
     var timeToExecute = GameVariables.findOne("timeToVoteExecution").value;
@@ -320,13 +336,18 @@ Template.dayNightCycle.helpers({
     majorityText += voteDirection ? "to lynch " : "not to lynch ";
     majorityText += target.name + "!";
 
+    var majorityTag = voteDirection ? "lynch" : "";
+
     if (TimeSync.serverTime() <= timeToExecute) {
       majorityText += " In: " + Math.floor((timeToExecute - TimeSync.serverTime())/1000);// Convert to seconds from ms
     } else if (GameVariables.findOne("timeToVoteExecution").enabled) {
       Meteor.call("executeVote");
     }
 
-    return majorityText;
+    return {
+      text: majorityText,
+      tag: majorityTag
+    };
   },
   "showNightResults": function() {
     nightViewDep.depend();

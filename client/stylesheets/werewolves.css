@@ -148,6 +148,10 @@ span.majority.reached {
     visibility: visible;
 }
 
+span.majority.reached.lynch {
+    background: darkred;
+}
+
 button.game-running {
     background: dimgrey;
 }

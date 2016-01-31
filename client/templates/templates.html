@@ -44,13 +44,17 @@
     {{else}}
       {{#if dayCycle}}
         <header>
-          <h1>It is day time</h1>
+          {{#if voting}}
+            <h1>{{votingTitle}}</h1>
+          {{else}}
+            <h1>It is day time</h1>
+          {{/if}}
 
           <br>
 
           <button class="whoami">My Role</button>
           {{#if voting}}
-            <span class="majority {{#if majorityReached}}reached{{/if}}">{{majorityText}}</span>
+            <span class="majority {{majorityReached}} {{majority.tag}}">{{majority.text}}</span>
           {{/if}}
         </header>
 
