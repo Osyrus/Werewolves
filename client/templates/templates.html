@@ -90,3 +90,24 @@
     <span class="event-text {{type}}">{{text}}</span>
   </li>
 </template>
+
+<template name="areYouSureDialog">
+  <div class="modal fade">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-header">{{title}}</h4>
+        </div>
+
+        <div class="modal-body">
+          <p>{{content}}</p>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
+          <button type="button" class="btn btn-primary sure {{sureTag}}">I'm Sure</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

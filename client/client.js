@@ -168,10 +168,6 @@ Template.registerHelper("equals", function (a, b) {
   return (a == b);
 });
 
-Accounts.ui.config({
-  passwordSignupFields: "USERNAME_ONLY"
-});
-
 Template.role.events({
   "click .vote-up": function() {
     if (getVote(this._id) != 1 && !getPlayer().ready) {
@@ -398,21 +394,26 @@ Template.dayNightCycle.events({
 
 Template.nominateTarget.events({
   "click .nominatePlayer": function(event) {
-    // Get the lynch target player
-    var nominatedPlayer = Players.findOne(this._id);
-    var nominator = getPlayer();
-    // Kill the array holding the number of players looking at the nominate selection screen
-    GameVariables.update("playersNominating", {$set: {value: []}});
-    // Set all the players votes back to zero for the impending vote
-    var players = getAlivePlayers();
-    players.forEach(function(player) {
-      // Don't do this yet, for testing purposes (the bots can have set votes
-      //Players.update(player._id, {$set: {voteChoice: 2}});
-    });
-    // Set the variable to move to the yes/no vote
-    GameVariables.update("lynchVote", {$set: {value: [nominatedPlayer._id, nominator._id], enabled: true}});
-    // The nominator starts voting to lynch the target
-    Players.update(nominator._id, {$set: {voteChoice: 1}});
+    // Get the lynch target player and the targetter
+    var target = Players.findOne(this._id);
+
+    var nominationDetails = {
+      nominatedPlayer: target._id,
+      nominator: getPlayer()._id
+    };
+
+    var titleText = "Are you sure you want to nominate " + target.name + "?";
+    var contentText = "If you are sure, a vote will be called for all players except " + target.name + ".";
+    contentText += " All players will also see that the vote was called by you.";
+
+    var modalData = {
+      title: titleText,
+      content: contentText,
+      sureTag: "nominate",
+      data: nominationDetails
+    };
+
+    Modal.show("areYouSureDialog", modalData);
   }
 });
 
@@ -586,3 +587,7 @@ function getCurrentCycle() {
     }
   });
 }
+
+Accounts.ui.config({
+  passwordSignupFields: "USERNAME_ONLY"
+});

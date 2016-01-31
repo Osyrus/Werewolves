@@ -98,7 +98,8 @@ Template.playerSelection.events({
 
         var modalData = {
           title: titleText,
-          content: contentText
+          content: contentText,
+          sureTag: "nightDone"
         };
 
         Modal.show("areYouSureDialog", modalData);
@@ -108,9 +109,28 @@ Template.playerSelection.events({
 });
 
 Template.areYouSureDialog.events({
-  "click .sure": function() {
+  "click .sure.nightDone": function() {
     Modal.hide("areYouSureDialog");
     finishedNightAction();
+  },
+  "click .sure.nominate": function() {
+    // This stuff is technically daytime stuff, but oh well
+    console.log("Clicked sure in nominate");
+
+    // Kill the array holding the number of players looking at the nominate selection screen
+    GameVariables.update("playersNominating", {$set: {value: []}});
+    // Set all the players votes back to abstain for the impending vote
+    var players = getAlivePlayers();
+    players.forEach(function(player) {
+      // Don't do this yet, for testing purposes (otherwise the bots votes get reset)
+      //Players.update(player._id, {$set: {voteChoice: 2}});
+    });
+    // Set the variable to move to the yes/no vote
+    GameVariables.update("lynchVote", {$set: {value: [this.data.nominatedPlayer, this.data.nominator], enabled: true}});
+    // The nominator starts voting to lynch the target
+    Players.update(this.data.nominator, {$set: {voteChoice: 1}});
+
+    Modal.hide("areYouSureDialog");
   }
 });
 
