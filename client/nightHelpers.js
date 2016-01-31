@@ -35,8 +35,42 @@ Template.nightTime.helpers({
 
 Template.werewolvesTargetList.helpers({
   "werewolfTargets": function(events) {
-    // TODO: Fetch all the players that are alive, but not the werewolves themselves
+    // Find all the players that aren't werewolves to make a list of targets
+    var werewolfId = Roles.findOne({name: "Werewolf"})._id;
+    var nonWerewolves = Players.find({role: {$ne: werewolfId}, alive: true});
+    var werewolves = Players.find({role: werewolfId});
 
+    // Now, in this case we are going to need to make out own modified array to fill the template with
+    var players = [];
+    nonWerewolves.forEach(function(player) {
+      // Let's check to see if there are any werewolves targeting this player
+      var targeted = false;
+      var targetString = "";
+
+      // Lets check this player against all the werewolves and their own targets
+      werewolves.forEach(function(werewolf) {
+        if (werewolf.target == player._id) {
+          targeted = true;
+
+          targetString += ", " + werewolf.name;
+        }
+      });
+      targetString = targetString.slice(2); // Kill the first two characters
+
+      // Lets make the data structure that will fill the info for each target
+      var targetInfo = {
+        playerId: player._id,
+        playerName: player.name,
+        targetString: targetString,
+        targeted: targeted
+      };
+      // Add that to the list
+      players.push(targetInfo);
+    });
+
+    return players;
+
+    // Overall idea here:
     // Make a new data structure for each one that only passes their _id and name
     // Then add to that structure a boolean for if any werewolves have targeted them (targeted)
     // Also add a string for any of them that are targeted that is a comma separated list of the werewolves
@@ -46,11 +80,25 @@ Template.werewolvesTargetList.helpers({
 
 Template.werewolfTarget.events({
   "click .js-select-target": function() {
-    // TODO: Set the werewolf's new target
+    // Get the current player (who is a werewolf of course, or else how are they here?)
+    var werewolf = getPlayer();
+    // We also need the target, luckily we included an id data entry that we gave to our template
+    var targetId = this.playerId;
+    // Now we can quite easily update this werewolf's target
+    Players.update(werewolf._id, {$set: {target: targetId}});
 
-    // This is where the werewolf who clicked this, needs to have their target set to the selected player
-    // This should update a reactive variable that will make every other werewolves screen update the target list
-    // to show that this particular werewolf's selection has changed.
+    // Now we need to check if all the werewolves have clicked on the same target
+    Meteor.call("checkWerewolvesAgree", function(error, result) {
+      if (error) {
+        console.log(error);
+      } else {
+        if (result) {
+          // This will ensure that if the server says that all the werewolves agree,
+          // then finishedNightAction() will be called
+          finishedNightAction();
+        }
+      }
+    });
   }
 });
 
@@ -145,41 +193,30 @@ Template.nightResults.helpers({
     seerDep.depend();
 
     var player = getPlayer();
+    var role = Roles.findOne(player.role);
     var info = {
       title: "Loading...",
       body: "Patience young padawan...",
       tag: ""
     };
 
-    Meteor.call("getRoleFromId", player._id, function(error, role) {
-      if (error) {
-        console.log(error);
+    if (player.nightActionDone) {
+      var name = String(role.name).toLowerCase();
 
-        info = {
-          title: "Get role method call failed",
-          body: "That's a shame...",
-          tag: ""
-        };
-      } else {
-        if (player.nightActionDone) {
-          var name = String(role.name).toLowerCase();
-
-          if (name == "doctor") {
-            info = getDoctorResults(role.target);
-          } else if (name == "witch") {
-            info = getWitchResults(role.target);
-          } else if (name == "seer") {
-            info = getSeerResults(role.target);
-          } else if (name == "villager") {
-            info = getVillagerResults();
-          }
-        }
+      if (name == "doctor") {
+        info = getDoctorResults(role.target);
+      } else if (name == "witch") {
+        info = getWitchResults(role.target);
+      } else if (name == "seer") {
+        info = getSeerResults(role.target);
+      } else if (name == "villager") {
+        info = getVillagerResults();
+      } else if (name == "werewolf") {
+        info = getWerewolfResults(role.target);
       }
+    }
 
-      Session.set("nightInfo", info);
-    });
-
-    return Session.get("nightInfo");
+    return info;
   },
   "okButton": function() {
     var player = getPlayer();
@@ -197,6 +234,23 @@ Template.nightResults.helpers({
     return okButton;
   }
 });
+
+function getWerewolfResults(targetId) {
+  var target = Players.findOne(targetId);
+
+  console.log("Werewolves targeted" + target.name);
+
+  var werewolfTitle = "The werewolves chose to kill " + target.name;
+  var werewolfContent = "The werewolves encountered " + target.name + " during the night. " +
+    "You yourself don't remember exactly what happened, but it would be a miracle if they were to have survived...";
+  var werewolfTag = "aggressive";
+
+  return {
+    title: werewolfTitle,
+    body: werewolfContent,
+    tag: werewolfTag
+  }
+}
 
 function getDoctorResults(targetId) {
   var target = Players.findOne(targetId);

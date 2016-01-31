@@ -24,26 +24,45 @@
 </template>
 
 <template name="passiveScreen">
-  <span>The villager/passive player screen</span>
-  <span>The idea here is that there will be some mini-game to play before being allowed to move on.</span>
+  <div class="panel panel-default">
+    <div class="panel-body">
+      The villager/passive player screen.
+      The idea here is that there will be some mini-game to play before being allowed to move on.
+    </div>
+  </div>
 
   <button class="btn btn-default js-done">Dismiss</button>
 </template>
 
 <template name="werewolfScreen">
-  <span>The Werewolf screen</span>
+  <div class="panel panel-default">
+    <div class="panel-body">
+      You are a werewolf, so you must pick someone you wish to kill during the night.
+      All werewolves must choose the same player before the kill can occur!
+    </div>
+  </div>
 
   {{> werewolvesTargetList}}
 </template>
 
 <template name="doctorScreen">
-  <span>The Doctor screen</span>
+  <div class="panel panel-default">
+    <div class="panel-body">
+      You are the Doctor, you must choose someone to save.
+      The person you choose cannot be killed during the night by the werewolves.
+    </div>
+  </div>
 
   {{> playerSelectionList}}
 </template>
 
 <template name="witchScreen">
-  <span>The Witch screen</span>
+  <div class="panel panel-default">
+    <div class="panel-body">
+      You are the Witch, you must choose someone to hex.
+      The person you choose will be unable to speak during the next day.
+    </div>
+  </div>
 
   {{> playerSelectionList}}
 </template>
@@ -99,7 +118,8 @@
 </template>
 
 <template name="werewolfTarget">
-  <button class="list-group-item js-select-target {{#if targeted}}targeted{{/if}}">
-    {{targetName}}{{#if targeted}} ({{werewolvesTargeting}}){{/if}}
+  <button class="list-group-item js-select-target
+                  {{#if targeted}}list-group-item-danger{{else}}list-group-item-info{{/if}}">
+    {{playerName}}{{#if targeted}} ({{targetString}}){{/if}}
   </button>
 </template>

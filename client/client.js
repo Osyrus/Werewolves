@@ -379,6 +379,12 @@ Template.dayNightCycle.helpers({
   }
 });
 
+Template.eventDisplay.helpers({
+  revealRole: function() {
+    return GameVariables.findOne("revealRole").value.day;
+  }
+});
+
 Template.dayNightCycle.events({
   "click .lynch.nominate": function(event) {
     // Get the list of people looking at the selection screen

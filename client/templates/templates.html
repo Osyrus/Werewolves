@@ -91,7 +91,9 @@
 
 <template name="eventDisplay">
   <li class="list-group-item">
-    <span class="event-text {{type}}">{{text}}</span>
+    <span class="event-text {{#if revealRole}}{{type}}{{/if}}">
+      {{text}}
+    </span>
   </li>
 </template>
 

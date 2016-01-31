@@ -16,7 +16,8 @@ Meteor.methods({
       effect: "none",
       bot: false,
       seenDeath: false,
-      deathDetails: {cycle: 0, type: "none"}
+      deathDetails: {cycle: 0, type: "none"},
+      target: 0
     });
   },
   // This is called when a client thinks it's time to start the game
@@ -183,10 +184,12 @@ Meteor.methods({
       var targetsRole = Roles.findOne(target.role);
 
       var targetDiedText = target.name + " has been lynched!";
-      if (targetsRole.name != "Werewolf" && targetsRole.name != "Villager")
-        targetDiedText += " They were the " + targetsRole.name;
-      else
-        targetDiedText += " They were a " + targetsRole.name;
+      if (GameVariables.findOne("revealRole").value.day) {
+        if (targetsRole.name != "Werewolf" && targetsRole.name != "Villager")
+          targetDiedText += " They were the " + targetsRole.name;
+        else
+          targetDiedText += " They were a " + targetsRole.name;
+      }
 
       var deathType = "";
       if (targetsRole.name == "Werewolf")
@@ -282,8 +285,6 @@ Meteor.methods({
       var noDeathText = "Nobody was killed during the night";
       EventList.insert({type: "info", cycleNumber: cycleNumber, text: noDeathText, timeAdded: new Date()});
     }
-    // Now to reset the werewolf target
-    Roles.update(werewolf._id, {$set: {target: 0}});
 
     // Need to generate an event for what the witch has done
     var witchesTargetId = Roles.findOne({name: "Witch"}).target;
@@ -303,6 +304,50 @@ Meteor.methods({
     var role = Roles.findOne({name: roleName});
 
     return Players.findOne(role.target);
+  },
+  "checkWerewolvesAgree": function() {
+    // Lets get the werewolves in question (all of them...)
+    var werewolfId = Roles.findOne({name: "Werewolf"})._id;
+    var werewolves = Players.find({role: werewolfId});
+
+    // Lets make a list of all the targets id's
+    var targets = [];
+    werewolves.forEach(function(werewolf) {
+      targets.push(werewolf.target);
+    });
+
+    // Lets now check to see if they are all the same and thus the werewolves all agree on a target
+    var potentialTargetId = targets[0];
+    var allAgree = true;
+    for (var i = 1; i < targets.length; i++) {
+      if (potentialTargetId != targets[i]) {
+        // One werewolf does not agree, then they don't all agree. Duh.
+        allAgree = false;
+      }
+    }
+
+    // OK, so what was the outcome of that? Are the werewolves all in agreement, or no?
+    if (allAgree) {
+      // As not all the wolves will be calling the finishedNightAction() function in the client,
+      // we need to make sure that they have the important variables set anyway.
+      werewolves.forEach(function(werewolf) {
+        Players.update(werewolf._id, {$set: {nightActionDone: true}});
+        Players.update(werewolf._id, {$set: {seenNightResults: false}});
+        Players.update(werewolf._id, {$set: {seenNewEvents: false}});
+      });
+
+      Roles.update(werewolfId, {$set: {target: potentialTargetId}});
+
+      var agreedTarget = Players.findOne(potentialTargetId);
+      console.log("Werewolves have all targeted: " + agreedTarget.name);
+
+      return true;
+    } else {
+      // No agreement yet
+      Roles.update(werewolfId, {$set: {target: 0}});
+
+      return false;
+    }
   }
 });
 
@@ -311,7 +356,7 @@ function moveToNextCycle() {
 
   // Reset all the variables for the players, to be ready for the next day/night cycle
   players.forEach(function(player) {
-    Players.update(player._id, {$set: {seenNewEvents: false}});
+    Players.update(player._id, {$set: {seenNewEvents: false, target: 0}});
 
     if (!player.bot) {
       //Players.update(player._id, {$set: {nightActionDone: false}});
@@ -319,6 +364,19 @@ function moveToNextCycle() {
     }
   });
 
+  // Do a check to see what cycle we are moving from, just in case there is anything cycle specific
+  var lastCycle = GameVariables.findOne("cycleNumber").value;
+  if (!(lastCycle % 2 == 0)) {
+    // It was just day
+
+    // The werewolves target needs to be set after leaving the day cycle
+    var werewolfId = Roles.findOne({name: "Werewolf"})._id;
+    Roles.update(werewolfId, {$set: {target: 0}});
+  } else {
+    // It was just night
+  }
+
+  // Increment the cycle
   GameVariables.update("cycleNumber", {$inc: {value: 1}});
 }
 
