@@ -379,16 +379,22 @@ Template.dayNightCycle.events({
     GameVariables.update("playersNominating", {$set: {value: playersNominating}});
   },
   "click .vote.do-lynch": function(event) {
-    Players.update(getPlayer()._id, {$set: {voteChoice: 1}});
-    checkLynchVotes();
+    Meteor.call("changeLynchVote", getPlayer()._id, 1);
+
+    //Players.update(getPlayer()._id, {$set: {voteChoice: 1}});
+    //checkLynchVotes();
   },
   "click .vote.dont-lynch": function(event) {
-    Players.update(getPlayer()._id, {$set: {voteChoice: 2}});
-    checkLynchVotes();
+    Meteor.call("changeLynchVote", getPlayer()._id, 2);
+
+    //Players.update(getPlayer()._id, {$set: {voteChoice: 2}});
+    //checkLynchVotes();
   },
   "click .vote.abstain": function(event) {
-    Players.update(getPlayer()._id, {$set: {voteChoice: 0}});
-    checkLynchVotes();
+    Meteor.call("changeLynchVote", getPlayer()._id, 0);
+
+    //Players.update(getPlayer()._id, {$set: {voteChoice: 0}});
+    //checkLynchVotes();
   }
 });
 
@@ -416,51 +422,6 @@ Template.nominateTarget.events({
     Modal.show("areYouSureDialog", modalData);
   }
 });
-
-function checkLynchVotes() {
-  // This is the function that will check to see if a majority has been reached yet
-  var players = getAlivePlayers();
-
-  // The number of voters is all the alive players, minus the target
-  var numVoters = players.count() -1;
-  var voteTally = 0;
-
-  players.forEach(function(player) {
-    if (player.voteChoice == 1) {
-      voteTally++;
-    } else if (player.voteChoice == 2) {
-      voteTally--;
-    }
-  });
-
-  console.log("Vote Tally: " + voteTally);
-  console.log("Num voters: " + numVoters);
-
-  // Has a majority been reached?
-  if (Math.abs(voteTally) > Math.floor(numVoters/2)) {
-    // Which direction are we going to execute this vote?
-    var votingFor = voteTally > 0;
-
-    console.log("Majority reached");
-    console.log(votingFor);
-
-    if (TimeSync.isSynced()) {
-      var date = new Date();
-      var startTime = date.valueOf() + 5100; // start 5 seconds from now (magic number, I know...)
-
-      GameVariables.update("timeToVoteExecution", {$set: {value: TimeSync.serverTime(startTime, 500), enabled: true}}); // Update every half second
-
-      GameVariables.update("voteDirection", {$set: {value: votingFor, enabled: true}});
-      //startDep.changed();
-    } else {
-      TimeSync.resync();
-    }
-  } else {
-    GameVariables.update("timeToVoteExecution", {$set: {value: 0, enabled: false}});
-  }
-
-  votesDep.changed();
-}
 
 function allPlayersDoingNothing() {
   var players = getAlivePlayers();

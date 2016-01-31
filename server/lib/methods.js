@@ -78,6 +78,90 @@ Meteor.methods({
   "currentCycle": function() {
     return GameVariables.findOne("cycleNumber").value;
   },
+  "changeLynchVote": function(playerId, vote) {
+    // A client has called that it would likes it's players vote to be changed
+
+    // First, we update the vote for that player
+    Players.update(playerId, {$set: {voteChoice: vote}});
+
+    // Now we need to get a hold of all the alive players
+    var players = Players.find({alive: true});
+    // The number of voters is all the alive players, minus the target
+    var numVoters = players.count() - 1;
+    // Now we need to get the tally counts
+    var tally = GameVariables.findOne("voteTally").value;
+    var votesFor = tally.for;
+    var votesAgainst = tally.against;
+
+    // Now we need to count up the new votes, keeping the old ones for comparison later
+    var newVotesFor = 0;
+    var newVotesAgainst = 0;
+    players.forEach(function(player) {
+      if (player.voteChoice == 1) {
+        newVotesFor++;
+      } else if (player.voteChoice == 2) {
+        newVotesAgainst++;
+      }
+    });
+    // Update the database with the new tally
+    GameVariables.update("voteTally", {$set: {value: {for: newVotesFor, against: newVotesAgainst}}});
+
+    // Just print some stuff to the console for debug purposes
+    console.log("Votes for: " + newVotesFor);
+    console.log("Votes against: " + newVotesAgainst);
+    console.log("Num voters: " + numVoters);
+
+    // Now we need to check is a majority has been reached and update the direction variable
+    if (newVotesFor > newVotesAgainst) {
+      if (newVotesFor > Math.floor(numVoters/2)) {
+        console.log("Majority reached to lynch.");
+
+        GameVariables.update("voteDirection", {$set: {value: true, enabled: true}});
+      } else {
+        // No majority, clear the relevant variables
+        GameVariables.update("voteDirection", {$set: {enabled: false}});
+        GameVariables.update("timeToVoteExecution", {$set: {value: 0, enabled: false}});
+      }
+    } else {
+      if (newVotesAgainst > Math.floor(numVoters/2)) {
+        console.log("Majority reached not to lynch.");
+
+        GameVariables.update("voteDirection", {$set: {value: false, enabled: true}});
+      } else {
+        // No majority, clear the relevant variables (code repeated, I know... I feel bad...)
+        GameVariables.update("voteDirection", {$set: {enabled: false}});
+        GameVariables.update("timeToVoteExecution", {$set: {value: 0, enabled: false}});
+      }
+    }
+
+    // Now that we know if there is a majority and in that case, which way the vote is going...
+    if (GameVariables.findOne("voteDirection").enabled) {
+      // If indeed a majority was reached, lets check that there isn't already a count in progress.
+      // First, lets check if there was already a majority in this direction before.
+      if (GameVariables.findOne("voteDirection").value) {
+        // Lets see if the original tally favoured this direction
+        if (votesFor > votesAgainst) {
+          // If we got here, that means that new votes came in, but they did not change the fact that there is
+          // a majority to lynch, so we do nothing and the countdown will continue.
+          console.log("Still a majority to lynch.");
+        } else {
+          // If we got here, that means there wasn't a majority before to lynch, so we should start the clock.
+          startLynchCountdown();
+          console.log("Starting countdown to lynch.");
+        }
+      } else {
+        // Lets see if the original tally favoured this direction instead
+        if (votesFor < votesAgainst) {
+          // If we got here, then there was already a majority not to lynch, so we do nothing here as well.
+          console.log("Still a majority to not lynch.");
+        } else {
+          // If we got here, that means that there wasn't a majority to not lynch before, so start the clock.
+          startLynchCountdown();
+          console.log("Starting countdown not to lynch.");
+        }
+      }
+    }
+  },
   "executeVote": function() {
     // The countdown has elapsed, execute the vote decision!!
     var cycleNumber = GameVariables.findOne("cycleNumber").value;
@@ -234,6 +318,12 @@ function moveToNextCycle() {
   });
 
   GameVariables.update("cycleNumber", {$inc: {value: 1}});
+}
+
+function startLynchCountdown() {
+  var executeTime = (new Date()).valueOf() + 5100; // execute 5 seconds from now (magic number, I know...)
+
+  GameVariables.update("timeToVoteExecution", {$set: {value: executeTime, enabled: true}});
 }
 
 function arrayShuffle(array) {
