@@ -14,7 +14,9 @@ Meteor.methods({
       seenNightResults: true,
       nightActionDone: false,
       effect: "none",
-      bot: false
+      bot: false,
+      seenDeath: false,
+      deathDetails: {cycle: 0, type: "none"}
     });
   },
   // This is called when a client thinks it's time to start the game
@@ -173,10 +175,10 @@ Meteor.methods({
 
       var dayEndedOnLynchText = "The vote is complete and with that marks the end of the day.";
 
-      EventList.insert({type: "info", cycleNumber: cycleNumber, text: dayEndedOnLynchText});
+      EventList.insert({type: "info", cycleNumber: cycleNumber, text: dayEndedOnLynchText, timeAdded: new Date()});
 
       // Lynch the target!!
-      Players.update(target._id, {$set: {alive: false}});
+      Players.update(target._id, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "lynch"}}});
 
       var targetsRole = Roles.findOne(target.role);
 
@@ -192,18 +194,18 @@ Meteor.methods({
       else
         deathType = "vDeath";
 
-      EventList.insert({type: deathType, cycleNumber: cycleNumber, text: targetDiedText});
+      EventList.insert({type: deathType, cycleNumber: cycleNumber, text: targetDiedText, timeAdded: new Date()});
 
       // We should also check if the target is the saint, as they take the nominator with them
       if (targetsRole.name == "Saint") {
         var nominator = Players.findOne(GameVariables.findOne("lynchVote").value[1]);
 
-        Players.update(nominator._id, {$set: {alive: false}});
+        Players.update(nominator._id, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "saint"}}});
 
         var nominatorDiedText = nominator.name + " has been struck down by the heavens because ";
         nominatorDiedText += target.name + " was a Saint!";
 
-        EventList.insert({type: "vDeath", cycleNumber: cycleNumber, text: nominatorDiedText});
+        EventList.insert({type: "vDeath", cycleNumber: cycleNumber, text: nominatorDiedText, timeAdded: new Date()});
       }
 
       moveToNextCycle();
@@ -226,7 +228,7 @@ Meteor.methods({
 
     var didNothingText = "The day moves into night with the villagers choosing not to lynch anyone.";
 
-    EventList.insert({type: "info", cycleNumber: cycleNumber, text: didNothingText});
+    EventList.insert({type: "info", cycleNumber: cycleNumber, text: didNothingText, timeAdded: new Date()});
 
     // Prepare players for night time
     var players = Players.find({alive: true});
@@ -243,7 +245,7 @@ Meteor.methods({
     var cycleNumber = GameVariables.findOne("cycleNumber").value;
 
     var nightEndText = "The night has ended...";
-    EventList.insert({type: "info", cycleNumber: cycleNumber, text: nightEndText});
+    EventList.insert({type: "info", cycleNumber: cycleNumber, text: nightEndText, timeAdded: new Date()});
 
     // Here is where the night cycle needs to be computed
 
@@ -256,29 +258,29 @@ Meteor.methods({
     // Get the doctors target id
     var doctorsTargetId = Roles.findOne({name: "Doctor"}).target;
     // Get the saints id
-    var saint = Players.findOne({role: Roles.findOne({name: "Saint"})._id});
-    var saintsId = 0;
-    if (saint != undefined) {
-      saintsId = saint._id;
+    var knight = Players.findOne({role: Roles.findOne({name: "Knight"})._id});
+    var knightId = 0;
+    if (knight != undefined) {
+      knightId = knight._id;
     }
 
-    // Now lets check if the werewolves are indeed allowed to kill their target
-    if (werewolfTargetId != doctorsTargetId && werewolfTargetId != saintsId && werewolfTargetId != 0) {
+    // Now lets check if the werewolves are indeed allowed to kill their target (not saved, not the knight)
+    if (werewolfTargetId != doctorsTargetId && werewolfTargetId != knightId && werewolfTargetId != 0) {
       // It seems this player is doomed
       var target = Players.findOne(werewolfTargetId);
 
       // Sorry mate...
-      Players.update(werewolfTargetId, {$set: {alive: false}});
+      Players.update(werewolfTargetId, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "werewolf"}}});
 
       // Now lets inform everyone
       var wwKillText = target.name + " has been killed during the night!";
-      EventList.insert({type: "vDeath", cycleNumber: cycleNumber, text: wwKillText});
+      EventList.insert({type: "vDeath", cycleNumber: cycleNumber, text: wwKillText, timeAdded: new Date()});
     } else {
       // Phew, that player sure is happy about this outcome...
 
       // Better let everybody know the good news
       var noDeathText = "Nobody was killed during the night";
-      EventList.insert({type: "info", cycleNumber: cycleNumber, text: noDeathText});
+      EventList.insert({type: "info", cycleNumber: cycleNumber, text: noDeathText, timeAdded: new Date()});
     }
     // Now to reset the werewolf target
     Roles.update(werewolf._id, {$set: {target: 0}});
@@ -289,7 +291,7 @@ Meteor.methods({
     // Now to generate some text and the event
     if (witchesTarget != undefined) {
       var witchesText = witchesTarget.name + " was hexxed during the night, and can't speak today!";
-      EventList.insert({type: "warning", cycleNumber: cycleNumber, text: witchesText});
+      EventList.insert({type: "warning", cycleNumber: cycleNumber, text: witchesText, timeAdded: new Date()});
     }
 
     moveToNextCycle();

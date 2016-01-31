@@ -91,23 +91,21 @@
   </li>
 </template>
 
-<template name="areYouSureDialog">
-  <div class="modal fade">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h4 class="modal-header">{{title}}</h4>
-        </div>
+<template name="youDiedScreen">
+  <div class="jumbotron">
+    <h1 class="lynched-title">You have been {{deathCause}}!!</h1>
 
-        <div class="modal-body">
-          <p>{{content}}</p>
-        </div>
+    <p>During the {{deathCycle}} you were {{deathCause}}, you are now a ghost who can only spectate the rest of the game!</p>
 
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
-          <button type="button" class="btn btn-primary sure {{sureTag}}">I'm Sure</button>
-        </div>
-      </div>
-    </div>
+    <button class="btn btn-primary btn-lg js-seen-death">OK...</button>
   </div>
+</template>
+
+<template name="spectatorScreen">
+  <span>You are spectating the game.</span>
+  <ul class="list-group">
+    {{#each events}}
+      {{> eventDisplay}}
+    {{/each}}
+  </ul>
 </template>

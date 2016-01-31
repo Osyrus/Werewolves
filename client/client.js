@@ -92,6 +92,16 @@ Template.body.helpers({
     }
 
     return false;
+  },
+  alive: function() {
+    var player = getPlayer();
+
+    return !player.seenNightResults ? true : player.alive;
+  },
+  seenDeath: function() {
+    var player = getPlayer();
+
+    return player.joined ? player.seenDeath : true;
   }
 });
 
@@ -420,6 +430,45 @@ Template.nominateTarget.events({
     };
 
     Modal.show("areYouSureDialog", modalData);
+  }
+});
+
+Template.youDiedScreen.helpers({
+  deathCause: function() {
+    var player = getPlayer();
+    var deathType = player.deathDetails.type;
+
+    if (deathType == "lynch") {
+      return "lynched";
+    }
+
+    if (deathType == "werewolf") {
+      return "killed";
+    }
+
+    if (deathType == "saint") {
+      return "smitten";
+    }
+  },
+  deathCycle: function() {
+    var player = getPlayer();
+    var deathCycle = player.deathDetails.cycle;
+
+    return !(deathCycle % 2 == 0) ? "day" : "night";
+  }
+});
+
+Template.youDiedScreen.events({
+  "click .js-seen-death": function() {
+    var player = getPlayer();
+
+    Players.update(player._id, {$set: {seenDeath: true}});
+  }
+});
+
+Template.spectatorScreen.helpers({
+  events: function() {
+    return EventList.find({}, {sort: {timeAdded: -1}});
   }
 });
 
