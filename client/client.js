@@ -33,6 +33,9 @@ Template.body.helpers({
 
   allReady: function() {
     return allReady();
+
+    // Testing this
+    //return ServerChecks.findOne("allReady");
   },
 
   counting: function() {
@@ -130,7 +133,7 @@ Template.body.events({
     Players.update(player._id, {$set: {ready: false}});
 
     // Reset the start game countdown
-    GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
+    Meteor.call("stopStartCountdown");
 
     // Number of people in the game changed, so need a recount
     countVotes();
@@ -145,27 +148,14 @@ Template.body.events({
     Players.update(player._id, {$set: {ready: false}});
 
     // Reset the start game countdown
-    GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
+    Meteor.call("stopStartCountdown");
   },
 
   "click .start-game": function() {
     if (allReady()) {
-      if (TimeSync.isSynced()) {
-        // Check to see if there is already a countdown
-        if (TimeSync.serverTime() < GameVariables.findOne("timeToStart").value) {
-          GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
-        } else {
-          // If there is no countdown, start one
-          var date = new Date();
-          var startTime = date.valueOf() + 5100; // start 5 seconds from now (magic number, I know...)
+      Meteor.call("startStopGame");
 
-          GameVariables.update("timeToStart", {$set: {value: TimeSync.serverTime(startTime, 500), enabled: true}}); // Update every half second
-        }
-
-        startDep.changed();
-      } else {
-        TimeSync.resync();
-      }
+      startDep.changed();
     }
   },
 

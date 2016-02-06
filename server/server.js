@@ -33,6 +33,10 @@ Meteor.startup(function () {
   GameVariables.insert({_id: "timeToVoteExecution", name: "Seconds until the vote result is executed", value: 0, enabled: false});
   GameVariables.insert({_id: "voteDirection", name: "The direction the vote should be executed. value: for/against (true/false)", value: false, enabled: false});
   GameVariables.insert({_id: "revealRole", name: "Should the role be revealed after a death?", value: {day: false, night: true}, enabled: true});
+
+  ServerChecks.remove({});
+
+  ServerChecks.insert({_id: "allReady", value: false});
 });
 
 // Note: The order that the roles are added will determine their tiebreaker order (when counting votes)

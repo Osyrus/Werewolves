@@ -1,3 +1,5 @@
+var startGameCounter = null;
+
 Meteor.methods({
   addPlayer: function(user) {
     Players.insert({
@@ -20,57 +22,28 @@ Meteor.methods({
       target: 0
     });
   },
+  // This is called when one of the clients wants to start/stop the game
+  startStopGame: function() {
+    //if ((new Date()).valueOf() < GameVariables.findOne("timeToStart").value) {
+    //  // If there is a countdown in progress, stop it
+    //  stopGameCountdown();
+    //} else {
+    //  // If there is no countdown, start one
+    //  startGameCountdown();
+    //}
+
+    if (startGameCounter) {
+      stopGameCountdown();
+    } else {
+      startGameCountdown();
+    }
+  },
+  stopStartCountdown: function() {
+    stopGameCountdown();
+  },
   // This is called when a client thinks it's time to start the game
   startGame: function() {
-    // Set the variables dealing with the game starting
-    GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
-    GameVariables.update("gameMode", {$set: {value: "inGame"}});
-    GameVariables.update("cycleNumber", {$set: {value: 1}});
-
-    // Clear the event list on starting a new game
-    EventList.remove({});
-
-    if (!GameVariables.findOne("rolesAssigned").value) {
-
-      // Calculate the number of werewolves
-      var numPlayers = Players.find({joined: true}).count();
-      var numWW      = Math.floor(numPlayers / 3);
-
-      // Get the role ids of the werewolf and villager
-      wwId = Roles.findOne({name: "Werewolf"})._id;
-      vId  = Roles.findOne({name: "Villager"})._id;
-
-      // Find all the non critical enabled roles
-      enabledRoles = Roles.find({enabled: true, critical: false});
-
-      // This is the array that will hold the roles to assign
-      var roleIds = [];
-      // This for loop adds all the werewolves
-      for (var i = 0; i < numWW; i++) {
-        roleIds.push(wwId);
-      }
-      // This Mongo for each loop adds the enabled non-critical roles
-      enabledRoles.forEach(function (role) {
-        roleIds.push(role._id);
-      });
-      // This for loop adds the remaining villagers
-      var addedRolesNum = roleIds.length;
-      for (i = 0; i < (numPlayers - addedRolesNum); i++) {
-        roleIds.push(vId);
-      }
-
-      // Now use the Knuth shuffle function on the array
-      arrayShuffle(roleIds);
-
-      // Map these roles onto the players
-      Players.find({joined: true}).map(function (player, index) {
-        Players.update(player._id, {$set: {role: roleIds[index]}});
-
-        console.log("Player " + player.name + " given " + Roles.findOne(roleIds[index]).name);
-      });
-
-      GameVariables.update("rolesAssigned", {$set: {value: true}});
-    }
+    startGame();
   },
   "getRoleId": function(user) {
     return Roles.findOne(Players.findOne({userId: user._id}).role);
@@ -384,6 +357,75 @@ function startLynchCountdown() {
   var executeTime = (new Date()).valueOf() + 5100; // execute 5 seconds from now (magic number, I know...)
 
   GameVariables.update("timeToVoteExecution", {$set: {value: executeTime, enabled: true}});
+}
+
+function startGameCountdown() {
+  var milliDelay = 5100;
+
+  var startTime = (new Date()).valueOf() + milliDelay; // start 5 seconds from now (magic number, I know...)
+
+  GameVariables.update("timeToStart", {$set: {value: startTime, enabled: true}});
+
+  startGameCounter = Meteor.setTimeout(startGame, milliDelay);
+}
+
+function stopGameCountdown() {
+  GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
+
+  Meteor.clearTimeout(startGameCounter);
+  startGameCounter = null;
+}
+
+function startGame() {
+  // Set the variables dealing with the game starting
+  GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
+  GameVariables.update("gameMode", {$set: {value: "inGame"}});
+  GameVariables.update("cycleNumber", {$set: {value: 1}});
+
+  // Clear the event list on starting a new game
+  EventList.remove({});
+
+  if (!GameVariables.findOne("rolesAssigned").value) {
+
+    // Calculate the number of werewolves
+    var numPlayers = Players.find({joined: true}).count();
+    var numWW      = Math.floor(numPlayers / 3);
+
+    // Get the role ids of the werewolf and villager
+    wwId = Roles.findOne({name: "Werewolf"})._id;
+    vId  = Roles.findOne({name: "Villager"})._id;
+
+    // Find all the non critical enabled roles
+    enabledRoles = Roles.find({enabled: true, critical: false});
+
+    // This is the array that will hold the roles to assign
+    var roleIds = [];
+    // This for loop adds all the werewolves
+    for (var i = 0; i < numWW; i++) {
+      roleIds.push(wwId);
+    }
+    // This Mongo for each loop adds the enabled non-critical roles
+    enabledRoles.forEach(function (role) {
+      roleIds.push(role._id);
+    });
+    // This for loop adds the remaining villagers
+    var addedRolesNum = roleIds.length;
+    for (i = 0; i < (numPlayers - addedRolesNum); i++) {
+      roleIds.push(vId);
+    }
+
+    // Now use the Knuth shuffle function on the array
+    arrayShuffle(roleIds);
+
+    // Map these roles onto the players
+    Players.find({joined: true}).map(function (player, index) {
+      Players.update(player._id, {$set: {role: roleIds[index]}});
+
+      console.log("Player " + player.name + " given " + Roles.findOne(roleIds[index]).name);
+    });
+
+    GameVariables.update("rolesAssigned", {$set: {value: true}});
+  }
 }
 
 function arrayShuffle(array) {
