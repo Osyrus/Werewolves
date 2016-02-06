@@ -91,6 +91,11 @@ button, span {
     display: inline-flex;
 }
 
+a.glyphicon {
+    color: white;
+    padding: 1px 2px;
+}
+
 span.role-name {
     padding: 8px 15px;
     background: darkred;

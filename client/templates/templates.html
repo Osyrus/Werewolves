@@ -6,9 +6,15 @@
 
 <template name="role">
   <li class="vote-status">
-    <button class="vote-down {{#if equals vote -1}}sel{{/if}} {{#if cantVote}}done{{/if}}">-</button>
-    <button class="vote-neutral {{#if equals vote 0}}sel{{/if}} {{#if cantVote}}done{{/if}}">o</button>
-    <button class="vote-up {{#if equals vote 1}}sel{{/if}} {{#if cantVote}}done{{/if}}">+</button>
+    <button class="vote-down {{#if equals vote -1}}sel{{/if}} {{#if cantVote}}done{{/if}}">
+      <a class="glyphicon glyphicon-thumbs-up" aria-hidden="true"></a>
+    </button>
+    <button class="vote-neutral {{#if equals vote 0}}sel{{/if}} {{#if cantVote}}done{{/if}}">
+      <a class="glyphicon glyphicon-option-horizontal" aria-hidden="true"></a>
+    </button>
+    <button class="vote-up {{#if equals vote 1}}sel{{/if}} {{#if cantVote}}done{{/if}}">
+      <a class="glyphicon glyphicon-thumbs-down" aria-hidden="true"></a>
+    </button>
 
     <span class="role-name {{#if roleEnabled}}enabled{{/if}}">{{name}}</span>
   </li>
