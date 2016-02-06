@@ -237,6 +237,50 @@ Template.whoAmI.helpers({
       return "";
     }
   },
+  "roleText": function() {
+    if (Session.get("revealPressed")) {
+      var roleString = "";
+      switch(Session.get("roleGiven").name) {
+        case "Werewolf":
+          var wolfId = Roles.findOne({name: "Werewolf"})._id;
+          var theWolves = Players.find({role: wolfId});
+
+          if (theWolves.count() > 1) {
+            var wolfArray = [];
+            theWolves.forEach(function (wolf) {
+              wolfArray.push(wolf.name);
+            });
+
+            roleString += "The other werewolves are " + wolfArray.join(", ") + ".";
+          }
+
+          roleString += werewolfDescription;
+          break;
+        case "Villager":
+          roleString += villagerDescription;
+          break;
+        case "Doctor":
+          roleString += doctorDescription;
+          break;
+        case "Witch":
+          roleString += witchDescription;
+          break;
+        case "Seer":
+          roleString += seerDescription;
+          break;
+        case "Knight":
+          roleString += knightDescription;
+          break;
+        case "Saint":
+          roleString += saintDescription;
+          break;
+      }
+
+      return roleString;
+    } else {
+      return "Hold the button below to reveal your role.";
+    }
+  },
   "roleIsWW": function() {
     return Roles.findOne(Session.get("roleGiven")).name == "Werewolf";
   },

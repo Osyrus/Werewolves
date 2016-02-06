@@ -21,19 +21,18 @@
 </template>
 
 <template name="whoAmI">
-  <header>
-    <h1>Role screen</h1>
-  </header>
+  <div class="jumbotron role-jumbotron">
+    <h1>{{playerName}}, you are a {{#if roleRevealed}}{{roleName}}{{else}}...{{/if}}</h1>
 
-  <span class="player-role-intro">{{playerName}}, you are a...</span>
-  <br>
-  <span class="player-role-name {{#if roleIsWW}}ww{{/if}} {{#if roleRevealed}}revealed{{/if}}">{{roleName}}</span>
-  <br>
-  <button class="revealRole {{#if roleRevealed}}revealed{{/if}}">Hold to Reveal Role</button>
+    <p>
+      {{roleText}}
+    </p>
 
-  <br>
-
-  <button class="seen-role">OK</button>
+    <p class="whoami-buttons">
+      <a class="btn btn-primary btn-lg revealRole" href="#" role="button">Hold to reveal...</a>
+      <a class="btn btn-default btn-lg seen-role" href="#" role="button">OK, I'm good...</a>
+    </p>
+  </div>
 </template>
 
 <template name="dayNightCycle">
