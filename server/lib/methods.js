@@ -20,7 +20,8 @@ Meteor.methods({
       bot: false,
       seenDeath: false,
       deathDetails: {cycle: 0, type: "none"},
-      target: 0
+      target: 0,
+      seenEndgame: false
     });
   },
   // This is called when one of the clients wants to start/stop the game
@@ -302,6 +303,15 @@ function moveToNextCycle() {
 
   // Increment the cycle
   GameVariables.update("cycleNumber", {$inc: {value: 1}});
+
+  // TODO Now after all that is done, we need to check if the game is over or not!!
+  // 1. Specifically, we first need to check that there are still werewolves (villagers win).
+  // 2. Then we need to check if the werewolves outnumber the villagers (werewolves win)
+  // 3. In the case that the villagers outnumber the werewolves, the game continues.
+  // 4. In the case that the villagers and werewolves have the same numbers, then another check is needed.
+  //    The only way the villagers can win in that case is if one of the villagers is a knight and thus cannot be
+  //    killed at night. Or one of them is a Doctor, which means that the other villager could potentially be saved.
+  //    So if the remaining pool of villagers contains either a Doctor or a Knight, the game continues.
 }
 
 function startLynchCountdown() {
@@ -343,6 +353,26 @@ function startGame() {
   GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
   GameVariables.update("gameMode", {$set: {value: "inGame"}});
   GameVariables.update("cycleNumber", {$set: {value: 1}});
+
+  // Clear the variables relating to each player
+  Players.find({joined: true}).forEach(function(player) {
+    if (!player.bot) {
+      Players.update(player._id, {
+        $set: {
+          seenEndgame: false,
+          alive: true,
+          doNothing: false,
+          seenNewEvents: false,
+          seenNightResults: true,
+          nightActionDone: false,
+          effect: "none",
+          seenDeath: false,
+          deathDetails: {cycle: 0, type: "none"},
+          target: 0
+        }
+      });
+    }
+  });
 
   // Clear the event list on starting a new game
   EventList.remove({});

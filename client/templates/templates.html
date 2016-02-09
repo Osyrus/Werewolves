@@ -40,11 +40,7 @@
     {{> nightResults}}
   {{else}}
     {{#if showEvents}}
-      <ul class="list-group"> <!-- Think about perhaps using bootstrap panels here -->
-        {{#each events}}
-          {{> eventDisplay}}
-        {{/each}}
-      </ul>
+      {{> eventsDisplay}}
       <button class="ok events">OK</button>
     {{else}}
       {{#if dayCycle}}
@@ -94,6 +90,14 @@
   <button class="nominatePlayer list-group-item">{{name}}</button>
 </template>
 
+<template name="eventsDisplay">
+  <ul class="list-group"> <!-- Think about perhaps using bootstrap panels here -->
+    {{#each events}}
+      {{> eventDisplay}}
+    {{/each}}
+  </ul>
+</template>
+
 <template name="eventDisplay">
   <li class="list-group-item">
     <span class="event-text {{#if revealRole}}{{type}}{{/if}}">
@@ -114,9 +118,33 @@
 
 <template name="spectatorScreen">
   <span>You are spectating the game.</span>
-  <ul class="list-group">
-    {{#each events}}
-      {{> eventDisplay}}
-    {{/each}}
-  </ul>
+  {{> eventsDisplay}}
+</template>
+
+<template name="endGameScreen">
+  <div class="panel {{result.tag}}">
+    <div class="panel-heading">
+      <h2 class="panel-title">{{result.title}}</h2>
+    </div>
+    <div class="panel-body">
+      {{result.text}}
+    </div>
+  </div>
+
+  {{> eventsDisplay}}
+
+  <div class="panel panel-default">
+    <!-- Default panel contents -->
+    <div class="panel-heading">The roles</div>
+    <div class="panel-body">
+      <p>The roles were assigned as follows...</p>
+    </div>
+
+    <!-- List group -->
+    <ul class="list-group">
+      {{#each roleList}}
+        <li class="list-group-item {{tag}}">{{text}}</li>
+      {{/each}}
+    </ul>
+  </div>
 </template>

@@ -63,6 +63,8 @@
           {{/if}}
         {{/if}}
       {{/if}}
-    {{/if}} {{/if}}
+    {{else}} {{#if gameOver}}
+      {{> endGameScreen}}
+    {{/if}} {{/if}} {{/if}}
   </div>
 </body>

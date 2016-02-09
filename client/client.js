@@ -75,6 +75,8 @@ Template.body.helpers({
         return true;
       } else if (!player.joined) {
         return true;
+      } else if (player.seenEndgame) {
+        return true;
       } else {
         return currentGameMode == "lobby";
       }
@@ -86,6 +88,11 @@ Template.body.helpers({
     var currentGameMode = GameVariables.findOne("gameMode").value;
 
     return currentGameMode == "inGame";
+  },
+  gameOver: function() {
+    var player = getPlayer();
+
+    return !player.seenEndgame;
   },
   whoAmIScreen: function() {
     var currentGameMode = GameVariables.findOne("gameMode").value;
@@ -294,6 +301,19 @@ Template.whoAmI.events({
   }
 });
 
+Template.eventsDisplay.helpers({
+  "events": function() {
+    var player = getPlayer();
+
+    if (player.alive && player.joined) {
+      var currentCycle = GameVariables.findOne("cycleNumber").value;
+      return EventList.find({cycleNumber: (currentCycle - 1)});
+    } else {
+      return EventList.find({}, {sort: {timeAdded: -1}});
+    }
+  }
+});
+
 Template.dayNightCycle.helpers({
   "dayCycle": function() {
     getCurrentCycle();
@@ -406,10 +426,6 @@ Template.dayNightCycle.helpers({
     var events = EventList.find({cycleNumber: (currentCycle - 1)});
 
     return (events.count() > 0 && !getPlayer().seenNewEvents);
-  },
-  "events": function() {
-    var currentCycle = GameVariables.findOne("cycleNumber").value;
-    return EventList.find({cycleNumber: (currentCycle - 1)});
   }
 });
 
@@ -542,9 +558,30 @@ Template.youDiedScreen.events({
   }
 });
 
-Template.spectatorScreen.helpers({
-  events: function() {
-    return EventList.find({}, {sort: {timeAdded: -1}});
+Template.endGameScreen.helpers({
+  result: function() {
+    var title = "This is the end game title";
+    var tag = "panel-primary";
+    var text = "This is the text that possibly describes the way the game ended or whatnot...";
+
+    return {
+      title: title,
+      tag: tag,
+      text: text
+    }
+  },
+  roleList: function() {
+    // This is where an array of text needs to be generated, where each entry has a text field and a tag field
+
+    // For example
+    var list = [
+      {text: "Player 1 was a Werewolf", tag: "list-group-item-danger"},
+      {text: "Player 2 was a Villager", tag: "list-group-item-info"},
+      {text: "Player 3 was a Witch", tag: "list-group-item-warning"},
+      {text: "Player 4 was a Doctor", tag: "list-group-item-success"}
+    ];
+
+    return list;
   }
 });
 
