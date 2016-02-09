@@ -6,28 +6,33 @@
 
 <template name="role">
   <li class="vote-status">
-    <button class="vote-down {{#if equals vote -1}}sel{{/if}} {{#if cantVote}}done{{/if}}">-</button>
-    <button class="vote-neutral {{#if equals vote 0}}sel{{/if}} {{#if cantVote}}done{{/if}}">o</button>
-    <button class="vote-up {{#if equals vote 1}}sel{{/if}} {{#if cantVote}}done{{/if}}">+</button>
+    <button class="vote-down {{#if equals vote -1}}sel{{/if}} {{#if cantVote}}done{{/if}}">
+      <a class="glyphicon glyphicon-thumbs-down" aria-hidden="true"></a>
+    </button>
+    <button class="vote-neutral {{#if equals vote 0}}sel{{/if}} {{#if cantVote}}done{{/if}}">
+      <a class="glyphicon glyphicon-option-horizontal" aria-hidden="true"></a>
+    </button>
+    <button class="vote-up {{#if equals vote 1}}sel{{/if}} {{#if cantVote}}done{{/if}}">
+      <a class="glyphicon glyphicon-thumbs-up" aria-hidden="true"></a>
+    </button>
 
     <span class="role-name {{#if roleEnabled}}enabled{{/if}}">{{name}}</span>
   </li>
 </template>
 
 <template name="whoAmI">
-  <header>
-    <h1>Role screen</h1>
-  </header>
+  <div class="jumbotron role-jumbotron">
+    <h2>{{playerName}}, you are a {{#if roleRevealed}}{{roleName}}{{else}}...{{/if}}</h2>
 
-  <span class="player-role-intro">{{playerName}}, you are a...</span>
-  <br>
-  <span class="player-role-name {{#if roleIsWW}}ww{{/if}} {{#if roleRevealed}}revealed{{/if}}">{{roleName}}</span>
-  <br>
-  <button class="revealRole {{#if roleRevealed}}revealed{{/if}}">Hold to Reveal Role</button>
+    <p>
+      {{roleText}}
+    </p>
 
-  <br>
-
-  <button class="seen-role">OK</button>
+    <p class="whoami-buttons">
+      <a class="btn btn-primary btn-lg revealRole" href="#" role="button">Hold to reveal...</a>
+      <a class="btn btn-default btn-lg seen-role" href="#" role="button">OK, I'm good...</a>
+    </p>
+  </div>
 </template>
 
 <template name="dayNightCycle">
@@ -44,13 +49,17 @@
     {{else}}
       {{#if dayCycle}}
         <header>
-          <h1>It is day time</h1>
+          {{#if voting}}
+            <h1>{{votingTitle}}</h1>
+          {{else}}
+            <h1>It is day time</h1>
+          {{/if}}
 
           <br>
 
           <button class="whoami">My Role</button>
           {{#if voting}}
-            <span class="majority {{#if majorityReached}}reached{{/if}}">{{majorityText}}</span>
+            <span class="majority {{majorityReached}} {{majority.tag}}">{{majority.text}}</span>
           {{/if}}
         </header>
 
@@ -87,27 +96,27 @@
 
 <template name="eventDisplay">
   <li class="list-group-item">
-    <span class="event-text {{type}}">{{text}}</span>
+    <span class="event-text {{#if revealRole}}{{type}}{{/if}}">
+      {{text}}
+    </span>
   </li>
 </template>
 
-<template name="areYouSureDialog">
-  <div class="modal fade">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h4 class="modal-header">{{title}}</h4>
-        </div>
+<template name="youDiedScreen">
+  <div class="jumbotron">
+    <h1 class="lynched-title">You have been {{deathCause}}!!</h1>
 
-        <div class="modal-body">
-          <p>{{content}}</p>
-        </div>
+    <p>During the {{deathCycle}} you were {{deathCause}}, you are now a ghost who can only spectate the rest of the game!</p>
 
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
-          <button type="button" class="btn btn-primary sure {{sureTag}}">I'm Sure</button>
-        </div>
-      </div>
-    </div>
+    <button class="btn btn-primary btn-lg js-seen-death">OK...</button>
   </div>
+</template>
+
+<template name="spectatorScreen">
+  <span>You are spectating the game.</span>
+  <ul class="list-group">
+    {{#each events}}
+      {{> eventDisplay}}
+    {{/each}}
+  </ul>
 </template>

@@ -33,6 +33,9 @@ Template.body.helpers({
 
   allReady: function() {
     return allReady();
+
+    // Testing this
+    //return ServerChecks.findOne("allReady");
   },
 
   counting: function() {
@@ -43,8 +46,8 @@ Template.body.helpers({
     }
 
     if (GameVariables.findOne("timeToStart").enabled) {
-      console.log("Calling start game method");
-      Meteor.call("startGame");
+      console.log("Calling start game method from client.");
+      //Meteor.call("startGame");
     }
 
     return false;
@@ -92,6 +95,16 @@ Template.body.helpers({
     }
 
     return false;
+  },
+  alive: function() {
+    var player = getPlayer();
+
+    return !player.seenNightResults ? true : player.alive;
+  },
+  seenDeath: function() {
+    var player = getPlayer();
+
+    return player.joined ? player.seenDeath : true;
   }
 });
 
@@ -107,7 +120,7 @@ Template.body.events({
       }
 
       // Reset the start game countdown
-      GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
+      Meteor.call("stopStartCountdown");
       Session.set("seenRole", false);
 
       // As the enabled roles vote count is dependant on the number of people, we need to do a recount.
@@ -120,7 +133,7 @@ Template.body.events({
     Players.update(player._id, {$set: {ready: false}});
 
     // Reset the start game countdown
-    GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
+    Meteor.call("stopStartCountdown");
 
     // Number of people in the game changed, so need a recount
     countVotes();
@@ -135,27 +148,14 @@ Template.body.events({
     Players.update(player._id, {$set: {ready: false}});
 
     // Reset the start game countdown
-    GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
+    Meteor.call("stopStartCountdown");
   },
 
   "click .start-game": function() {
     if (allReady()) {
-      if (TimeSync.isSynced()) {
-        // Check to see if there is already a countdown
-        if (TimeSync.serverTime() < GameVariables.findOne("timeToStart").value) {
-          GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
-        } else {
-          // If there is no countdown, start one
-          var date = new Date();
-          var startTime = date.valueOf() + 5100; // start 5 seconds from now (magic number, I know...)
+      Meteor.call("startStopGame");
 
-          GameVariables.update("timeToStart", {$set: {value: TimeSync.serverTime(startTime, 500), enabled: true}}); // Update every half second
-        }
-
-        startDep.changed();
-      } else {
-        TimeSync.resync();
-      }
+      startDep.changed();
     }
   },
 
@@ -227,6 +227,50 @@ Template.whoAmI.helpers({
       return "";
     }
   },
+  "roleText": function() {
+    if (Session.get("revealPressed")) {
+      var roleString = "";
+      switch(Session.get("roleGiven").name) {
+        case "Werewolf":
+          var wolfId = Roles.findOne({name: "Werewolf"})._id;
+          var theWolves = Players.find({role: wolfId});
+
+          if (theWolves.count() > 1) {
+            var wolfArray = [];
+            theWolves.forEach(function (wolf) {
+              wolfArray.push(wolf.name);
+            });
+
+            roleString += "The other werewolves are " + wolfArray.join(", ") + ".";
+          }
+
+          roleString += werewolfDescription;
+          break;
+        case "Villager":
+          roleString += villagerDescription;
+          break;
+        case "Doctor":
+          roleString += doctorDescription;
+          break;
+        case "Witch":
+          roleString += witchDescription;
+          break;
+        case "Seer":
+          roleString += seerDescription;
+          break;
+        case "Knight":
+          roleString += knightDescription;
+          break;
+        case "Saint":
+          roleString += saintDescription;
+          break;
+      }
+
+      return roleString;
+    } else {
+      return "Hold the button below to reveal your role.";
+    }
+  },
   "roleIsWW": function() {
     return Roles.findOne(Session.get("roleGiven")).name == "Werewolf";
   },
@@ -273,6 +317,18 @@ Template.dayNightCycle.helpers({
   "voting": function() {
     return GameVariables.findOne("lynchVote").enabled;
   },
+  votingTitle: function() {
+    var voteDetails = GameVariables.findOne("lynchVote");
+
+    if (voteDetails.enabled) {
+      var target = Players.findOne(voteDetails.value[0]);
+      var nominator = Players.findOne(voteDetails.value[1]);
+
+      return target.name + " has been nominated by " + nominator.name + ". Please cast your votes!";
+    } else {
+      return "Not voting yet..."
+    }
+  },
   "lynchTarget": function() {
     return Players.findOne(GameVariables.findOne("lynchVote").value).name;
   },
@@ -297,9 +353,13 @@ Template.dayNightCycle.helpers({
   "majorityReached": function() {
     votesDep.depend();
 
-    return GameVariables.findOne("timeToVoteExecution").enabled;
+    if (GameVariables.findOne("timeToVoteExecution").enabled) {
+      return "reached";
+    } else {
+      return "";
+    }
   },
-  "majorityText": function() {
+  "majority": function() {
     votesDep.depend();
 
     var timeToExecute = GameVariables.findOne("timeToVoteExecution").value;
@@ -310,13 +370,18 @@ Template.dayNightCycle.helpers({
     majorityText += voteDirection ? "to lynch " : "not to lynch ";
     majorityText += target.name + "!";
 
+    var majorityTag = voteDirection ? "lynch" : "";
+
     if (TimeSync.serverTime() <= timeToExecute) {
       majorityText += " In: " + Math.floor((timeToExecute - TimeSync.serverTime())/1000);// Convert to seconds from ms
     } else if (GameVariables.findOne("timeToVoteExecution").enabled) {
-      Meteor.call("executeVote");
+      //Meteor.call("executeVote"); Don't need this anymore as the server does it (which is way better...)
     }
 
-    return majorityText;
+    return {
+      text: majorityText,
+      tag: majorityTag
+    };
   },
   "showNightResults": function() {
     nightViewDep.depend();
@@ -345,6 +410,27 @@ Template.dayNightCycle.helpers({
   "events": function() {
     var currentCycle = GameVariables.findOne("cycleNumber").value;
     return EventList.find({cycleNumber: (currentCycle - 1)});
+  }
+});
+
+Template.eventDisplay.helpers({
+  revealRole: function() {
+    var cycle = this.cycleNumber;
+
+    if (cycle % 2 == 0) {
+      return GameVariables.findOne("revealRole").value.night;
+    } else {
+      return GameVariables.findOne("revealRole").value.day;
+    }
+  },
+  revealTag: function() {
+    // This requires the events list to be boostrapped first
+
+    // The idea here would be to pass a tag that would set the colour based on what the event information is.
+
+    // For example, if reveal role was disabled for this cycle, then just pass back the "info" tag.
+    // If the role is to be revealed on death, then pass the warning tag for a villager, and the danger tag for a werewolf.
+    // If the event is not to do with death, then send something to emphasise that (for example, the witch hexxing someone).
   }
 });
 
@@ -379,16 +465,22 @@ Template.dayNightCycle.events({
     GameVariables.update("playersNominating", {$set: {value: playersNominating}});
   },
   "click .vote.do-lynch": function(event) {
-    Players.update(getPlayer()._id, {$set: {voteChoice: 1}});
-    checkLynchVotes();
+    Meteor.call("changeLynchVote", getPlayer()._id, 1);
+
+    //Players.update(getPlayer()._id, {$set: {voteChoice: 1}});
+    //checkLynchVotes();
   },
   "click .vote.dont-lynch": function(event) {
-    Players.update(getPlayer()._id, {$set: {voteChoice: 2}});
-    checkLynchVotes();
+    Meteor.call("changeLynchVote", getPlayer()._id, 2);
+
+    //Players.update(getPlayer()._id, {$set: {voteChoice: 2}});
+    //checkLynchVotes();
   },
   "click .vote.abstain": function(event) {
-    Players.update(getPlayer()._id, {$set: {voteChoice: 0}});
-    checkLynchVotes();
+    Meteor.call("changeLynchVote", getPlayer()._id, 0);
+
+    //Players.update(getPlayer()._id, {$set: {voteChoice: 0}});
+    //checkLynchVotes();
   }
 });
 
@@ -417,50 +509,44 @@ Template.nominateTarget.events({
   }
 });
 
-function checkLynchVotes() {
-  // This is the function that will check to see if a majority has been reached yet
-  var players = getAlivePlayers();
+Template.youDiedScreen.helpers({
+  deathCause: function() {
+    var player = getPlayer();
+    var deathType = player.deathDetails.type;
 
-  // The number of voters is all the alive players, minus the target
-  var numVoters = players.count() -1;
-  var voteTally = 0;
-
-  players.forEach(function(player) {
-    if (player.voteChoice == 1) {
-      voteTally++;
-    } else if (player.voteChoice == 2) {
-      voteTally--;
+    if (deathType == "lynch") {
+      return "lynched";
     }
-  });
 
-  console.log("Vote Tally: " + voteTally);
-  console.log("Num voters: " + numVoters);
-
-  // Has a majority been reached?
-  if (Math.abs(voteTally) > Math.floor(numVoters/2)) {
-    // Which direction are we going to execute this vote?
-    var votingFor = voteTally > 0;
-
-    console.log("Majority reached");
-    console.log(votingFor);
-
-    if (TimeSync.isSynced()) {
-      var date = new Date();
-      var startTime = date.valueOf() + 5100; // start 5 seconds from now (magic number, I know...)
-
-      GameVariables.update("timeToVoteExecution", {$set: {value: TimeSync.serverTime(startTime, 500), enabled: true}}); // Update every half second
-
-      GameVariables.update("voteDirection", {$set: {value: votingFor, enabled: true}});
-      //startDep.changed();
-    } else {
-      TimeSync.resync();
+    if (deathType == "werewolf") {
+      return "killed";
     }
-  } else {
-    GameVariables.update("timeToVoteExecution", {$set: {value: 0, enabled: false}});
+
+    if (deathType == "saint") {
+      return "smitten";
+    }
+  },
+  deathCycle: function() {
+    var player = getPlayer();
+    var deathCycle = player.deathDetails.cycle;
+
+    return !(deathCycle % 2 == 0) ? "day" : "night";
   }
+});
 
-  votesDep.changed();
-}
+Template.youDiedScreen.events({
+  "click .js-seen-death": function() {
+    var player = getPlayer();
+
+    Players.update(player._id, {$set: {seenDeath: true}});
+  }
+});
+
+Template.spectatorScreen.helpers({
+  events: function() {
+    return EventList.find({}, {sort: {timeAdded: -1}});
+  }
+});
 
 function allPlayersDoingNothing() {
   var players = getAlivePlayers();

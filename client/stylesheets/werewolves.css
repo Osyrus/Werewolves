@@ -32,7 +32,7 @@ h1 {
 }
 
 h2 {
-    font-size: 2em;
+    font-size: 3em;
     margin-right: 0;
     margin-left: 10px;
     margin-top: 15px;
@@ -91,6 +91,11 @@ button, span {
     display: inline-flex;
 }
 
+a.glyphicon {
+    color: white;
+    padding: 1px 2px;
+}
+
 span.role-name {
     padding: 8px 15px;
     background: darkred;
@@ -146,6 +151,10 @@ span.majority {
 
 span.majority.reached {
     visibility: visible;
+}
+
+span.majority.reached.lynch {
+    background: darkred;
 }
 
 button.game-running {
@@ -285,7 +294,7 @@ span.event-text {
 }
 
 span.event-text.vDeath {
-    background: darkred;
+    background: darkorange;
 }
 
 span.event-text.wwDeath {
@@ -293,7 +302,7 @@ span.event-text.wwDeath {
 }
 
 span.event-text.warning {
-    background: darkorange;
+    background: orange;
 }
 
 button.ok.waiting {
@@ -306,4 +315,17 @@ h3.aggressive {
 
 h3.passive {
     color: green;
+}
+
+.role-jumbotron {
+    height: 500px;
+    position: relative;
+    padding-bottom: 20px;
+    margin-top: 20px;
+}
+
+.whoami-buttons {
+    position: absolute;
+    bottom: 0;
+    left: 20px;
 }

@@ -51,13 +51,17 @@
       {{/if}}
     {{else}} {{#if inGame}}
       {{#if whoAmIScreen}}
-
         {{> whoAmI}}
-
       {{else}}
-
-        {{> dayNightCycle}}
-
+        {{#if alive}}
+          {{> dayNightCycle}}
+        {{else}}
+          {{#if seenDeath}}
+            {{> spectatorScreen}}
+          {{else}}
+            {{> youDiedScreen}}
+          {{/if}}
+        {{/if}}
       {{/if}}
     {{/if}} {{/if}}
   </div>
