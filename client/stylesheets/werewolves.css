@@ -32,7 +32,7 @@ h1 {
 }
 
 h2 {
-    font-size: 2em;
+    font-size: 3em;
     margin-right: 0;
     margin-left: 10px;
     margin-top: 15px;
@@ -294,7 +294,7 @@ span.event-text {
 }
 
 span.event-text.vDeath {
-    background: darkred;
+    background: darkorange;
 }
 
 span.event-text.wwDeath {
@@ -302,7 +302,7 @@ span.event-text.wwDeath {
 }
 
 span.event-text.warning {
-    background: darkorange;
+    background: orange;
 }
 
 button.ok.waiting {
@@ -318,7 +318,7 @@ h3.passive {
 }
 
 .role-jumbotron {
-    height: 300px;
+    height: 500px;
     position: relative;
     padding-bottom: 20px;
     margin-top: 20px;

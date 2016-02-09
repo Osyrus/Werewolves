@@ -1,4 +1,5 @@
 var startGameCounter = null;
+var executeVoteCounter = null;
 
 Meteor.methods({
   addPlayer: function(user) {
@@ -40,10 +41,6 @@ Meteor.methods({
   },
   stopStartCountdown: function() {
     stopGameCountdown();
-  },
-  // This is called when a client thinks it's time to start the game
-  startGame: function() {
-    startGame();
   },
   "getRoleId": function(user) {
     return Roles.findOne(Players.findOne({userId: user._id}).role);
@@ -96,7 +93,7 @@ Meteor.methods({
       } else {
         // No majority, clear the relevant variables
         GameVariables.update("voteDirection", {$set: {enabled: false}});
-        GameVariables.update("timeToVoteExecution", {$set: {value: 0, enabled: false}});
+        stopLynchCountdown();
       }
     } else {
       if (newVotesAgainst > Math.floor(numVoters/2)) {
@@ -106,7 +103,7 @@ Meteor.methods({
       } else {
         // No majority, clear the relevant variables (code repeated, I know... I feel bad...)
         GameVariables.update("voteDirection", {$set: {enabled: false}});
-        GameVariables.update("timeToVoteExecution", {$set: {value: 0, enabled: false}});
+        stopLynchCountdown();
       }
     }
 
@@ -139,65 +136,7 @@ Meteor.methods({
     }
   },
   "executeVote": function() {
-    // The countdown has elapsed, execute the vote decision!!
-    var cycleNumber = GameVariables.findOne("cycleNumber").value;
-    var voteDirection = GameVariables.findOne("voteDirection").value;
-    var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
-
-    if (voteDirection) {
-      // This means the day is over, so make an event for that
-
-      var dayEndedOnLynchText = "The vote is complete and with that marks the end of the day.";
-
-      EventList.insert({type: "info", cycleNumber: cycleNumber, text: dayEndedOnLynchText, timeAdded: new Date()});
-
-      // Lynch the target!!
-      Players.update(target._id, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "lynch"}}});
-
-      var targetsRole = Roles.findOne(target.role);
-
-      var targetDiedText = target.name + " has been lynched!";
-      if (GameVariables.findOne("revealRole").value.day) {
-        if (targetsRole.name != "Werewolf" && targetsRole.name != "Villager")
-          targetDiedText += " They were the " + targetsRole.name;
-        else
-          targetDiedText += " They were a " + targetsRole.name;
-      }
-
-      var deathType = "";
-      if (targetsRole.name == "Werewolf")
-        deathType = "wwDeath";
-      else
-        deathType = "vDeath";
-
-      EventList.insert({type: deathType, cycleNumber: cycleNumber, text: targetDiedText, timeAdded: new Date()});
-
-      // We should also check if the target is the saint, as they take the nominator with them
-      if (targetsRole.name == "Saint") {
-        var nominator = Players.findOne(GameVariables.findOne("lynchVote").value[1]);
-
-        Players.update(nominator._id, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "saint"}}});
-
-        var nominatorDiedText = nominator.name + " has been struck down by the heavens because ";
-        nominatorDiedText += target.name + " was a Saint!";
-
-        EventList.insert({type: "vDeath", cycleNumber: cycleNumber, text: nominatorDiedText, timeAdded: new Date()});
-      }
-
-      moveToNextCycle();
-    }
-
-    // Reset the related global variables
-    GameVariables.update("timeToVoteExecution", {$set: {value: 0, enabled: false}});
-    GameVariables.update("voteDirection", {$set: {value: false, enabled: false}});
-    GameVariables.update("lynchVote", {$set: {value: [0, 0], enabled: false}});
-    // Prepare players for night time / reset for day
-    var players = Players.find({alive: true});
-    players.forEach(function(player) {
-      Players.update(player._id, {$set: {doNothing: false}});
-      if (!player.bot)
-        Players.update(player._id, {$set: {nightActionDone: false}});
-    });
+    executeVote();
   },
   "doingNothingToday": function() {
     var cycleNumber = GameVariables.findOne("cycleNumber").value;
@@ -216,8 +155,6 @@ Meteor.methods({
     moveToNextCycle();
   },
   "endNightCycle": function() {
-    console.log("End night cycle has been called.");
-
     var cycleNumber = GameVariables.findOne("cycleNumber").value;
 
     var nightEndText = "The night has ended...";
@@ -225,7 +162,7 @@ Meteor.methods({
 
     // Here is where the night cycle needs to be computed
 
-    // Need to kill whoever the werewolves picked UNLESS they have the "save" effect, or are the Saint
+    // Need to kill whoever the werewolves picked UNLESS they have the "save" effect, or are the Knight
       // Need to generate an event based on that
 
     // Get the werewol(f/ves) target id
@@ -250,6 +187,18 @@ Meteor.methods({
 
       // Now lets inform everyone
       var wwKillText = target.name + " has been killed during the night!";
+
+      // Are we revealing the roles of the dead during the night?
+      if (GameVariables.findOne("revealRole").value.night) {
+        var targetsRole = Roles.findOne(target.role);
+
+        if (targetsRole.name == "Villager") {
+          wwKillText += " They were a villager.";
+        } else {
+          wwKillText += " They were the " + targetsRole.name + ".";
+        }
+      }
+
       EventList.insert({type: "vDeath", cycleNumber: cycleNumber, text: wwKillText, timeAdded: new Date()});
     } else {
       // Phew, that player sure is happy about this outcome...
@@ -341,12 +290,14 @@ function moveToNextCycle() {
   var lastCycle = GameVariables.findOne("cycleNumber").value;
   if (!(lastCycle % 2 == 0)) {
     // It was just day
+    console.log("End day cycle has been called.");
 
     // The werewolves target needs to be set after leaving the day cycle
     var werewolfId = Roles.findOne({name: "Werewolf"})._id;
     Roles.update(werewolfId, {$set: {target: 0}});
   } else {
     // It was just night
+    console.log("End night cycle has been called.");
   }
 
   // Increment the cycle
@@ -354,15 +305,26 @@ function moveToNextCycle() {
 }
 
 function startLynchCountdown() {
-  var executeTime = (new Date()).valueOf() + 5100; // execute 5 seconds from now (magic number, I know...)
+  var milliDelay = 5100; // execute 5 seconds from now (magic number, I know...)
+
+  var executeTime = (new Date()).valueOf() + milliDelay;
 
   GameVariables.update("timeToVoteExecution", {$set: {value: executeTime, enabled: true}});
+
+  executeVoteCounter = Meteor.setTimeout(executeVote, milliDelay);
+}
+
+function stopLynchCountdown() {
+  GameVariables.update("timeToVoteExecution", {$set: {value: 0, enabled: false}});
+
+  Meteor.clearTimeout(executeVoteCounter);
+  executeVoteCounter = null;
 }
 
 function startGameCountdown() {
-  var milliDelay = 5100;
+  var milliDelay = 5100; // start 5 seconds from now (magic number, I know...)
 
-  var startTime = (new Date()).valueOf() + milliDelay; // start 5 seconds from now (magic number, I know...)
+  var startTime = (new Date()).valueOf() + milliDelay;
 
   GameVariables.update("timeToStart", {$set: {value: startTime, enabled: true}});
 
@@ -426,6 +388,81 @@ function startGame() {
 
     GameVariables.update("rolesAssigned", {$set: {value: true}});
   }
+}
+
+function executeVote() {
+  // The countdown has elapsed, execute the vote decision!!
+  var cycleNumber = GameVariables.findOne("cycleNumber").value;
+  var voteDirection = GameVariables.findOne("voteDirection").value;
+  var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
+
+  if (voteDirection) {
+    // This means the day is over, so make an event for that
+
+    var dayEndedOnLynchText = "The vote is complete and with that marks the end of the day.";
+
+    EventList.insert({type: "info", cycleNumber: cycleNumber, text: dayEndedOnLynchText, timeAdded: new Date()});
+
+    // Lynch the target!!
+    Players.update(target._id, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "lynch"}}});
+
+    var targetsRole = Roles.findOne(target.role);
+
+    var targetDiedText = target.name + " has been lynched!";
+    if (GameVariables.findOne("revealRole").value.day) {
+      if (targetsRole.name != "Werewolf" && targetsRole.name != "Villager")
+        targetDiedText += " They were the " + targetsRole.name + ".";
+      else
+        targetDiedText += " They were a " + targetsRole.name + ".";
+    }
+
+    var deathType = "";
+    if (targetsRole.name == "Werewolf")
+      deathType = "wwDeath";
+    else
+      deathType = "vDeath";
+
+    EventList.insert({type: deathType, cycleNumber: cycleNumber, text: targetDiedText, timeAdded: new Date()});
+
+    // We should also check if the target is the saint, as they take the nominator with them
+    if (targetsRole.name == "Saint") {
+      var nominator = Players.findOne(GameVariables.findOne("lynchVote").value[1]);
+      var nominatorsRole = Roles.findOne(nominator.role);
+
+      Players.update(nominator._id, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "saint"}}});
+
+      var nominatorDiedText = nominator.name + " has been struck down by the heavens because ";
+      nominatorDiedText += target.name + " was a Saint!";
+
+      if (GameVariables.findOne("revealRole").value.day) {
+        if (nominatorsRole.name != "Werewolf" && nominatorsRole.name != "Villager")
+          nominatorDiedText += " They were the " + nominatorsRole.name + ".";
+        else
+          nominatorDiedText += " They were a " + nominatorsRole.name + ".";
+      }
+
+      if (nominatorsRole.name == "Werewolf")
+        deathType = "wwDeath";
+      else
+        deathType = "vDeath";
+
+      EventList.insert({type: deathType, cycleNumber: cycleNumber, text: nominatorDiedText, timeAdded: new Date()});
+    }
+
+    moveToNextCycle();
+  }
+
+  // Reset the related global variables
+  GameVariables.update("timeToVoteExecution", {$set: {value: 0, enabled: false}});
+  GameVariables.update("voteDirection", {$set: {value: false, enabled: false}});
+  GameVariables.update("lynchVote", {$set: {value: [0, 0], enabled: false}});
+  // Prepare players for night time / reset for day
+  var players = Players.find({alive: true});
+  players.forEach(function(player) {
+    Players.update(player._id, {$set: {doNothing: false}});
+    if (!player.bot)
+      Players.update(player._id, {$set: {nightActionDone: false}});
+  });
 }
 
 function arrayShuffle(array) {

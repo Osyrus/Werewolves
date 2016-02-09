@@ -39,30 +39,50 @@ Template.werewolvesTargetList.helpers({
     var werewolfId = Roles.findOne({name: "Werewolf"})._id;
     var nonWerewolves = Players.find({role: {$ne: werewolfId}, alive: true});
     var werewolves = Players.find({role: werewolfId});
+    var thisPlayer = getPlayer();
 
     // Now, in this case we are going to need to make out own modified array to fill the template with
     var players = [];
     nonWerewolves.forEach(function(player) {
       // Let's check to see if there are any werewolves targeting this player
       var targeted = false;
+      var playersTarget = false;
       var targetString = "";
 
       // Lets check this player against all the werewolves and their own targets
       werewolves.forEach(function(werewolf) {
         if (werewolf.target == player._id) {
+          // This make it so that the target has the string next to them of all the werewolves that have selected them.
           targeted = true;
 
-          targetString += ", " + werewolf.name;
+          if (thisPlayer.target == player._id) {
+            // This makes it so that this player has a more immediate colour as it is THIS players target
+            playersTarget = true;
+            // Make it obvious that it is indeed this player that has selected this player
+            targetString += ", You";
+          } else {
+            // Add the werewolves who have targeted this player to the string to display for this player to see
+            targetString += ", " + werewolf.name;
+          }
         }
       });
       targetString = targetString.slice(2); // Kill the first two characters
+
+      // Set up the css tag depending on the players status
+      var targetTag = "list-group-item-info";
+      if (playersTarget) {
+        targetTag = "list-group-item-danger";
+      } else if (targeted) {
+        targetTag = "list-group-item-warning";
+      }
 
       // Lets make the data structure that will fill the info for each target
       var targetInfo = {
         playerId: player._id,
         playerName: player.name,
         targetString: targetString,
-        targeted: targeted
+        targeted: targeted,
+        targetTag: targetTag
       };
       // Add that to the list
       players.push(targetInfo);
@@ -238,7 +258,7 @@ Template.nightResults.helpers({
 function getWerewolfResults(targetId) {
   var target = Players.findOne(targetId);
 
-  console.log("Werewolves targeted" + target.name);
+  //console.log("Werewolves targeted" + target.name);
 
   var werewolfTitle = "The werewolves chose to kill " + target.name;
   var werewolfContent = "The werewolves encountered " + target.name + " during the night. " +

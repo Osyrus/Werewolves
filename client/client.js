@@ -46,8 +46,8 @@ Template.body.helpers({
     }
 
     if (GameVariables.findOne("timeToStart").enabled) {
-      console.log("Calling start game method");
-      Meteor.call("startGame");
+      console.log("Calling start game method from client.");
+      //Meteor.call("startGame");
     }
 
     return false;
@@ -120,7 +120,7 @@ Template.body.events({
       }
 
       // Reset the start game countdown
-      GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
+      Meteor.call("stopStartCountdown");
       Session.set("seenRole", false);
 
       // As the enabled roles vote count is dependant on the number of people, we need to do a recount.
@@ -375,7 +375,7 @@ Template.dayNightCycle.helpers({
     if (TimeSync.serverTime() <= timeToExecute) {
       majorityText += " In: " + Math.floor((timeToExecute - TimeSync.serverTime())/1000);// Convert to seconds from ms
     } else if (GameVariables.findOne("timeToVoteExecution").enabled) {
-      Meteor.call("executeVote");
+      //Meteor.call("executeVote"); Don't need this anymore as the server does it (which is way better...)
     }
 
     return {
@@ -415,7 +415,22 @@ Template.dayNightCycle.helpers({
 
 Template.eventDisplay.helpers({
   revealRole: function() {
-    return GameVariables.findOne("revealRole").value.day;
+    var cycle = this.cycleNumber;
+
+    if (cycle % 2 == 0) {
+      return GameVariables.findOne("revealRole").value.night;
+    } else {
+      return GameVariables.findOne("revealRole").value.day;
+    }
+  },
+  revealTag: function() {
+    // This requires the events list to be boostrapped first
+
+    // The idea here would be to pass a tag that would set the colour based on what the event information is.
+
+    // For example, if reveal role was disabled for this cycle, then just pass back the "info" tag.
+    // If the role is to be revealed on death, then pass the warning tag for a villager, and the danger tag for a werewolf.
+    // If the event is not to do with death, then send something to emphasise that (for example, the witch hexxing someone).
   }
 });
 

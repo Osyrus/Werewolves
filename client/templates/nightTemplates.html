@@ -118,8 +118,7 @@
 </template>
 
 <template name="werewolfTarget">
-  <button class="list-group-item js-select-target
-                  {{#if targeted}}list-group-item-danger{{else}}list-group-item-info{{/if}}">
-    {{playerName}}{{#if targeted}} ({{targetString}}){{/if}}
+  <button class="list-group-item js-select-target {{targetTag}}">
+    {{playerName}} {{#if targeted}}({{targetString}}){{/if}}
   </button>
 </template>
