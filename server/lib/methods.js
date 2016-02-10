@@ -21,7 +21,7 @@ Meteor.methods({
       seenDeath: false,
       deathDetails: {cycle: 0, type: "none"},
       target: 0,
-      seenEndgame: false
+      seenEndgame: true
     });
   },
   // This is called when one of the clients wants to start/stop the game
@@ -288,13 +288,13 @@ function moveToNextCycle() {
   });
 
   // Do a check to see what cycle we are moving from, just in case there is anything cycle specific
+  var werewolfId = Roles.findOne({name: "Werewolf"})._id;
   var lastCycle = GameVariables.findOne("cycleNumber").value;
   if (!(lastCycle % 2 == 0)) {
     // It was just day
     console.log("End day cycle has been called.");
 
-    // The werewolves target needs to be set after leaving the day cycle
-    var werewolfId = Roles.findOne({name: "Werewolf"})._id;
+    // The werewolves target needs to be reset after leaving the day cycle
     Roles.update(werewolfId, {$set: {target: 0}});
   } else {
     // It was just night
@@ -312,6 +312,76 @@ function moveToNextCycle() {
   //    The only way the villagers can win in that case is if one of the villagers is a knight and thus cannot be
   //    killed at night. Or one of them is a Doctor, which means that the other villager could potentially be saved.
   //    So if the remaining pool of villagers contains either a Doctor or a Knight, the game continues.
+
+  var doctorKnightPresent = false;
+  var knight = Roles.findOne({name: "Knight"});
+  var doctor = Roles.findOne({name: "Doctor"});
+
+  // Count the werewolves/villagers
+  var numWerewolves = 0;
+  var numVillagers = 0;
+  players.forEach(function(player) {
+    if (player.role == werewolfId) {
+      numWerewolves++;
+    } else {
+      if ((player.role == knight._id) || (player.role == doctor._id)) {
+        // There is a knight and/or doctor present
+        doctorKnightPresent = true;
+      }
+      numVillagers++;
+    }
+  });
+
+  if (numWerewolves <= 0) { // 1. Are the werewolves all dead?
+    // The villagers win
+    endGame(true);
+  } else if (numWerewolves > numVillagers) { // 2. Are the werewolves the majority?
+    // The werewolves win
+    endGame(false);
+  } else if (numVillagers == numVillagers) { // 4. Is the number of werewolves and villagers equal?
+    // We need to check if the remaining players contains either a doctor or knight.
+    console.log("There was a doctor or knight present so the game continues.");
+    if (!doctorKnightPresent || numVillagers <= 1) {
+      // There is no doctor or knight present, the villagers can't win, the werewolves have it
+      // Also, if there is only one villager, they also lose even if it is a knight (for balance reasons).
+      endGame(false);
+    }
+  }
+  // 3. If we get here, that means there are more villagers than werewolves, so do nothing.
+}
+
+// This function ends the game, the boolean input is true if the villagers won, false if the werewolves win.
+function endGame(villagersWin) {
+  console.log("Endgame called");
+
+  if (villagersWin) {
+    console.log("Villagers win");
+  } else {
+    console.log("Werewolves win");
+  }
+
+  GameVariables.update("lastGameResult", {$set: {value: villagersWin, enabled: true}});
+
+  var players = Players.find({joined: true});
+  var werewolfId = Roles.findOne({name: "Werewolf"})._id;
+
+  // Let's set the variables for all the players that were in the game
+  players.forEach(function(player) {
+    Players.update(player._id, {$set: {seenEndgame: false, ready: false}});
+
+    if (villagersWin) {
+      if (player.role == werewolfId) {
+        Players.update(player._id, {$set: {alive: false}});
+      }
+    } else {
+      if (player.role != werewolfId) {
+        Players.update(player._id, {$set: {alive: false}});
+      }
+    }
+  });
+
+  // Re-enable the lobby
+  GameVariables.update("gameMode", {$set: {value: "lobby"}});
 }
 
 function startLynchCountdown() {
@@ -353,6 +423,7 @@ function startGame() {
   GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
   GameVariables.update("gameMode", {$set: {value: "inGame"}});
   GameVariables.update("cycleNumber", {$set: {value: 1}});
+  GameVariables.update("lastGameResult", {$set: {enabled: false}});
 
   // Clear the variables relating to each player
   Players.find({joined: true}).forEach(function(player) {

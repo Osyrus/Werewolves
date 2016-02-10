@@ -75,8 +75,8 @@ Template.body.helpers({
         return true;
       } else if (!player.joined) {
         return true;
-      } else if (player.seenEndgame) {
-        return true;
+      } else if (!player.seenEndgame) {
+        return false;
       } else {
         return currentGameMode == "lobby";
       }
@@ -121,7 +121,7 @@ Template.body.events({
       var player = getPlayer();
 
       if (player) {
-        Players.update(player._id, {$set: {joined: true}});
+        Players.update(player._id, {$set: {joined: true, seenEndgame: true}});
       } else {
         Meteor.call("addPlayer", Meteor.user());
       }
@@ -561,8 +561,23 @@ Template.youDiedScreen.events({
 Template.endGameScreen.helpers({
   result: function() {
     var title = "This is the end game title";
-    var tag = "panel-primary";
+    var tag = "panel-default";
     var text = "This is the text that possibly describes the way the game ended or whatnot...";
+
+    var villagersWon = GameVariables.findOne("lastGameResult").value;
+
+    if (villagersWon) {
+      tag = "panel-success";
+      title = "The Villagers have won!!"
+    } else {
+      tag = "panel-danger";
+      title = "The Werewolves have won!!";
+    }
+
+    var cycleNumber = GameVariables.findOne("cycleNumber").value - 1;
+
+    text = "The game took " + cycleNumber + " cycles to complete.";
+    // TODO Think of more info to include here?
 
     return {
       title: title,
@@ -572,16 +587,50 @@ Template.endGameScreen.helpers({
   },
   roleList: function() {
     // This is where an array of text needs to be generated, where each entry has a text field and a tag field
+    var players = Players.find({joined: true}, {sort: {alive: -1}});
 
-    // For example
-    var list = [
-      {text: "Player 1 was a Werewolf", tag: "list-group-item-danger"},
-      {text: "Player 2 was a Villager", tag: "list-group-item-info"},
-      {text: "Player 3 was a Witch", tag: "list-group-item-warning"},
-      {text: "Player 4 was a Doctor", tag: "list-group-item-success"}
-    ];
+    var list = [];
+    var villager = Roles.findOne({name: "Villager"});
+
+    players.forEach(function(player) {
+      // Find the players role
+      var role = Roles.findOne(player.role);
+
+      // Generate the text and tag for the list
+      var text = player.name + " was a " + role.name;
+      var tag = "list-group-item-info";
+
+      // Change the tag to suit the role
+      if (role != villager._id) {
+        if (role.name == "Werewolf") {
+          tag = "list-group-item-danger";
+        } else if (role.aggressive) {
+          // This includes roles like the Witch and the Saint
+          tag = "list-group-item-warning";
+        } else {
+          // This includes roles like the Seer and Doctor
+          tag = "list-group-item-success";
+        }
+      }
+
+      var icon = "glyphicon-remove";
+      if (player.alive) {
+        icon = "glyphicon-heart";
+      }
+
+      // Now add this entry to the list
+      list.push({text: text, tag: tag, icon: icon});
+    });
 
     return list;
+  }
+});
+
+Template.endGameScreen.events({
+  "click .js-seenEndGame": function() {
+    var player = getPlayer();
+
+    Players.update(player._id, {$set: {seenEndgame: true}});
   }
 });
 

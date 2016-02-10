@@ -124,18 +124,28 @@
 <template name="endGameScreen">
   <div class="panel {{result.tag}}">
     <div class="panel-heading">
-      <h2 class="panel-title">{{result.title}}</h2>
+      <h1 class="panel-title">{{result.title}}</h1>
     </div>
+
     <div class="panel-body">
       {{result.text}}
     </div>
   </div>
 
-  {{> eventsDisplay}}
+  <div class="panel panel-info">
+    <div class="panel-heading">
+      <h2 class="panel-title">The last events...</h2>
+    </div>
+    <div class="panel-body">
+      {{> eventsDisplay}}
+    </div>
+  </div>
 
   <div class="panel panel-default">
     <!-- Default panel contents -->
-    <div class="panel-heading">The roles</div>
+    <div class="panel-heading">
+      <h2 class="panel-title">The roles</h2>
+    </div>
     <div class="panel-body">
       <p>The roles were assigned as follows...</p>
     </div>
@@ -143,8 +153,14 @@
     <!-- List group -->
     <ul class="list-group">
       {{#each roleList}}
-        <li class="list-group-item {{tag}}">{{text}}</li>
+        <li class="list-group-item {{tag}}">
+          <p class="glyphicon {{icon}}"></p> {{text}}
+        </li>
       {{/each}}
     </ul>
   </div>
+
+  <button class="btn btn-primary btn-lg js-seenEndGame">
+    OK
+  </button>
 </template>
