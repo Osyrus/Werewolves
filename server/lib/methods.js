@@ -1,5 +1,6 @@
 var startGameCounter = null;
 var executeVoteCounter = null;
+var voteTimeout = null;
 
 Meteor.methods({
   addPlayer: function(user) {
@@ -86,8 +87,9 @@ Meteor.methods({
     console.log("Num voters: " + numVoters);
 
     // Now we need to check is a majority has been reached and update the direction variable
+    // Majority is when you have more votes than the half number of eligible voters, rounded up (ceil)
     if (newVotesFor > newVotesAgainst) {
-      if (newVotesFor > Math.floor(numVoters/2)) {
+      if (newVotesFor > Math.ceil(numVoters/2)) {
         console.log("Majority reached to lynch.");
 
         GameVariables.update("voteDirection", {$set: {value: true, enabled: true}});
@@ -95,9 +97,10 @@ Meteor.methods({
         // No majority, clear the relevant variables
         GameVariables.update("voteDirection", {$set: {enabled: false}});
         stopLynchCountdown();
+        startLynchTimeout();
       }
     } else {
-      if (newVotesAgainst > Math.floor(numVoters/2)) {
+      if (newVotesAgainst > Math.ceil(numVoters/2)) {
         console.log("Majority reached not to lynch.");
 
         GameVariables.update("voteDirection", {$set: {value: false, enabled: true}});
@@ -105,6 +108,7 @@ Meteor.methods({
         // No majority, clear the relevant variables (code repeated, I know... I feel bad...)
         GameVariables.update("voteDirection", {$set: {enabled: false}});
         stopLynchCountdown();
+        startLynchTimeout();
       }
     }
 
@@ -121,6 +125,7 @@ Meteor.methods({
         } else {
           // If we got here, that means there wasn't a majority before to lynch, so we should start the clock.
           startLynchCountdown();
+          stopLynchTimeout();
           console.log("Starting countdown to lynch.");
         }
       } else {
@@ -131,12 +136,16 @@ Meteor.methods({
         } else {
           // If we got here, that means that there wasn't a majority to not lynch before, so start the clock.
           startLynchCountdown();
+          stopLynchTimeout();
           console.log("Starting countdown not to lynch.");
         }
       }
     }
   },
-  "executeVote": function() {
+  "beginLynchVote": function() {
+    startLynchTimeout();
+  },
+  "executeVote": function() { // This isn't used anymore
     executeVote();
   },
   "doingNothingToday": function() {
@@ -401,6 +410,23 @@ function stopLynchCountdown() {
   executeVoteCounter = null;
 }
 
+function startLynchTimeout() {
+  var milliDelay = 60000; // 1 minute?
+
+  var timeoutTime = (new Date()).valueOf() + milliDelay;
+
+  GameVariables.update("timeToVoteTimeout", {$set: {value: timeoutTime, enabled: true}});
+
+  voteTimeout = Meteor.setTimeout(cancelVote, milliDelay);
+}
+
+function stopLynchTimeout() {
+  GameVariables.update("timeToVoteTimeout", {$set: {value: 0, enabled: false}});
+
+  Meteor.clearTimeout(voteTimeout);
+  voteTimeout = null;
+}
+
 function startGameCountdown() {
   var milliDelay = 5100; // start 5 seconds from now (magic number, I know...)
 
@@ -489,6 +515,11 @@ function startGame() {
 
     GameVariables.update("rolesAssigned", {$set: {value: true}});
   }
+}
+
+function cancelVote() {
+  GameVariables.update("voteDirection", {$set: {value: false, enabled: true}});
+  executeVote();
 }
 
 function executeVote() {

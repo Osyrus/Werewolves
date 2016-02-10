@@ -142,6 +142,15 @@ span.player-role-name.revealed.ww {
     background: darkred;
 }
 
+span.lynch-timeout {
+    background: darkblue;
+    font-size: large;
+}
+
+span.lynch-timeout.reached {
+    visibility: hidden;
+}
+
 span.majority {
     width: 60%;
     visibility: hidden;

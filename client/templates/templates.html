@@ -55,6 +55,7 @@
 
           <button class="whoami">My Role</button>
           {{#if voting}}
+            <span class="lynch-timeout {{majorityReached}}">{{timeoutText}}</span>
             <span class="majority {{majorityReached}} {{majority.tag}}">{{majority.text}}</span>
           {{/if}}
         </header>
@@ -68,6 +69,12 @@
           <button class="cancel">Cancel</button>
         {{else}}
           {{#if voting}}
+            <div class="panel {{majority.tag}}">
+              <div class="panel-heading">
+                <h1 class="panel-title">{{majority.text}}</h1>
+              </div>
+            </div>
+
             <button class="vote do-lynch {{#if votingFor}}selected{{/if}}">Lynch {{lynchTarget}}!</button>
             <span class="vote players-for"><i>Also for: {{playersVotingFor}}</i></span>
             <button class="vote dont-lynch {{#if votingAgainst}}selected{{/if}}">Don't Lynch {{lynchTarget}}!</button>

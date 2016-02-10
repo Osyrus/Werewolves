@@ -373,16 +373,12 @@ Template.dayNightCycle.helpers({
   "majorityReached": function() {
     votesDep.depend();
 
-    if (GameVariables.findOne("timeToVoteExecution").enabled) {
-      return "reached";
-    } else {
-      return "";
-    }
+    return (GameVariables.findOne("timeToVoteExecution").enabled);
   },
   "majority": function() {
     votesDep.depend();
 
-    var timeToExecute = GameVariables.findOne("timeToVoteExecution").value;
+    var timeToExecute = GameVariables.findOne("timeToVoteExecution");
     var voteDirection = GameVariables.findOne("voteDirection").value;
     var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
 
@@ -390,12 +386,18 @@ Template.dayNightCycle.helpers({
     majorityText += voteDirection ? "to lynch " : "not to lynch ";
     majorityText += target.name + "!";
 
-    var majorityTag = voteDirection ? "lynch" : "";
+    var majorityTag = "panel-info";
 
-    if (TimeSync.serverTime() <= timeToExecute) {
-      majorityText += " In: " + Math.floor((timeToExecute - TimeSync.serverTime())/1000);// Convert to seconds from ms
-    } else if (GameVariables.findOne("timeToVoteExecution").enabled) {
-      //Meteor.call("executeVote"); Don't need this anymore as the server does it (which is way better...)
+    if (timeToExecute.enabled) {
+      majorityTag = voteDirection ? "panel-danger" : "panel-primary";
+
+      if (TimeSync.serverTime() <= timeToExecute.value) {
+        majorityText += " In: " + Math.floor((timeToExecute.value - TimeSync.serverTime()) / 1000);// Convert to seconds from ms
+      }
+    } else {
+      var timeToTimeout = GameVariables.findOne("timeToVoteTimeout").value;
+
+      majorityText = "Time left: " + Math.floor((timeToTimeout - TimeSync.serverTime())/1000);
     }
 
     return {
@@ -601,7 +603,7 @@ Template.endGameScreen.helpers({
       var tag = "list-group-item-info";
 
       // Change the tag to suit the role
-      if (role != villager._id) {
+      if (role._id != villager._id) {
         if (role.name == "Werewolf") {
           tag = "list-group-item-danger";
         } else if (role.aggressive) {
