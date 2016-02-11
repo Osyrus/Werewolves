@@ -75,6 +75,8 @@ Template.body.helpers({
         return true;
       } else if (!player.joined) {
         return true;
+      } else if (!player.seenEndgame) {
+        return false;
       } else {
         return currentGameMode == "lobby";
       }
@@ -86,6 +88,11 @@ Template.body.helpers({
     var currentGameMode = GameVariables.findOne("gameMode").value;
 
     return currentGameMode == "inGame";
+  },
+  gameOver: function() {
+    var player = getPlayer();
+
+    return !player.seenEndgame;
   },
   whoAmIScreen: function() {
     var currentGameMode = GameVariables.findOne("gameMode").value;
@@ -114,7 +121,7 @@ Template.body.events({
       var player = getPlayer();
 
       if (player) {
-        Players.update(player._id, {$set: {joined: true}});
+        Players.update(player._id, {$set: {joined: true, seenEndgame: true}});
       } else {
         Meteor.call("addPlayer", Meteor.user());
       }
@@ -222,7 +229,10 @@ Template.whoAmI.helpers({
         }
       });
 
-      return Roles.findOne(Session.get("roleGiven")).name;
+      if (Roles.findOne(Session.get("roleGiven")))
+        return Roles.findOne(Session.get("roleGiven")).name;
+
+      return "";
     } else {
       return "";
     }
@@ -294,13 +304,28 @@ Template.whoAmI.events({
   }
 });
 
+Template.eventsDisplay.helpers({
+  "events": function() {
+    var player = getPlayer();
+
+    // TODO This needs some work here to make it more clear what to show on game end, rather than spectating
+    // Perhaps add a "spectating" variable to the players
+    if (player.alive && player.joined) {
+      // This should show on the game end screen
+      var currentCycle = GameVariables.findOne("cycleNumber").value;
+      return EventList.find({cycleNumber: (currentCycle - 1)});
+    } else {
+      // This should only show when spectating
+      return EventList.find({}, {sort: {timeAdded: -1}});
+    }
+  }
+});
+
 Template.dayNightCycle.helpers({
   "dayCycle": function() {
-    getCurrentCycle();
+    var currentCycle = GameVariables.findOne("cycleNumber").value
 
-    var cycleNum = Session.get("cycleNumber");
-
-    return (!(cycleNum % 2 == 0));
+    return (!(currentCycle % 2 == 0));
   },
   "nominating": function() {
     // Get the list of people looking at the selection screen
@@ -324,13 +349,13 @@ Template.dayNightCycle.helpers({
       var target = Players.findOne(voteDetails.value[0]);
       var nominator = Players.findOne(voteDetails.value[1]);
 
-      return target.name + " has been nominated by " + nominator.name + ". Please cast your votes!";
+      return target.name + " has been nominated by " + nominator.name + ". Please cast your vote!";
     } else {
       return "Not voting yet..."
     }
   },
   "lynchTarget": function() {
-    return Players.findOne(GameVariables.findOne("lynchVote").value).name;
+    return Players.findOne(GameVariables.findOne("lynchVote").value[0]).name;
   },
   "playersVotingFor": function() {
     return generateVoteString(1);
@@ -353,16 +378,12 @@ Template.dayNightCycle.helpers({
   "majorityReached": function() {
     votesDep.depend();
 
-    if (GameVariables.findOne("timeToVoteExecution").enabled) {
-      return "reached";
-    } else {
-      return "";
-    }
+    return (GameVariables.findOne("timeToVoteExecution").enabled);
   },
   "majority": function() {
     votesDep.depend();
 
-    var timeToExecute = GameVariables.findOne("timeToVoteExecution").value;
+    var timeToExecute = GameVariables.findOne("timeToVoteExecution");
     var voteDirection = GameVariables.findOne("voteDirection").value;
     var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
 
@@ -370,12 +391,18 @@ Template.dayNightCycle.helpers({
     majorityText += voteDirection ? "to lynch " : "not to lynch ";
     majorityText += target.name + "!";
 
-    var majorityTag = voteDirection ? "lynch" : "";
+    var majorityTag = "panel-info";
 
-    if (TimeSync.serverTime() <= timeToExecute) {
-      majorityText += " In: " + Math.floor((timeToExecute - TimeSync.serverTime())/1000);// Convert to seconds from ms
-    } else if (GameVariables.findOne("timeToVoteExecution").enabled) {
-      //Meteor.call("executeVote"); Don't need this anymore as the server does it (which is way better...)
+    if (timeToExecute.enabled) {
+      majorityTag = voteDirection ? "panel-danger" : "panel-primary";
+
+      if (TimeSync.serverTime() <= timeToExecute.value) {
+        majorityText += " In: " + Math.floor((timeToExecute.value - TimeSync.serverTime()) / 1000);// Convert to seconds from ms
+      }
+    } else {
+      var timeToTimeout = GameVariables.findOne("timeToVoteTimeout").value;
+
+      majorityText = "Time left: " + Math.floor((timeToTimeout - TimeSync.serverTime())/1000);
     }
 
     return {
@@ -406,10 +433,6 @@ Template.dayNightCycle.helpers({
     var events = EventList.find({cycleNumber: (currentCycle - 1)});
 
     return (events.count() > 0 && !getPlayer().seenNewEvents);
-  },
-  "events": function() {
-    var currentCycle = GameVariables.findOne("cycleNumber").value;
-    return EventList.find({cycleNumber: (currentCycle - 1)});
   }
 });
 
@@ -542,9 +565,79 @@ Template.youDiedScreen.events({
   }
 });
 
-Template.spectatorScreen.helpers({
-  events: function() {
-    return EventList.find({}, {sort: {timeAdded: -1}});
+Template.endGameScreen.helpers({
+  result: function() {
+    var title = "This is the end game title";
+    var tag = "panel-default";
+    var text = "This is the text that possibly describes the way the game ended or whatnot...";
+
+    var villagersWon = GameVariables.findOne("lastGameResult").value;
+
+    if (villagersWon) {
+      tag = "panel-success";
+      title = "The Villagers have won!!"
+    } else {
+      tag = "panel-danger";
+      title = "The Werewolves have won!!";
+    }
+
+    var cycleNumber = GameVariables.findOne("cycleNumber").value - 1;
+
+    text = "The game took " + cycleNumber + " cycles to complete.";
+    // TODO Think of more info to include here?
+
+    return {
+      title: title,
+      tag: tag,
+      text: text
+    }
+  },
+  roleList: function() {
+    // This is where an array of text needs to be generated, where each entry has a text field and a tag field
+    var players = Players.find({joined: true}, {sort: {alive: -1}});
+
+    var list = [];
+    var villager = Roles.findOne({name: "Villager"});
+
+    players.forEach(function(player) {
+      // Find the players role
+      var role = Roles.findOne(player.role);
+
+      // Generate the text and tag for the list
+      var text = player.name + " was a " + role.name;
+      var tag = "list-group-item-info";
+
+      // Change the tag to suit the role
+      if (role._id != villager._id) {
+        if (role.name == "Werewolf") {
+          tag = "list-group-item-danger";
+        } else if (role.aggressive) {
+          // This includes roles like the Witch and the Saint
+          tag = "list-group-item-warning";
+        } else {
+          // This includes roles like the Seer and Doctor
+          tag = "list-group-item-success";
+        }
+      }
+
+      var icon = "glyphicon-remove";
+      if (player.alive) {
+        icon = "glyphicon-heart";
+      }
+
+      // Now add this entry to the list
+      list.push({text: text, tag: tag, icon: icon});
+    });
+
+    return list;
+  }
+});
+
+Template.endGameScreen.events({
+  "click .js-seenEndGame": function() {
+    var player = getPlayer();
+
+    Players.update(player._id, {$set: {seenEndgame: true}});
   }
 });
 
@@ -562,7 +655,8 @@ function allPlayersDoingNothing() {
 }
 
 function generateVoteString(voteType) {
-  var players = getAlivePlayers();
+  var lynchTarget = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
+  var players = Players.find({alive: true, _id: {$ne: lynchTarget._id}});
 
   var voteList = "";
 
@@ -661,7 +755,8 @@ function allReady() {
   var playersTotal = Players.find({joined: true}).count();
   var playersReady = Players.find({ready: true}).count();
 
-  return playersReady == playersTotal;
+  // There must be a minimum of 3 joined players to start the game
+  return (playersReady == playersTotal) && (playersTotal > 2);
 }
 
 function getCurrentCycle() {

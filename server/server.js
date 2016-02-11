@@ -4,18 +4,18 @@ Meteor.startup(function () {
 
   addTestPlayer("Fred", 1);
   addTestPlayer("Steve", 1);
-  //addTestPlayer("Bob", 0);
+  addTestPlayer("Bob", 2);
 
   // Create the roles
   Roles.remove({});
 
-  addRole("Villager", true);
-  addRole("Werewolf", true);
-  addRole("Doctor", false);
-  addRole("Witch", false);
-  addRole("Seer", false);
-  addRole("Knight", false);
-  addRole("Saint", false);
+  addRole("Villager", true, false);
+  addRole("Werewolf", true, true);
+  addRole("Doctor", false, false);
+  addRole("Witch", false, true);
+  addRole("Seer", false, false);
+  addRole("Knight", false, false);
+  addRole("Saint", false, true);
 
   // Clear the votes upon server restart
   RoleVotes.remove({});
@@ -31,8 +31,10 @@ Meteor.startup(function () {
   GameVariables.insert({_id: "lynchVote", name: "This is the information needed for the lynch vote, value is [target._id, nominator._id], enabled is if the vote is happening", value: [0, 0], enabled: false});
   GameVariables.insert({_id: "voteTally", name: "The votes for and against are stored here", value: {for: 0, against: 0}, enabled: false});
   GameVariables.insert({_id: "timeToVoteExecution", name: "Seconds until the vote result is executed", value: 0, enabled: false});
+  GameVariables.insert({_id: "timeToVoteTimeout", name: "Seconds until the vote times out and the lynch fails", value: 0, enabled: false});
   GameVariables.insert({_id: "voteDirection", name: "The direction the vote should be executed. value: for/against (true/false)", value: false, enabled: false});
   GameVariables.insert({_id: "revealRole", name: "Should the role be revealed after a death?", value: {day: true, night: true}, enabled: true});
+  GameVariables.insert({_id: "lastGameResult", name: "The last games result", value: {villagersWon: false}, enabled: false});
 
   ServerChecks.remove({});
 
@@ -40,12 +42,13 @@ Meteor.startup(function () {
 });
 
 // Note: The order that the roles are added will determine their tiebreaker order (when counting votes)
-function addRole(name, critical) {
+function addRole(name, critical, aggressive) {
   Roles.insert({
     name: name,
     votes: 0,
     enabled: critical,
     critical: critical,
+    aggressive: aggressive,
     target: 0
   });
 }

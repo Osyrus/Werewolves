@@ -40,11 +40,7 @@
     {{> nightResults}}
   {{else}}
     {{#if showEvents}}
-      <ul class="list-group"> <!-- Think about perhaps using bootstrap panels here -->
-        {{#each events}}
-          {{> eventDisplay}}
-        {{/each}}
-      </ul>
+      {{> eventsDisplay}}
       <button class="ok events">OK</button>
     {{else}}
       {{#if dayCycle}}
@@ -58,9 +54,6 @@
           <br>
 
           <button class="whoami">My Role</button>
-          {{#if voting}}
-            <span class="majority {{majorityReached}} {{majority.tag}}">{{majority.text}}</span>
-          {{/if}}
         </header>
 
         {{#if nominating}}
@@ -72,6 +65,12 @@
           <button class="cancel">Cancel</button>
         {{else}}
           {{#if voting}}
+            <div class="panel {{majority.tag}}">
+              <div class="panel-heading">
+                <h1 class="panel-title">{{majority.text}}</h1>
+              </div>
+            </div>
+
             <button class="vote do-lynch {{#if votingFor}}selected{{/if}}">Lynch {{lynchTarget}}!</button>
             <span class="vote players-for"><i>Also for: {{playersVotingFor}}</i></span>
             <button class="vote dont-lynch {{#if votingAgainst}}selected{{/if}}">Don't Lynch {{lynchTarget}}!</button>
@@ -94,6 +93,14 @@
   <button class="nominatePlayer list-group-item">{{name}}</button>
 </template>
 
+<template name="eventsDisplay">
+  <ul class="list-group"> <!-- Think about perhaps using bootstrap panels here -->
+    {{#each events}}
+      {{> eventDisplay}}
+    {{/each}}
+  </ul>
+</template>
+
 <template name="eventDisplay">
   <li class="list-group-item">
     <span class="event-text {{#if revealRole}}{{type}}{{/if}}">
@@ -114,9 +121,49 @@
 
 <template name="spectatorScreen">
   <span>You are spectating the game.</span>
-  <ul class="list-group">
-    {{#each events}}
-      {{> eventDisplay}}
-    {{/each}}
-  </ul>
+  {{> eventsDisplay}}
+</template>
+
+<template name="endGameScreen">
+  <div class="panel {{result.tag}}">
+    <div class="panel-heading">
+      <h1 class="panel-title">{{result.title}}</h1>
+    </div>
+
+    <div class="panel-body">
+      {{result.text}}
+    </div>
+  </div>
+
+  <div class="panel panel-info">
+    <div class="panel-heading">
+      <h2 class="panel-title">The last events...</h2>
+    </div>
+    <div class="panel-body">
+      {{> eventsDisplay}}
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <!-- Default panel contents -->
+    <div class="panel-heading">
+      <h2 class="panel-title">The roles</h2>
+    </div>
+    <div class="panel-body">
+      <p>The roles were assigned as follows...</p>
+    </div>
+
+    <!-- List group -->
+    <ul class="list-group">
+      {{#each roleList}}
+        <li class="list-group-item {{tag}}">
+          <p class="glyphicon {{icon}}"></p> {{text}}
+        </li>
+      {{/each}}
+    </ul>
+  </div>
+
+  <button class="btn btn-primary btn-lg js-seenEndGame">
+    OK
+  </button>
 </template>

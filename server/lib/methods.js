@@ -1,5 +1,6 @@
 var startGameCounter = null;
 var executeVoteCounter = null;
+var voteTimeout = null;
 
 Meteor.methods({
   addPlayer: function(user) {
@@ -20,7 +21,8 @@ Meteor.methods({
       bot: false,
       seenDeath: false,
       deathDetails: {cycle: 0, type: "none"},
-      target: 0
+      target: 0,
+      seenEndgame: true
     });
   },
   // This is called when one of the clients wants to start/stop the game
@@ -57,10 +59,11 @@ Meteor.methods({
     // First, we update the vote for that player
     Players.update(playerId, {$set: {voteChoice: vote}});
 
-    // Now we need to get a hold of all the alive players
-    var players = Players.find({alive: true});
-    // The number of voters is all the alive players, minus the target
-    var numVoters = players.count() - 1;
+    // Now we need to get a hold of all the alive players excluding the target
+    var lynchTarget = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
+    var players = Players.find({alive: true, _id: {$ne: lynchTarget._id}});
+    // The number of voters is all of these players
+    var numVoters = players.count();
     // Now we need to get the tally counts
     var tally = GameVariables.findOne("voteTally").value;
     var votesFor = tally.for;
@@ -85,8 +88,9 @@ Meteor.methods({
     console.log("Num voters: " + numVoters);
 
     // Now we need to check is a majority has been reached and update the direction variable
+    // Majority is when you have more votes than the half number of eligible voters, rounded up (ceil)
     if (newVotesFor > newVotesAgainst) {
-      if (newVotesFor > Math.floor(numVoters/2)) {
+      if (newVotesFor > (numVoters/2)) {
         console.log("Majority reached to lynch.");
 
         GameVariables.update("voteDirection", {$set: {value: true, enabled: true}});
@@ -94,9 +98,10 @@ Meteor.methods({
         // No majority, clear the relevant variables
         GameVariables.update("voteDirection", {$set: {enabled: false}});
         stopLynchCountdown();
+        startLynchTimeout();
       }
     } else {
-      if (newVotesAgainst > Math.floor(numVoters/2)) {
+      if (newVotesAgainst > (numVoters/2)) {
         console.log("Majority reached not to lynch.");
 
         GameVariables.update("voteDirection", {$set: {value: false, enabled: true}});
@@ -104,6 +109,7 @@ Meteor.methods({
         // No majority, clear the relevant variables (code repeated, I know... I feel bad...)
         GameVariables.update("voteDirection", {$set: {enabled: false}});
         stopLynchCountdown();
+        startLynchTimeout();
       }
     }
 
@@ -113,29 +119,48 @@ Meteor.methods({
       // First, lets check if there was already a majority in this direction before.
       if (GameVariables.findOne("voteDirection").value) {
         // Lets see if the original tally favoured this direction
-        if (votesFor > votesAgainst) {
+        if (votesFor > (numVoters/2)) {
           // If we got here, that means that new votes came in, but they did not change the fact that there is
           // a majority to lynch, so we do nothing and the countdown will continue.
           console.log("Still a majority to lynch.");
+
+          // Just in case, check to make sure that there is a countdown in progress
+          if (!executeVoteCounter) {
+            startLynchCountdown();
+            stopLynchTimeout();
+          }
         } else {
           // If we got here, that means there wasn't a majority before to lynch, so we should start the clock.
           startLynchCountdown();
+          // We should also stop the timeout counter
+          stopLynchTimeout();
           console.log("Starting countdown to lynch.");
         }
       } else {
         // Lets see if the original tally favoured this direction instead
-        if (votesFor < votesAgainst) {
+        if (votesAgainst > (numVoters/2)) {
           // If we got here, then there was already a majority not to lynch, so we do nothing here as well.
           console.log("Still a majority to not lynch.");
+
+          // Just in case, check to make sure that there is a countdown in progress
+          if (!executeVoteCounter) {
+            startLynchCountdown();
+            stopLynchTimeout();
+          }
         } else {
           // If we got here, that means that there wasn't a majority to not lynch before, so start the clock.
           startLynchCountdown();
+          // And also stop the countdown timer again
+          stopLynchTimeout();
           console.log("Starting countdown not to lynch.");
         }
       }
     }
   },
-  "executeVote": function() {
+  "beginLynchVote": function() {
+    startLynchTimeout();
+  },
+  "executeVote": function() { // This isn't used anymore
     executeVote();
   },
   "doingNothingToday": function() {
@@ -287,13 +312,13 @@ function moveToNextCycle() {
   });
 
   // Do a check to see what cycle we are moving from, just in case there is anything cycle specific
+  var werewolfId = Roles.findOne({name: "Werewolf"})._id;
   var lastCycle = GameVariables.findOne("cycleNumber").value;
   if (!(lastCycle % 2 == 0)) {
     // It was just day
     console.log("End day cycle has been called.");
 
-    // The werewolves target needs to be set after leaving the day cycle
-    var werewolfId = Roles.findOne({name: "Werewolf"})._id;
+    // The werewolves target needs to be reset after leaving the day cycle
     Roles.update(werewolfId, {$set: {target: 0}});
   } else {
     // It was just night
@@ -302,6 +327,102 @@ function moveToNextCycle() {
 
   // Increment the cycle
   GameVariables.update("cycleNumber", {$inc: {value: 1}});
+
+  // TODO Now after all that is done, we need to check if the game is over or not!!
+  // 1. Specifically, we first need to check that there are still werewolves (villagers win).
+  // 2. Then we need to check if the werewolves outnumber the villagers (werewolves win)
+  // 3. In the case that the villagers outnumber the werewolves, the game continues.
+  // 4. In the case that the villagers and werewolves have the same numbers, then another check is needed.
+  //    The only way the villagers can win in that case is if one of the villagers is a knight and thus cannot be
+  //    killed at night. Or one of them is a Doctor, which means that the other villager could potentially be saved.
+  //    So if the remaining pool of villagers contains either a Doctor or a Knight, the game continues.
+
+  var doctorKnightPresent = false;
+  var knight = Roles.findOne({name: "Knight"});
+  var doctor = Roles.findOne({name: "Doctor"});
+
+  // Count the werewolves/villagers
+  var numWerewolves = 0;
+  var numVillagers = 0;
+  players.forEach(function(player) {
+    if (player.role == werewolfId) {
+      numWerewolves++;
+    } else {
+      if ((player.role == knight._id) || (player.role == doctor._id)) {
+        // There is a knight and/or doctor present
+        doctorKnightPresent = true;
+      }
+      numVillagers++;
+    }
+  });
+
+  console.log("Num Villagers left: " + numVillagers);
+  console.log("Num Werewolves left: " + numWerewolves);
+
+  if (numWerewolves <= 0) { // 1. Are the werewolves all dead?
+    // The villagers win
+    console.log("The Werewolves are all dead.");
+    endGame(true);
+  } else if (numWerewolves > numVillagers) { // 2. Are the werewolves the majority?
+    // The werewolves win
+    console.log("The Werewolves have the majority.");
+    endGame(false);
+  } else if (numWerewolves == numVillagers) { // 4. Is the number of werewolves and villagers equal?
+    // We need to check if the remaining players contains either a doctor or knight.
+    console.log("Equal numbers for werewolves and villagers");
+    if (!doctorKnightPresent || numVillagers <= 1) {
+      // There is no doctor or knight present, the villagers can't win, the werewolves have it
+      // Also, if there is only one villager, they also lose even if it is a knight (for balance reasons).
+      console.log("No doctor or knight present.");
+      endGame(false);
+    } else {
+      console.log("There was a doctor or knight present so the game continues.");
+    }
+  } else {
+    // 3. If we get here, that means there are more villagers than werewolves, so do nothing.
+    console.log("The game continues...");
+  }
+}
+
+// This function ends the game, the boolean input is true if the villagers won, false if the werewolves win.
+function endGame(villagersWin) {
+  console.log("Endgame called");
+
+  var cycleNumber = GameVariables.findOne("cycleNumber").value - 1;
+  var winnerText = "";
+
+  if (villagersWin) {
+    console.log("Villagers win");
+    winnerText = "The Villagers have won!";
+  } else {
+    console.log("Werewolves win");
+    winnerText = "The Werewolves have won!";
+  }
+
+  EventList.insert({type: "info", cycleNumber: cycleNumber, text: winnerText, timeAdded: new Date()});
+
+  GameVariables.update("lastGameResult", {$set: {value: villagersWin, enabled: true}});
+
+  var players = Players.find({joined: true});
+  var werewolfId = Roles.findOne({name: "Werewolf"})._id;
+
+  // Let's set the variables for all the players that were in the game
+  players.forEach(function(player) {
+    Players.update(player._id, {$set: {seenEndgame: false, ready: false}});
+
+    if (villagersWin) {
+      if (player.role == werewolfId) {
+        Players.update(player._id, {$set: {alive: false}});
+      }
+    } else {
+      if (player.role != werewolfId) {
+        Players.update(player._id, {$set: {alive: false}});
+      }
+    }
+  });
+
+  // Re-enable the lobby
+  GameVariables.update("gameMode", {$set: {value: "lobby"}});
 }
 
 function startLynchCountdown() {
@@ -311,6 +432,9 @@ function startLynchCountdown() {
 
   GameVariables.update("timeToVoteExecution", {$set: {value: executeTime, enabled: true}});
 
+  if (executeVoteCounter) {
+    Meteor.clearTimeout(executeVoteCounter);
+  }
   executeVoteCounter = Meteor.setTimeout(executeVote, milliDelay);
 }
 
@@ -319,6 +443,23 @@ function stopLynchCountdown() {
 
   Meteor.clearTimeout(executeVoteCounter);
   executeVoteCounter = null;
+}
+
+function startLynchTimeout() {
+  var milliDelay = 60000; // 1 minute?
+
+  var timeoutTime = (new Date()).valueOf() + milliDelay;
+
+  GameVariables.update("timeToVoteTimeout", {$set: {value: timeoutTime, enabled: true}});
+
+  voteTimeout = Meteor.setTimeout(cancelVote, milliDelay);
+}
+
+function stopLynchTimeout() {
+  GameVariables.update("timeToVoteTimeout", {$set: {value: 0, enabled: false}});
+
+  Meteor.clearTimeout(voteTimeout);
+  voteTimeout = null;
 }
 
 function startGameCountdown() {
@@ -343,6 +484,27 @@ function startGame() {
   GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
   GameVariables.update("gameMode", {$set: {value: "inGame"}});
   GameVariables.update("cycleNumber", {$set: {value: 1}});
+  GameVariables.update("lastGameResult", {$set: {enabled: false}});
+
+  // Clear the variables relating to each player
+  Players.find({joined: true}).forEach(function(player) {
+    if (!player.bot) {
+      Players.update(player._id, {
+        $set: {
+          seenEndgame: false,
+          alive: true,
+          doNothing: false,
+          seenNewEvents: false,
+          seenNightResults: true,
+          nightActionDone: false,
+          effect: "none",
+          seenDeath: false,
+          deathDetails: {cycle: 0, type: "none"},
+          target: 0
+        }
+      });
+    }
+  });
 
   // Clear the event list on starting a new game
   EventList.remove({});
@@ -390,11 +552,17 @@ function startGame() {
   }
 }
 
+function cancelVote() {
+  GameVariables.update("voteDirection", {$set: {value: false, enabled: true}});
+  executeVote();
+}
+
 function executeVote() {
   // The countdown has elapsed, execute the vote decision!!
   var cycleNumber = GameVariables.findOne("cycleNumber").value;
   var voteDirection = GameVariables.findOne("voteDirection").value;
   var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
+  stopLynchCountdown();
 
   if (voteDirection) {
     // This means the day is over, so make an event for that
