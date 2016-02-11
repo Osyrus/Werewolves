@@ -191,7 +191,7 @@ Template.areYouSureDialog.events({
     players.forEach(function(player) {
       // Don't do this yet, for testing purposes (otherwise the bots votes get reset)
       // TODO Remember this is here!!!
-      //Players.update(player._id, {$set: {voteChoice: 2}});
+      //Players.update(player._id, {$set: {voteChoice: 0}});
     });
     // Set the variable to move to the yes/no vote
     GameVariables.update("lynchVote", {$set: {value: [this.data.nominatedPlayer, this.data.nominator], enabled: true}});

@@ -54,10 +54,6 @@
           <br>
 
           <button class="whoami">My Role</button>
-          {{#if voting}}
-            <span class="lynch-timeout {{majorityReached}}">{{timeoutText}}</span>
-            <span class="majority {{majorityReached}} {{majority.tag}}">{{majority.text}}</span>
-          {{/if}}
         </header>
 
         {{#if nominating}}

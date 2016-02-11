@@ -4,7 +4,7 @@ Meteor.startup(function () {
 
   addTestPlayer("Fred", 1);
   addTestPlayer("Steve", 1);
-  //addTestPlayer("Bob", 0);
+  addTestPlayer("Bob", 2);
 
   // Create the roles
   Roles.remove({});

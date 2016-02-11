@@ -229,7 +229,10 @@ Template.whoAmI.helpers({
         }
       });
 
-      return Roles.findOne(Session.get("roleGiven")).name;
+      if (Roles.findOne(Session.get("roleGiven")))
+        return Roles.findOne(Session.get("roleGiven")).name;
+
+      return "";
     } else {
       return "";
     }
@@ -305,10 +308,14 @@ Template.eventsDisplay.helpers({
   "events": function() {
     var player = getPlayer();
 
+    // TODO This needs some work here to make it more clear what to show on game end, rather than spectating
+    // Perhaps add a "spectating" variable to the players
     if (player.alive && player.joined) {
+      // This should show on the game end screen
       var currentCycle = GameVariables.findOne("cycleNumber").value;
       return EventList.find({cycleNumber: (currentCycle - 1)});
     } else {
+      // This should only show when spectating
       return EventList.find({}, {sort: {timeAdded: -1}});
     }
   }
@@ -316,11 +323,9 @@ Template.eventsDisplay.helpers({
 
 Template.dayNightCycle.helpers({
   "dayCycle": function() {
-    getCurrentCycle();
+    var currentCycle = GameVariables.findOne("cycleNumber").value
 
-    var cycleNum = Session.get("cycleNumber");
-
-    return (!(cycleNum % 2 == 0));
+    return (!(currentCycle % 2 == 0));
   },
   "nominating": function() {
     // Get the list of people looking at the selection screen
@@ -344,13 +349,13 @@ Template.dayNightCycle.helpers({
       var target = Players.findOne(voteDetails.value[0]);
       var nominator = Players.findOne(voteDetails.value[1]);
 
-      return target.name + " has been nominated by " + nominator.name + ". Please cast your votes!";
+      return target.name + " has been nominated by " + nominator.name + ". Please cast your vote!";
     } else {
       return "Not voting yet..."
     }
   },
   "lynchTarget": function() {
-    return Players.findOne(GameVariables.findOne("lynchVote").value).name;
+    return Players.findOne(GameVariables.findOne("lynchVote").value[0]).name;
   },
   "playersVotingFor": function() {
     return generateVoteString(1);
@@ -650,7 +655,8 @@ function allPlayersDoingNothing() {
 }
 
 function generateVoteString(voteType) {
-  var players = getAlivePlayers();
+  var lynchTarget = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
+  var players = Players.find({alive: true, _id: {$ne: lynchTarget._id}});
 
   var voteList = "";
 
@@ -749,7 +755,8 @@ function allReady() {
   var playersTotal = Players.find({joined: true}).count();
   var playersReady = Players.find({ready: true}).count();
 
-  return playersReady == playersTotal;
+  // There must be a minimum of 3 joined players to start the game
+  return (playersReady == playersTotal) && (playersTotal > 2);
 }
 
 function getCurrentCycle() {
