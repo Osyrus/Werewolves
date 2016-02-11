@@ -1,5 +1,5 @@
 
-// TODO this aint working!
+// TODO this ain't working!
 
 /// This observer will update a reactive document entry that represents all the joined players being ready or not
 

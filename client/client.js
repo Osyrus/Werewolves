@@ -620,9 +620,9 @@ Template.endGameScreen.helpers({
         }
       }
 
-      var icon = "glyphicon-remove";
+      var icon = "glyphicon-remove"; // This looks like death, kinda...
       if (player.alive) {
-        icon = "glyphicon-heart";
+        icon = "glyphicon-heart"; // This looks a lot like alive, so cool!
       }
 
       // Now add this entry to the list

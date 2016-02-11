@@ -328,7 +328,6 @@ function moveToNextCycle() {
   // Increment the cycle
   GameVariables.update("cycleNumber", {$inc: {value: 1}});
 
-  // TODO Now after all that is done, we need to check if the game is over or not!!
   // 1. Specifically, we first need to check that there are still werewolves (villagers win).
   // 2. Then we need to check if the werewolves outnumber the villagers (werewolves win)
   // 3. In the case that the villagers outnumber the werewolves, the game continues.
