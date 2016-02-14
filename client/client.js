@@ -5,71 +5,12 @@ var startDep = new Tracker.Dependency;
 nightViewDep = new Tracker.Dependency;
 
 Template.body.helpers({
-  players: function() {
-    return Players.find({joined: true});
-  },
-
-  roles: function() {
-    return Roles.find({critical: false});
-  },
-
-  playerCounter: function() {
-    var playersTotal = Players.find({joined: true}).count();
-    var playersReady = Players.find({ready: true}).count();
-
-    return String(playersReady) + "/" + String(playersTotal);
-  },
-
-  joined: function() {
-    var player = Players.findOne({userId: Meteor.user()._id});
-    return player != undefined ? player.joined : false;
-  },
-
-  ready: function() {
-    var player = Players.findOne({userId: Meteor.user()._id});
-
-    return player.ready;
-  },
-
-  allReady: function() {
-    return allReady();
-
-    // Testing this
-    //return ServerChecks.findOne("allReady");
-  },
-
-  counting: function() {
-    startDep.depend();
-
-    if (TimeSync.serverTime() <= GameVariables.findOne("timeToStart").value) {
-      return true;
-    }
-
-    if (GameVariables.findOne("timeToStart").enabled) {
-      console.log("Calling start game method from client.");
-      //Meteor.call("startGame");
-    }
-
-    return false;
-  },
-  countdown: function() {
-    startDep.depend();
-
-    var timeToStart = GameVariables.findOne("timeToStart").value;
-
-    if (TimeSync.serverTime() <= timeToStart) {
-      return Math.floor((timeToStart - TimeSync.serverTime())/1000);// Convert to seconds from ms
-    }
-
-    return 0;
-  },
-
   // These are the helpers that tell the html which screen to show
   lobby: function() {
     var currentGameMode = GameVariables.findOne("gameMode").value;
 
     if (Meteor.user() != null) {
-      var player = Players.findOne({userId: Meteor.user()._id});
+      var player = Players.findOne({userId: Meteor.userId()});
 
       if (player == undefined) {
         return true;
@@ -171,6 +112,72 @@ Template.body.events({
   }
 });
 
+Template.lobbyScreen.helpers({
+  players: function() {
+    return Players.find({joined: true});
+  },
+
+  roles: function() {
+    return Roles.find({critical: false});
+  },
+
+  playerCounter: function() {
+    var playersTotal = Players.find({joined: true}).count();
+    var playersReady = Players.find({ready: true}).count();
+
+    return String(playersReady) + "/" + String(playersTotal);
+  },
+
+  joined: function() {
+    var player = Players.findOne({userId: Meteor.user()._id});
+    return player != undefined ? player.joined : false;
+  },
+
+  ready: function() {
+    var player = Players.findOne({userId: Meteor.user()._id});
+
+    return player.ready;
+  },
+
+  allReady: function() {
+    return allReady();
+
+    // Testing this
+    //return ServerChecks.findOne("allReady");
+  },
+
+  counting: function() {
+    startDep.depend();
+
+    if (TimeSync.serverTime() <= GameVariables.findOne("timeToStart").value) {
+      return true;
+    }
+
+    if (GameVariables.findOne("timeToStart").enabled) {
+      console.log("Calling start game method from client.");
+      //Meteor.call("startGame");
+    }
+
+    return false;
+  },
+  countdown: function() {
+    startDep.depend();
+
+    var timeToStart = GameVariables.findOne("timeToStart").value;
+
+    if (TimeSync.serverTime() <= timeToStart) {
+      return Math.floor((timeToStart - TimeSync.serverTime())/1000);// Convert to seconds from ms
+    }
+
+    return 0;
+  },
+  inGame: function() {
+    var currentGameMode = GameVariables.findOne("gameMode").value;
+
+    return currentGameMode == "inGame";
+  }
+});
+
 Template.registerHelper("equals", function (a, b) {
   return (a == b);
 });
@@ -238,7 +245,7 @@ Template.whoAmI.helpers({
     }
   },
   "roleText": function() {
-    if (Session.get("revealPressed")) {
+    if (true || Session.get("revealPressed")) {
       var roleString = "";
       switch(Session.get("roleGiven").name) {
         case "Werewolf":

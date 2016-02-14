@@ -1,0 +1,130 @@
+<template name="lobbyScreen">
+  <div class="ui page grid main">
+    {{#if currentUser}}
+      <div class="row">
+        <div class="column">
+          {{#if joined}}
+          <div class="three ui buttons">
+            <button class="ui red button leave-game">Leave Game</button>
+
+            <button class="ui {{#if ready}}orange set-nready{{else}}green set-ready{{/if}} button">
+              {{#if ready}}
+                Not Ready
+              {{else}}
+                Ready
+              {{/if}}
+            </button>
+
+            <button class="ui
+              {{#if allReady}}green{{/if}}
+              {{#if counting}}red{{/if}}
+              button start-game">
+              {{#if counting}}
+                Cancel ({{countdown}})
+              {{else}}
+                Start Game
+              {{/if}}
+            </button>
+            </div>
+          {{else}}
+            {{#if inGame}}
+              <button class="ui fluid button game-running">Game in Progress</button>
+            {{else}}
+              <button class="ui fluid button blue join-game">Join Game</button>
+            {{/if}}
+          {{/if}}
+        </div>
+      </div>
+    {{/if}}
+
+    <div class="row">
+      <div class="column">
+        <div class="ui segment">
+          <div class="ui top attached blue large label">Player List</div>
+          <div class="ui relaxed divided list">
+            {{#each players}}
+              {{> player}}
+            {{/each}}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{#if joined}}
+      <div class="row">
+        <div class="column">
+          <div class="ui segment">
+            <div class="ui top attached blue large label">Role List</div>
+            <div class="ui divided list">
+              {{#each roles}}
+                {{> role}}
+              {{/each}}
+            </div>
+          </div>
+        </div>
+      </div>
+    {{/if}}
+  </div>
+</template>
+
+<template name="whoAmI">
+  <div class="ui page grid main">
+    <div class="row">
+      <div class="column">
+        <div class="ui raised segment">
+          <h1 class="ui header">
+            {{playerName}}, you are a {{#if roleRevealed}}{{roleName}}{{else}}...{{/if}}
+          </h1>
+        </div>
+      </div>
+    </div>
+
+    <!--TODO Hide this shit properly-->
+
+    <div class="row">
+      <div class="column">
+        <div class="ui card">
+          <div class="content">
+            <h2 class="ui header">
+              {{roleName}}
+            </h2>
+          </div>
+
+          <div class="image">
+            <img src="werewolf.jpg" class="ui image">
+          </div>
+
+          <div class="description">
+            <div class="meta">
+              <p>Role Description</p>
+            </div>
+            {{roleText}}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ui bottom fixed one item menu">
+      <div class="item">
+        <div class="two ui large buttons">
+          <button class="ui blue button revealRole">Hold to Reveal...</button>
+          <button class="ui grey button seen-role">OK</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!--<div class="jumbotron role-jumbotron">-->
+    <!--<h2>{{playerName}}, you are a {{#if roleRevealed}}{{roleName}}{{else}}...{{/if}}</h2>-->
+
+    <!--<p>-->
+      <!--{{roleText}}-->
+    <!--</p>-->
+
+    <!--<p class="whoami-buttons">-->
+      <!--<a class="btn btn-primary btn-lg revealRole" href="#" role="button">Hold to reveal...</a>-->
+      <!--<a class="btn btn-default btn-lg seen-role" href="#" role="button">OK, I'm good...</a>-->
+    <!--</p>-->
+  <!--</div>-->
+</template>

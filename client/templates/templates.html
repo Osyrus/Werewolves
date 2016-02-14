@@ -1,37 +1,62 @@
 <template name="player">
-  <li class="player-list">
-    <span class="player-name {{#if ready}}ready{{/if}}">{{name}}</span>
-  </li>
+  <div class="item">
+    <!-- This is where the eventual user avatar will go as a "ui avatar image" -->
+    <div class="content">
+      <h3 class="ui {{#if ready}}green{{else}}orange{{/if}} header">
+        {{name}}
+      </h3>
+      <div class="description">
+        <!-- This could possibly have some of the players stats? -->
+        {{#if ready}}
+          Ready to play.
+        {{else}}
+          Not ready to play.
+        {{/if}}
+      </div>
+    </div>
+  </div>
 </template>
 
 <template name="role">
-  <li class="vote-status">
-    <button class="vote-down {{#if equals vote -1}}sel{{/if}} {{#if cantVote}}done{{/if}}">
-      <a class="glyphicon glyphicon-thumbs-down" aria-hidden="true"></a>
-    </button>
-    <button class="vote-neutral {{#if equals vote 0}}sel{{/if}} {{#if cantVote}}done{{/if}}">
-      <a class="glyphicon glyphicon-option-horizontal" aria-hidden="true"></a>
-    </button>
-    <button class="vote-up {{#if equals vote 1}}sel{{/if}} {{#if cantVote}}done{{/if}}">
-      <a class="glyphicon glyphicon-thumbs-up" aria-hidden="true"></a>
-    </button>
+  <div class="item">
+    <!--<div class="ui right pointing big {{#if roleEnabled}}green{{else}}red{{/if}} label">{{name}}</div>-->
 
-    <span class="role-name {{#if roleEnabled}}enabled{{/if}}">{{name}}</span>
-  </li>
-</template>
+    <div class="content">
+      <!-- Could actually put an image avatar here of the role -->
 
-<template name="whoAmI">
-  <div class="jumbotron role-jumbotron">
-    <h2>{{playerName}}, you are a {{#if roleRevealed}}{{roleName}}{{else}}...{{/if}}</h2>
+      <h3 class="ui large {{#if roleEnabled}}green{{else}}red{{/if}} header">
+        {{name}}
+      </h3>
 
-    <p>
-      {{roleText}}
-    </p>
+      <div class="meta">
+        <p>{{#if roleEnabled}}Enabled{{else}}Not Enabled{{/if}}</p>
+      </div>
 
-    <p class="whoami-buttons">
-      <a class="btn btn-primary btn-lg revealRole" href="#" role="button">Hold to reveal...</a>
-      <a class="btn btn-default btn-lg seen-role" href="#" role="button">OK, I'm good...</a>
-    </p>
+      <div class="description">
+        <!-- The role description could go here-->
+        <p>
+          {{shortDescription}}
+        </p>
+      </div>
+
+      <div class="extra">
+        <div class="ui icon buttons">
+          <button class="ui button vote-down {{#if equals vote -1}}red{{else}}{{#if cantVote}}grey{{/if}}{{/if}}">
+            <i class="thumbs down icon"></i>
+          </button>
+          <button class="ui button vote-neutral {{#if equals vote 0}}blue{{else}}{{#if cantVote}}grey{{/if}}{{/if}}">
+            <i class="ellipsis horizontal icon"></i>
+          </button>
+          <button class="ui button vote-up {{#if equals vote 1}}green{{else}}{{#if cantVote}}grey{{/if}}{{/if}}">
+            <i class="thumbs up icon"></i>
+          </button>
+        </div>
+
+        <div class="ui left pointing label">
+          Vote
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
