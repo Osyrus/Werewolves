@@ -176,27 +176,6 @@ button.done {
     border: solid 1px dimgrey;
 }
 
-button.lynch {
-    font-size: xx-large;
-    margin-left: 2%;
-    margin-top: 2%;
-    margin-bottom: 2%;
-    width: 96%;
-    height: 60%;
-}
-
-button.lynch.nominate {
-    background: darkred;
-}
-
-button.lynch.do-nothing {
-    background: darkblue;
-}
-
-button.lynch.selected {
-    background: mediumblue;
-}
-
 button.ok {
     margin-left: 2%;
     width: 96%;
@@ -207,42 +186,6 @@ button.cancel {
     margin-left: 2%;
     background: darkblue;
     width: 96%;
-}
-
-button.vote {
-    margin-left: 2%;
-    margin-top: 1%;
-    width: 96%;
-    font-size: xx-large;
-    text-align: center;
-    height: 35%;
-}
-
-button.vote.do-lynch {
-    background: darkred;
-}
-
-button.vote.dont-lynch {
-    background: darkblue;
-}
-
-button.vote.abstain {
-    background: darkslateblue;
-}
-
-span.vote {
-    margin-left: 2%;
-    width: 96%;
-    font-size: large;
-    text-align: left;
-}
-
-span.vote.players-for {
-    background: darkorange;
-}
-
-span.vote.players-against {
-    background: mediumblue;
 }
 
 span.event-text {

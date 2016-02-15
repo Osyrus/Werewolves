@@ -425,40 +425,51 @@ function endGame(villagersWin) {
 }
 
 function startLynchCountdown() {
-  var milliDelay = 5100; // execute 5 seconds from now (magic number, I know...)
-
-  var executeTime = (new Date()).valueOf() + milliDelay;
-
-  GameVariables.update("timeToVoteExecution", {$set: {value: executeTime, enabled: true}});
-
   if (executeVoteCounter) {
-    Meteor.clearTimeout(executeVoteCounter);
+    // We don't want to reset the countdown in the event on is already running (cheating!!)
+    console.log("Lynch countdown already in progress");
+  } else {
+    var milliDelay = 5100; // execute 5 seconds from now (magic number, I know...)
+
+    var executeTime = (new Date()).valueOf() + milliDelay;
+
+    GameVariables.update("timeToVoteExecution", {$set: {value: executeTime, enabled: true}});
+
+    executeVoteCounter = Meteor.setTimeout(executeVote, milliDelay);
   }
-  executeVoteCounter = Meteor.setTimeout(executeVote, milliDelay);
 }
 
 function stopLynchCountdown() {
   GameVariables.update("timeToVoteExecution", {$set: {value: 0, enabled: false}});
 
-  Meteor.clearTimeout(executeVoteCounter);
-  executeVoteCounter = null;
+  // Lets not stop what isn't started
+  if (executeVoteCounter) {
+    Meteor.clearTimeout(executeVoteCounter);
+    executeVoteCounter = null;
+  }
 }
 
 function startLynchTimeout() {
-  var milliDelay = 60000; // 1 minute?
+  if (voteTimeout) {
+    console.log("Timeout counter already in progress");
+  } else {
+    var milliDelay = 60000; // 1 minute?
 
-  var timeoutTime = (new Date()).valueOf() + milliDelay;
+    var timeoutTime = (new Date()).valueOf() + milliDelay;
 
-  GameVariables.update("timeToVoteTimeout", {$set: {value: timeoutTime, enabled: true}});
+    GameVariables.update("timeToVoteTimeout", {$set: {value: timeoutTime, enabled: true}});
 
-  voteTimeout = Meteor.setTimeout(cancelVote, milliDelay);
+    voteTimeout = Meteor.setTimeout(cancelVote, milliDelay);
+  }
 }
 
 function stopLynchTimeout() {
   GameVariables.update("timeToVoteTimeout", {$set: {value: 0, enabled: false}});
 
-  Meteor.clearTimeout(voteTimeout);
-  voteTimeout = null;
+  if (voteTimeout) {
+    Meteor.clearTimeout(voteTimeout);
+    voteTimeout = null;
+  }
 }
 
 function startGameCountdown() {

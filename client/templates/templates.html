@@ -60,62 +60,14 @@
   </div>
 </template>
 
-<template name="dayNightCycle">
-  {{#if showNightResults}}
-    {{> nightResults}}
-  {{else}}
-    {{#if showEvents}}
-      {{> eventsDisplay}}
-      <button class="ok events">OK</button>
-    {{else}}
-      {{#if dayCycle}}
-        <header>
-          {{#if voting}}
-            <h1>{{votingTitle}}</h1>
-          {{else}}
-            <h1>It is day time</h1>
-          {{/if}}
-
-          <br>
-
-          <button class="whoami">My Role</button>
-        </header>
-
-        {{#if nominating}}
-          <div class="list-group">
-            {{#each targets}}
-              {{> nominateTarget}}
-            {{/each}}
-          </div>
-          <button class="cancel">Cancel</button>
-        {{else}}
-          {{#if voting}}
-            <div class="panel {{majority.tag}}">
-              <div class="panel-heading">
-                <h1 class="panel-title">{{majority.text}}</h1>
-              </div>
-            </div>
-
-            <button class="vote do-lynch {{#if votingFor}}selected{{/if}}">Lynch {{lynchTarget}}!</button>
-            <span class="vote players-for"><i>Also for: {{playersVotingFor}}</i></span>
-            <button class="vote dont-lynch {{#if votingAgainst}}selected{{/if}}">Don't Lynch {{lynchTarget}}!</button>
-            <span class="vote players-against"><i>Also against: {{playersVotingAgainst}}</i></span>
-            <button class="vote abstain {{#if abstaining}}selected{{/if}}">Abstain</button>
-          {{else}}
-            <button class="lynch nominate">Nominate to Lynch</button>
-            <br>
-            <button class="lynch do-nothing {{#if doingNothing}}selected{{/if}}">Do nothing</button>
-          {{/if}}
-        {{/if}}
-      {{else}}
-        {{> nightTime}}
-      {{/if}}
-    {{/if}}
-  {{/if}}
-</template>
-
 <template name="nominateTarget">
-  <button class="nominatePlayer list-group-item">{{name}}</button>
+  <div class="ui item nominatePlayer">
+    <!-- This is where the players avatar could go (in a "ui avatar image")-->
+    
+    <div class="content">
+      <div class="header">{{name}}</div>
+    </div>
+  </div>
 </template>
 
 <template name="eventsDisplay">

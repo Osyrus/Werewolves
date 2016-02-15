@@ -182,6 +182,7 @@ Template.areYouSureDialog.events({
     finishedNightAction();
   },
   "click .sure.nominate": function() {
+    // TODO this may now all be redundant
     // This stuff is technically daytime stuff, but oh well
     console.log("Clicked sure in nominate");
     // Kill the array holding the number of players looking at the nominate selection screen

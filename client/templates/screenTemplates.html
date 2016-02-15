@@ -80,6 +80,7 @@
     </div>
 
     <!--TODO Hide this shit properly-->
+    <!-- Also, probably don't use a card -->
 
     <div class="row">
       <div class="column">
@@ -127,4 +128,29 @@
       <!--<a class="btn btn-default btn-lg seen-role" href="#" role="button">OK, I'm good...</a>-->
     <!--</p>-->
   <!--</div>-->
+</template>
+
+<template name="dayNightCycle">
+  {{#if showNightResults}}
+    {{> nightResults}}
+  {{else}}
+    {{#if showEvents}}
+      {{> eventsDisplay}}
+      <button class="ok events">OK</button>
+    {{else}}
+      {{#if dayCycle}}
+        {{#if nominating}}
+          {{> nominationView}}
+        {{else}}
+          {{#if voting}}
+            {{> nominationVoteView}}
+          {{else}}
+            {{> dayView}}
+          {{/if}}
+        {{/if}}
+      {{else}}
+        {{> nightTime}}
+      {{/if}}
+    {{/if}}
+  {{/if}}
 </template>

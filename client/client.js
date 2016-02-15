@@ -4,6 +4,14 @@ var startDep = new Tracker.Dependency;
 
 nightViewDep = new Tracker.Dependency;
 
+Template.navbar.helpers({
+  inGame: function() {
+    var currentGameMode = GameVariables.findOne("gameMode").value;
+
+    return currentGameMode == "inGame";
+  }
+});
+
 Template.body.helpers({
   // These are the helpers that tell the html which screen to show
   lobby: function() {
@@ -340,14 +348,143 @@ Template.dayNightCycle.helpers({
     // If the clients player is in the list, the index will be 0 onwards, else it will be -1
     return playersNominating.indexOf(getPlayer()._id) >= 0;
   },
+  "voting": function() {
+    return GameVariables.findOne("lynchVote").enabled;
+  },
+  "showNightResults": function() {
+    nightViewDep.depend();
+
+    var player = getPlayer();
+
+    // Also need to show this if everyone hasn't finished seeing their results
+    //getCurrentCycle();
+
+    var cycleNum = GameVariables.findOne("cycleNumber").value;
+    var nightTime = cycleNum % 2 == 0;
+
+    if (!player.seenNightResults) {
+      return true;
+    }
+
+    return (nightTime && player.nightActionDone);
+  },
+  "showEvents": function() {
+    var currentCycle = GameVariables.findOne("cycleNumber").value;
+
+    var events = EventList.find({cycleNumber: (currentCycle - 1)});
+
+    return (events.count() > 0 && !getPlayer().seenNewEvents);
+  }
+});
+
+Template.dayView.helpers({
   "doingNothing": function() {
     return getPlayer().doNothing;
+  }
+});
+
+Template.dayView.events({
+  "click .nominate": function(event) {
+    // Get the list of people looking at the selection screen
+    var playersNominating = GameVariables.findOne("playersNominating").value;
+    // Add the current player (who pushed the button) to this list
+    playersNominating.push(getPlayer()._id);
+    // Update the list back to global space
+    GameVariables.update("playersNominating", {$set: {value: playersNominating}});
+    Players.update(getPlayer()._id, {$set: {doNothing: false}});
   },
+  "click .do-nothing": function(event) {
+    Players.update(getPlayer()._id, {$set: {doNothing: true}});
+
+    if (allPlayersDoingNothing()) {
+      Meteor.call("doingNothingToday");
+    }
+  }
+});
+
+Template.nominateTarget.events({
+  "click .nominatePlayer": function(event) {
+    if (!Session.get("nominationTarget")) {
+      // Get the lynch target player and the nominator
+      var target = Players.findOne(this._id);
+
+      //console.log("Clicked nominate on " + target.name);
+
+      Session.set("nominationTarget", target);
+
+      $('.ui.modal.nominateCheck')
+        .modal({
+          closable: false,
+          onApprove: function() {
+            //console.log("Clicked sure in nominate");
+            // Kill the array holding the number of players looking at the nominate selection screen
+            GameVariables.update("playersNominating", {$set: {value: []}});
+            // Set all the players votes back to abstain for the impending vote
+            var players = getAlivePlayers();
+            players.forEach(function (player) {
+              // Don't do this yet, for testing purposes (otherwise the bots votes get reset)
+              // TODO Remember this is here!!!
+              //Players.update(player._id, {$set: {voteChoice: 0}});
+            });
+            // Get the nominator and nominee
+            var target = Session.get("nominationTarget");
+            Session.set("nominationTarget", null);
+            var nominator = getPlayer();
+            // Set the variable to move to the yes/no vote
+            GameVariables.update("lynchVote", {$set: {value: [target._id, nominator._id], enabled: true}});
+            // The nominator starts voting to lynch the target
+            Players.update(nominator._id, {$set: {voteChoice: 1}});
+            // Let the server know that the lynch vote has started
+            Meteor.call("beginLynchVote");
+          },
+          onDeny: function() {
+            Session.set("nominationTarget", null);
+          }
+        })
+        .modal("show");
+    }
+  }
+});
+
+Template.nominationView.helpers({
   "targets": function() {
     return Players.find({joined: true, alive: true});
   },
-  "voting": function() {
-    return GameVariables.findOne("lynchVote").enabled;
+  "target": function() {
+    return Session.get("nominationTarget").name;
+  }
+});
+
+Template.nominationVoteView.helpers({
+  "majority": function() {
+    votesDep.depend();
+
+    var timeToExecute = GameVariables.findOne("timeToVoteExecution");
+    var voteDirection = GameVariables.findOne("voteDirection").value;
+    var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
+
+    var majorityText = "Majority reached ";
+    majorityText += voteDirection ? "to lynch " : "not to lynch ";
+    majorityText += target.name + "!";
+
+    var majorityTag = "orange";
+
+    if (timeToExecute.enabled) {
+      majorityTag = voteDirection ? "red" : "blue";
+
+      if (TimeSync.serverTime() <= timeToExecute.value) {
+        majorityText += " In: " + Math.floor((timeToExecute.value - TimeSync.serverTime()) / 1000);// Convert to seconds from ms
+      }
+    } else {
+      var timeToTimeout = GameVariables.findOne("timeToVoteTimeout").value;
+
+      majorityText = "Voting time left: " + Math.floor((timeToTimeout - TimeSync.serverTime())/1000);
+    }
+
+    return {
+      text: majorityText,
+      tag: majorityTag
+    };
   },
   votingTitle: function() {
     var voteDetails = GameVariables.findOne("lynchVote");
@@ -386,60 +523,27 @@ Template.dayNightCycle.helpers({
     votesDep.depend();
 
     return (GameVariables.findOne("timeToVoteExecution").enabled);
+  }
+});
+
+Template.nominationVoteView.events({
+  "click .do-lynch": function(event) {
+    Meteor.call("changeLynchVote", getPlayer()._id, 1);
+
+    //Players.update(getPlayer()._id, {$set: {voteChoice: 1}});
+    //checkLynchVotes();
   },
-  "majority": function() {
-    votesDep.depend();
+  "click .dont-lynch": function(event) {
+    Meteor.call("changeLynchVote", getPlayer()._id, 2);
 
-    var timeToExecute = GameVariables.findOne("timeToVoteExecution");
-    var voteDirection = GameVariables.findOne("voteDirection").value;
-    var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
-
-    var majorityText = "Majority reached ";
-    majorityText += voteDirection ? "to lynch " : "not to lynch ";
-    majorityText += target.name + "!";
-
-    var majorityTag = "panel-info";
-
-    if (timeToExecute.enabled) {
-      majorityTag = voteDirection ? "panel-danger" : "panel-primary";
-
-      if (TimeSync.serverTime() <= timeToExecute.value) {
-        majorityText += " In: " + Math.floor((timeToExecute.value - TimeSync.serverTime()) / 1000);// Convert to seconds from ms
-      }
-    } else {
-      var timeToTimeout = GameVariables.findOne("timeToVoteTimeout").value;
-
-      majorityText = "Time left: " + Math.floor((timeToTimeout - TimeSync.serverTime())/1000);
-    }
-
-    return {
-      text: majorityText,
-      tag: majorityTag
-    };
+    //Players.update(getPlayer()._id, {$set: {voteChoice: 2}});
+    //checkLynchVotes();
   },
-  "showNightResults": function() {
-    nightViewDep.depend();
+  "click .abstain": function(event) {
+    Meteor.call("changeLynchVote", getPlayer()._id, 0);
 
-    var player = getPlayer();
-
-    // Also need to show this if everyone hasn't finished seeing their results
-    //getCurrentCycle();
-
-    var cycleNum = GameVariables.findOne("cycleNumber").value;
-    var nightTime = cycleNum % 2 == 0;
-
-    if (!player.seenNightResults) {
-      return true;
-    }
-
-    return (nightTime && player.nightActionDone);
-  },
-  "showEvents": function() {
-    var currentCycle = GameVariables.findOne("cycleNumber").value;
-
-    var events = EventList.find({cycleNumber: (currentCycle - 1)});
-
-    return (events.count() > 0 && !getPlayer().seenNewEvents);
+    //Players.update(getPlayer()._id, {$set: {voteChoice: 0}});
+    //checkLynchVotes();
   }
 });
 
@@ -465,22 +569,6 @@ Template.eventDisplay.helpers({
 });
 
 Template.dayNightCycle.events({
-  "click .lynch.nominate": function(event) {
-    // Get the list of people looking at the selection screen
-    var playersNominating = GameVariables.findOne("playersNominating").value;
-    // Add the current player (who pushed the button) to this list
-    playersNominating.push(getPlayer()._id);
-    // Update the list back to global space
-    GameVariables.update("playersNominating", {$set: {value: playersNominating}});
-    Players.update(getPlayer()._id, {$set: {doNothing: false}});
-  },
-  "click .lynch.do-nothing": function(event) {
-    Players.update(getPlayer()._id, {$set: {doNothing: true}});
-
-    if (allPlayersDoingNothing()) {
-      Meteor.call("doingNothingToday");
-    }
-  },
   "click .events.ok": function(event) {
     // Update that the player has seen the events
     Players.update(getPlayer()._id, {$set: {seenNewEvents: true}});
@@ -493,49 +581,6 @@ Template.dayNightCycle.events({
     playersNominating.splice(playerIndex, 1);
     // Update the list back to global space
     GameVariables.update("playersNominating", {$set: {value: playersNominating}});
-  },
-  "click .vote.do-lynch": function(event) {
-    Meteor.call("changeLynchVote", getPlayer()._id, 1);
-
-    //Players.update(getPlayer()._id, {$set: {voteChoice: 1}});
-    //checkLynchVotes();
-  },
-  "click .vote.dont-lynch": function(event) {
-    Meteor.call("changeLynchVote", getPlayer()._id, 2);
-
-    //Players.update(getPlayer()._id, {$set: {voteChoice: 2}});
-    //checkLynchVotes();
-  },
-  "click .vote.abstain": function(event) {
-    Meteor.call("changeLynchVote", getPlayer()._id, 0);
-
-    //Players.update(getPlayer()._id, {$set: {voteChoice: 0}});
-    //checkLynchVotes();
-  }
-});
-
-Template.nominateTarget.events({
-  "click .nominatePlayer": function(event) {
-    // Get the lynch target player and the targetter
-    var target = Players.findOne(this._id);
-
-    var nominationDetails = {
-      nominatedPlayer: target._id,
-      nominator: getPlayer()._id
-    };
-
-    var titleText = "Are you sure you want to nominate " + target.name + "?";
-    var contentText = "If you are sure, a vote will be called for all players except " + target.name + ".";
-    contentText += " All players will also see that the vote was called by you.";
-
-    var modalData = {
-      title: titleText,
-      content: contentText,
-      sureTag: "nominate",
-      data: nominationDetails
-    };
-
-    Modal.show("areYouSureDialog", modalData);
   }
 });
 
