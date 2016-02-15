@@ -21,6 +21,24 @@
   <div class="item">
     <!--<div class="ui right pointing big {{#if roleEnabled}}green{{else}}red{{/if}} label">{{name}}</div>-->
 
+    <div class="right floated content">
+      <div class="ui right pointing label">
+        Vote
+      </div>
+
+      <div class="ui icon buttons">
+        <button class="ui button vote-down {{#if equals vote -1}}red{{else}}{{#if cantVote}}grey{{/if}}{{/if}}">
+          <i class="thumbs down icon"></i>
+        </button>
+        <button class="ui button vote-neutral {{#if equals vote 0}}blue{{else}}{{#if cantVote}}grey{{/if}}{{/if}}">
+          <i class="ellipsis horizontal icon"></i>
+        </button>
+        <button class="ui button vote-up {{#if equals vote 1}}green{{else}}{{#if cantVote}}grey{{/if}}{{/if}}">
+          <i class="thumbs up icon"></i>
+        </button>
+      </div>
+    </div>
+
     <div class="content">
       <!-- Could actually put an image avatar here of the role -->
 
@@ -37,24 +55,6 @@
         <p>
           {{shortDescription}}
         </p>
-      </div>
-
-      <div class="extra">
-        <div class="ui icon buttons">
-          <button class="ui button vote-down {{#if equals vote -1}}red{{else}}{{#if cantVote}}grey{{/if}}{{/if}}">
-            <i class="thumbs down icon"></i>
-          </button>
-          <button class="ui button vote-neutral {{#if equals vote 0}}blue{{else}}{{#if cantVote}}grey{{/if}}{{/if}}">
-            <i class="ellipsis horizontal icon"></i>
-          </button>
-          <button class="ui button vote-up {{#if equals vote 1}}green{{else}}{{#if cantVote}}grey{{/if}}{{/if}}">
-            <i class="thumbs up icon"></i>
-          </button>
-        </div>
-
-        <div class="ui left pointing label">
-          Vote
-        </div>
       </div>
     </div>
   </div>
