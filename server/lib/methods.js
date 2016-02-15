@@ -426,17 +426,16 @@ function endGame(villagersWin) {
 
 function startLynchCountdown() {
   if (executeVoteCounter) {
-    // We don't want to reset the countdown in the event on is already running (cheating!!)
-    console.log("Lynch countdown already in progress");
-  } else {
-    var milliDelay = 5100; // execute 5 seconds from now (magic number, I know...)
-
-    var executeTime = (new Date()).valueOf() + milliDelay;
-
-    GameVariables.update("timeToVoteExecution", {$set: {value: executeTime, enabled: true}});
-
-    executeVoteCounter = Meteor.setTimeout(executeVote, milliDelay);
+    Meteor.clearTimeout(executeVoteCounter);
   }
+
+  var milliDelay = 5100; // execute 5 seconds from now (magic number, I know...)
+
+  var executeTime = (new Date()).valueOf() + milliDelay;
+
+  GameVariables.update("timeToVoteExecution", {$set: {value: executeTime, enabled: true}});
+
+  executeVoteCounter = Meteor.setTimeout(executeVote, milliDelay);
 }
 
 function stopLynchCountdown() {

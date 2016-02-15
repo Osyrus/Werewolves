@@ -319,7 +319,7 @@ Template.whoAmI.events({
   }
 });
 
-Template.eventsDisplay.helpers({
+Template.eventList.helpers({
   "events": function() {
     var player = getPlayer();
 
@@ -333,6 +333,63 @@ Template.eventsDisplay.helpers({
       // This should only show when spectating
       return EventList.find({}, {sort: {timeAdded: -1}});
     }
+  }
+});
+
+Template.eventsDisplay.events({
+  "click .ok": function(event) {
+    // Update that the player has seen the events
+    Players.update(getPlayer()._id, {$set: {seenNewEvents: true}});
+  }
+});
+
+Template.eventDisplay.helpers({
+  revealRole: function() {
+    var cycle = this.cycleNumber;
+
+    if (cycle % 2 == 0) {
+      return GameVariables.findOne("revealRole").value.night;
+    } else {
+      return GameVariables.findOne("revealRole").value.day;
+    }
+  },
+  revealTag: function() {
+    // This requires the events list to be boostrapped first
+
+    // The idea here would be to pass a tag that would set the colour based on what the event information is.
+
+    // For example, if reveal role was disabled for this cycle, then just pass back the "info" tag.
+    // If the role is to be revealed on death, then pass the warning tag for a villager, and the danger tag for a werewolf.
+    // If the event is not to do with death, then send something to emphasise that (for example, the witch hexxing someone).
+
+    var tag = "";
+    var reveal = false;
+
+    var cycle = this.cycleNumber;
+
+    if (cycle % 2 == 0) {
+      reveal = GameVariables.findOne("revealRole").value.night;
+    } else {
+      reveal = GameVariables.findOne("revealRole").value.day;
+    }
+
+    if (reveal) {
+      var eventType = this.type;
+
+      switch (eventType) {
+        case "vDeath":
+          tag = "red";
+          break;
+        case "wwDeath":
+          tag = "green";
+          break;
+        case "warning":
+          tag = "orange";
+          break;
+      }
+    }
+
+    return tag;
   }
 });
 
@@ -547,32 +604,7 @@ Template.nominationVoteView.events({
   }
 });
 
-Template.eventDisplay.helpers({
-  revealRole: function() {
-    var cycle = this.cycleNumber;
-
-    if (cycle % 2 == 0) {
-      return GameVariables.findOne("revealRole").value.night;
-    } else {
-      return GameVariables.findOne("revealRole").value.day;
-    }
-  },
-  revealTag: function() {
-    // This requires the events list to be boostrapped first
-
-    // The idea here would be to pass a tag that would set the colour based on what the event information is.
-
-    // For example, if reveal role was disabled for this cycle, then just pass back the "info" tag.
-    // If the role is to be revealed on death, then pass the warning tag for a villager, and the danger tag for a werewolf.
-    // If the event is not to do with death, then send something to emphasise that (for example, the witch hexxing someone).
-  }
-});
-
 Template.dayNightCycle.events({
-  "click .events.ok": function(event) {
-    // Update that the player has seen the events
-    Players.update(getPlayer()._id, {$set: {seenNewEvents: true}});
-  },
   "click .cancel": function(event) {
     // Get the list of people looking at the selection screen
     var playersNominating = GameVariables.findOne("playersNominating").value;

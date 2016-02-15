@@ -63,15 +63,19 @@
 <template name="nominateTarget">
   <div class="ui item nominatePlayer">
     <!-- This is where the players avatar could go (in a "ui avatar image")-->
-    
+
     <div class="content">
       <div class="header">{{name}}</div>
     </div>
   </div>
 </template>
 
-<template name="eventsDisplay">
-  <ul class="list-group"> <!-- Think about perhaps using bootstrap panels here -->
+<template name="eventList">
+  <ul class="ui segments">
+    <div class="ui top attached blue label">
+      The events from the last cycle
+    </div>
+
     {{#each events}}
       {{> eventDisplay}}
     {{/each}}
@@ -79,11 +83,9 @@
 </template>
 
 <template name="eventDisplay">
-  <li class="list-group-item">
-    <span class="event-text {{#if revealRole}}{{type}}{{/if}}">
-      {{text}}
-    </span>
-  </li>
+  <div class="ui {{revealTag}} segment">
+    <p>{{text}}</p>
+  </div>
 </template>
 
 <template name="youDiedScreen">
@@ -98,49 +100,5 @@
 
 <template name="spectatorScreen">
   <span>You are spectating the game.</span>
-  {{> eventsDisplay}}
-</template>
-
-<template name="endGameScreen">
-  <div class="panel {{result.tag}}">
-    <div class="panel-heading">
-      <h1 class="panel-title">{{result.title}}</h1>
-    </div>
-
-    <div class="panel-body">
-      {{result.text}}
-    </div>
-  </div>
-
-  <div class="panel panel-info">
-    <div class="panel-heading">
-      <h2 class="panel-title">The last events...</h2>
-    </div>
-    <div class="panel-body">
-      {{> eventsDisplay}}
-    </div>
-  </div>
-
-  <div class="panel panel-default">
-    <!-- Default panel contents -->
-    <div class="panel-heading">
-      <h2 class="panel-title">The roles</h2>
-    </div>
-    <div class="panel-body">
-      <p>The roles were assigned as follows...</p>
-    </div>
-
-    <!-- List group -->
-    <ul class="list-group">
-      {{#each roleList}}
-        <li class="list-group-item {{tag}}">
-          <p class="glyphicon {{icon}}"></p> {{text}}
-        </li>
-      {{/each}}
-    </ul>
-  </div>
-
-  <button class="btn btn-primary btn-lg js-seenEndGame">
-    OK
-  </button>
+  {{> eventList}}
 </template>

@@ -19,6 +19,7 @@
           <button class="fluid ui massive red button nominate">Nominate</button>
 
           <div class="ui horizontal divider">Or</div>
+
           <button class="fluid ui massive {{#if doingNothing}}grey{{else}}blue{{/if}} button do-nothing">
             {{#if doingNothing}}
               Doing Nothing
@@ -99,19 +100,39 @@
           </div>
 
           <div class="ui segment">
-            <button class="fluid ui red {{#if votingFor}}active{{/if}} massive button do-lynch">Lynch {{lynchTarget}}!</button>
+            <button class="fluid ui {{#if votingFor}}red{{/if}} massive button do-lynch">
+              Lynch {{lynchTarget}}!
+            </button>
             <div class="meta"><i>Also for: {{playersVotingFor}}</i></div>
           </div>
 
           <div class="ui segment">
-            <button class="fluid ui blue {{#if votingAgainst}}active{{/if}} massive button dont-lynch">Don't Lynch {{lynchTarget}}!</button>
+            <button class="fluid ui {{#if votingAgainst}}blue{{/if}} massive button dont-lynch">
+              Don't Lynch {{lynchTarget}}!
+            </button>
             <div class="meta"><i>Also against: {{playersVotingAgainst}}</i></div>
           </div>
 
           <div class="ui segment">
-            <button class="fluid ui grey {{#if abstaining}}active{{/if}} massive button abstain">Abstain</button>
+            <button class="fluid ui {{#if abstaining}}grey{{/if}} massive button abstain">Abstain</button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template name="eventsDisplay">
+  <div class="ui main page grid">
+    <div class="row">
+      <div class="column">
+        {{> eventList}}
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <button class="fluid ui blue button ok">OK</button>
       </div>
     </div>
   </div>

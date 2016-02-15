@@ -176,36 +176,6 @@ button.done {
     border: solid 1px dimgrey;
 }
 
-button.ok {
-    margin-left: 2%;
-    width: 96%;
-    background: darkgreen;
-}
-
-button.cancel {
-    margin-left: 2%;
-    background: darkblue;
-    width: 96%;
-}
-
-span.event-text {
-    margin-left: 2%;
-    width: 96%;
-    font-size: large;
-}
-
-span.event-text.vDeath {
-    background: darkorange;
-}
-
-span.event-text.wwDeath {
-    background: darkred;
-}
-
-span.event-text.warning {
-    background: orange;
-}
-
 button.ok.waiting {
     background: dimgrey;
 }
