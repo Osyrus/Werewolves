@@ -9,13 +9,16 @@ body {
     /*right: 0;*/
 }
 
-.ui.grid.main{
+.ui.grid.main {
     margin-top: 0px;
     margin-left: 4%;
+}
+
+.ui.grid.main.whoAmI {
     margin-bottom: 70px;
 }
 
-.ui.menu{
+.ui.menu {
     border-radius: 0px !important;
 }
 
@@ -186,17 +189,4 @@ h3.aggressive {
 
 h3.passive {
     color: green;
-}
-
-.role-jumbotron {
-    height: 500px;
-    position: relative;
-    padding-bottom: 20px;
-    margin-top: 20px;
-}
-
-.whoami-buttons {
-    position: absolute;
-    bottom: 0;
-    left: 20px;
 }

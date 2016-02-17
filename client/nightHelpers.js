@@ -134,6 +134,7 @@ Template.playerSelectionList.helpers({
   }
 });
 
+// TODO get rid of the Bootstrap modal call, also get rid of the Meteor call for the Id
 Template.playerSelection.events({
   "click .select-player": function(event) {
     var targetId = this._id;

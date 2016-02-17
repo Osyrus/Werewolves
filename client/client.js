@@ -378,13 +378,13 @@ Template.eventDisplay.helpers({
 
       switch (eventType) {
         case "vDeath":
-          tag = "red";
+          tag = "inverted red";
           break;
         case "wwDeath":
-          tag = "green";
+          tag = "inverted green";
           break;
         case "warning":
-          tag = "orange";
+          tag = "inverted orange";
           break;
       }
     }
@@ -656,12 +656,14 @@ Template.endGameScreen.helpers({
     var text = "This is the text that possibly describes the way the game ended or whatnot...";
 
     var villagersWon = GameVariables.findOne("lastGameResult").value;
+    var vWin = false;
 
     if (villagersWon) {
-      tag = "panel-success";
-      title = "The Villagers have won!!"
+      tag = "green";
+      title = "The Villagers have won!!";
+      vWin = true;
     } else {
-      tag = "panel-danger";
+      tag = "red";
       title = "The Werewolves have won!!";
     }
 
@@ -673,7 +675,8 @@ Template.endGameScreen.helpers({
     return {
       title: title,
       tag: tag,
-      text: text
+      text: text,
+      vWin: vWin
     }
   },
   roleList: function() {
@@ -689,24 +692,28 @@ Template.endGameScreen.helpers({
 
       // Generate the text and tag for the list
       var text = player.name + " was a " + role.name;
-      var tag = "list-group-item-info";
+      var tag = "";
 
       // Change the tag to suit the role
       if (role._id != villager._id) {
         if (role.name == "Werewolf") {
-          tag = "list-group-item-danger";
+          tag = "inverted red";
         } else if (role.aggressive) {
           // This includes roles like the Witch and the Saint
-          tag = "list-group-item-warning";
+          tag = "inverted orange";
         } else {
           // This includes roles like the Seer and Doctor
-          tag = "list-group-item-success";
+          tag = "inverted green";
         }
       }
 
-      var icon = "glyphicon-remove"; // This looks like death, kinda...
+      var icon = "black crosshairs"; // This looks like death, kinda...
       if (player.alive) {
-        icon = "glyphicon-heart"; // This looks a lot like alive, so cool!
+        if (tag == "inverted red") {
+          icon = "heart"; // Otherwise the werewolf role display will be a red heart on a red background!
+        } else {
+          icon = "red heart"; // This looks a lot like alive, so cool!
+        }
       }
 
       // Now add this entry to the list

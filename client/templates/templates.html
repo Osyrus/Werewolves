@@ -19,13 +19,7 @@
 
 <template name="role">
   <div class="item">
-    <!--<div class="ui right pointing big {{#if roleEnabled}}green{{else}}red{{/if}} label">{{name}}</div>-->
-
     <div class="right floated content">
-      <div class="ui right pointing label">
-        Vote
-      </div>
-
       <div class="ui icon buttons">
         <button class="ui button vote-down {{#if equals vote -1}}red{{else}}{{#if cantVote}}grey{{/if}}{{/if}}">
           <i class="thumbs down icon"></i>
@@ -84,7 +78,7 @@
 
 <template name="eventDisplay">
   <div class="ui {{revealTag}} segment">
-    <p>{{text}}</p>
+    {{text}}
   </div>
 </template>
 

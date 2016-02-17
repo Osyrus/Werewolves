@@ -68,7 +68,7 @@
 </template>
 
 <template name="whoAmI">
-  <div class="ui page grid main">
+  <div class="ui page grid main whoAmI">
     <div class="row">
       <div class="column">
         <div class="ui raised segment">
@@ -156,45 +156,57 @@
 
 <!-- TODO Semantify this!-->
 <template name="endGameScreen">
-  <div class="panel {{result.tag}}">
-    <div class="panel-heading">
-      <h1 class="panel-title">{{result.title}}</h1>
+  <div class="ui page grid main">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          {{#if result.vWin}}
+            <i class="green tree icon"></i>
+          {{else}}
+            <i class="red paw icon"></i>
+          {{/if}}
+          {{result.title}}
+        </h1>
+      </div>
     </div>
 
-    <div class="panel-body">
-      {{result.text}}
+    <div class="row">
+      <div class="column">
+        <div class="ui segment">
+          {{result.text}}
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        {{> eventList}}
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <div class="ui segments">
+          <div class="ui top attached blue label">
+            The Roles
+          </div>
+
+          {{#each roleList}}
+            <div class="ui {{tag}} segment">
+              <i class="{{icon}} icon"></i>
+              {{text}}
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <button class="ui fluid large blue button js-seenEndGame">
+          OK
+        </button>
+      </div>
     </div>
   </div>
-
-  <div class="panel panel-info">
-    <div class="panel-heading">
-      <h2 class="panel-title">The last events...</h2>
-    </div>
-    <div class="panel-body">
-      {{> eventList}}
-    </div>
-  </div>
-
-  <div class="panel panel-default">
-    <!-- Default panel contents -->
-    <div class="panel-heading">
-      <h2 class="panel-title">The roles</h2>
-    </div>
-    <div class="panel-body">
-      <p>The roles were assigned as follows...</p>
-    </div>
-
-    <!-- List group -->
-    <ul class="list-group">
-      {{#each roleList}}
-        <li class="list-group-item {{tag}}">
-          <p class="glyphicon {{icon}}"></p> {{text}}
-        </li>
-      {{/each}}
-    </ul>
-  </div>
-
-  <button class="btn btn-primary btn-lg js-seenEndGame">
-    OK
-  </button>
 </template>
