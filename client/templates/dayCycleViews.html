@@ -1,10 +1,10 @@
 <template name="dayView">
-  <div class="ui page grid main">
+  <div class="ui centered page grid main">
     <div class="row">
       <div class="column">
         <h1 class="ui center aligned icon header">
           <i class="yellow sun icon"></i>
-          It is daytime
+          It is Day
         </h1>
       </div>
     </div>
@@ -34,7 +34,16 @@
 </template>
 
 <template name="nominationView">
-  <div class="ui page grid main">
+  <div class="ui centered page grid main">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="users icon"></i>
+          Make a Nomination
+        </h1>
+      </div>
+    </div>
+
     <div class="row">
       <div class="column">
         <div class="ui inverted segment">
@@ -53,7 +62,7 @@
 
     <div class="row">
       <div class="column">
-        <button class="fluid ui blue button cancel">Cancel</button>
+        <button class="fluid ui blue massive button cancel">Cancel</button>
       </div>
     </div>
 
@@ -79,10 +88,13 @@
 </template>
 
 <template name="nominationVoteView">
-  <div class="ui page main grid">
+  <div class="ui centered page main grid">
     <div class="row">
       <div class="column">
-        <h1 class="ui centered header">{{votingTitle}}</h1>
+        <h1 class="ui center aligned icon header">
+          <i class="{{majority.tag}} warning icon"></i>
+          {{votingTitle}}
+        </h1>
 
         <div class="ui divider"></div>
 
@@ -123,7 +135,16 @@
 </template>
 
 <template name="eventsDisplay">
-  <div class="ui main page grid">
+  <div class="ui centered main page grid">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="announcement icon"></i>
+          Event List
+        </h1>
+      </div>
+    </div>
+
     <div class="row">
       <div class="column">
         {{> eventList}}
@@ -132,7 +153,7 @@
 
     <div class="row">
       <div class="column">
-        <button class="fluid ui blue button ok">OK</button>
+        <button class="ui fluid massive blue button ok">OK</button>
       </div>
     </div>
   </div>

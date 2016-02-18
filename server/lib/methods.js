@@ -245,6 +245,13 @@ Meteor.methods({
     moveToNextCycle();
   },
   "setRoleTarget": function(roleId, targetId) {
+    var role = Roles.findOne(roleId);
+    var target = Players.findOne(targetId);
+
+    //console.log(roleId);
+
+    console.log("Setting " + role.name + " target to " + target.name);
+
     Roles.update(roleId, {$set: {target: targetId}});
   },
   "getRoleTarget": function(roleName) {

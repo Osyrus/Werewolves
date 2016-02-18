@@ -469,6 +469,8 @@ Template.nominateTarget.events({
 
       Session.set("nominationTarget", target);
 
+      // TODO is the Sessions reactivity causing this to fire multiple times?
+      // Perhaps a "hide others" behaviour will patch this (not fix it though...)
       $('.ui.modal.nominateCheck')
         .modal({
           closable: false,
@@ -498,7 +500,9 @@ Template.nominateTarget.events({
             Session.set("nominationTarget", null);
           }
         })
-        .modal("show");
+        .modal("show")
+        .modal('hide others', true)
+        .modal('refresh', true);
     }
   }
 });
@@ -797,6 +801,7 @@ function changeVote(roleId, newVote) {
   votesDep.changed();
 }
 
+// TODO this should be done server side!
 function countVotes() {
   // We only want to do this for non critical roles.
   var talliedRoles = Roles.find({critical: false}, {sort: {votes: -1}});
@@ -811,10 +816,10 @@ function countVotes() {
   // This is the calculation that determines is the role is enabled or not.
   var numVillagers = Players.find({joined: true}).count() - numWerewolves();
 
-  console.log("Number of villagers that can take on a role = " + numVillagers);
+  //console.log("Number of villagers that can take on a role = " + numVillagers);
 
   Roles.find({critical: false}).forEach(function(role) {
-    console.log(role.name + "'s order is " + role.order);
+    //console.log(role.name + "'s order is " + role.order);
 
     var enabled = false;
     // To be enabled, the role must have a positive vote score, and have a high enough order
