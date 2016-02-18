@@ -55,12 +55,16 @@
 </template>
 
 <template name="nominateTarget">
-  <div class="ui item nominatePlayer">
+  <div class="ui {{enabled.tag}} segment {{#if enabled.enabled}}nominatePlayer{{/if}}">
+    {{#if enabled.disabled}}
+      <div class="ui right ribbon label">
+        <p>Already nominated today</p>
+      </div>
+    {{/if}}
+
     <!-- This is where the players avatar could go (in a "ui avatar image")-->
 
-    <div class="content">
-      <div class="header">{{name}}</div>
-    </div>
+    <p>{{name}}</p>
   </div>
 </template>
 

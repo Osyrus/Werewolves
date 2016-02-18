@@ -46,16 +46,14 @@
 
     <div class="row">
       <div class="column">
-        <div class="ui inverted segment">
+        <div class="ui segments">
           <div class="ui top attached red label">
-            Potential Nominees List
+            Make your nomination
           </div>
 
-          <div class="ui middle aligned inverted selection list">
-            {{#each targets}}
-              {{> nominateTarget}}
-            {{/each}}
-          </div>
+          {{#each targets}}
+            {{> nominateTarget}}
+          {{/each}}
         </div>
       </div>
     </div>

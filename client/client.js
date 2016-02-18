@@ -457,6 +457,39 @@ Template.dayView.events({
   }
 });
 
+Template.nominateTarget.helpers({
+  enabled: function() {
+    // Ensure the double jeopardy rule is enforced.
+    var player = getPlayer();
+    var targetId = this._id;
+
+    var previousNominations = player.previousNominations;
+
+    var enabled = true;
+    var tag = "";
+
+    // Only do this if this setting is enabled
+    var djEnabled = GameSettings.findOne("doubleJeopardy").enabled;
+
+    if (previousNominations && djEnabled) {
+      var numNominations = previousNominations.length;
+
+      for (i = 0; i < numNominations; i++) {
+        if (previousNominations[i] == targetId) {
+          enabled = false;
+          tag = "inverted grey";
+        }
+      }
+    }
+
+    return {
+      tag: tag,
+      disabled: !enabled, // Makes it easier on the handlebars html side
+      enabled: enabled
+    }
+  }
+});
+
 Template.nominateTarget.events({
   "click .nominatePlayer": function(event) {
     if (!Session.get("nominationTarget")) {
@@ -491,6 +524,9 @@ Template.nominateTarget.events({
             GameVariables.update("lynchVote", {$set: {value: [target._id, nominator._id], enabled: true}});
             // The nominator starts voting to lynch the target
             Players.update(nominator._id, {$set: {voteChoice: 1}});
+            // The nominator also needs this nomination tracked, to make sure they can't nominate
+            // the same person again in the same day cycle (double jeopardy rule).
+            Players.update(nominator._id, {$push: {previousNominations: target._id}});
             // Let the server know that the lynch vote has started
             Meteor.call("beginLynchVote");
           },
@@ -510,7 +546,10 @@ Template.nominationView.helpers({
     return Players.find({joined: true, alive: true});
   },
   "target": function() {
-    return Session.get("nominationTarget").name;
+    if (Session.get("nominationTarget"))
+      return Session.get("nominationTarget").name;
+    else
+      return "Unknown";
   }
 });
 

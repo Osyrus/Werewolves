@@ -372,6 +372,9 @@ function moveToNextCycle() {
   players.forEach(function(player) {
     Players.update(player._id, {$set: {seenNewEvents: false, target: 0}});
 
+    // Reset the double jeopardy rule
+    Players.update(player._id, {$set: {previousNominations: []}});
+
     if (!player.bot) {
       //Players.update(player._id, {$set: {nightActionDone: false}});
       Players.update(player._id, {$set: {doNothing: false}});
