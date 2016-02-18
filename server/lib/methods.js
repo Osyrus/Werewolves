@@ -302,6 +302,66 @@ Meteor.methods({
 
       return false;
     }
+  },
+  "changeRoleVote": function(playerId, roleId, newVote) {
+    var vote = RoleVotes.findOne({playerId: playerId, roleId: roleId});
+
+    // Check to see if an entry for this players vote exists, if so update it, else make one.
+    if (vote) {
+      RoleVotes.update(vote._id, {$set: {vote: newVote}});
+    } else {
+      RoleVotes.insert({
+        roleId: roleId,
+        playerId: playerId,
+        vote: newVote
+      });
+    }
+
+    // As the vote count for this role has now changed, recount the vote for this role
+    var votes = RoleVotes.find({roleId: roleId});
+    var tally = 0;
+
+    votes.forEach(function (vote) {
+      tally += vote.vote;
+    });
+
+    // Update the vote count to the role
+    Roles.update(roleId, {$set: {votes: tally}});
+
+    // Some debug console logs
+    //console.log("Processing role votes for " + Roles.findOne(roleId).name);
+    //console.log("Adding votes, tally: " + tally);
+
+    // Now to count the votes
+
+    // We only want to do this for non critical roles.
+    var talliedRoles = Roles.find({critical: false}, {sort: {votes: -1}});
+
+    var count = 1;
+    talliedRoles.forEach(function(role) {
+      Roles.update(role._id, {$set: {order: count}});
+      count += 1;
+      //console.log(role.name + " got " + role.votes + " votes.");
+    });
+
+    // This is the calculation that determines is the role is enabled or not.
+    var numVillagers = Players.find({joined: true}).count() - numWerewolves();
+
+    //console.log("Number of villagers that can take on a role = " + numVillagers);
+
+    Roles.find({critical: false}).forEach(function(role) {
+      //console.log(role.name + "'s order is " + role.order);
+
+      var enabled = false;
+      // To be enabled, the role must have a positive vote score, and have a high enough order
+      if (role.votes > 0) {
+        if (role.order <= numVillagers) {
+          enabled = true;
+        }
+      }
+
+      Roles.update(role._id, {$set: {enabled: enabled}});
+    });
   }
 });
 
@@ -647,6 +707,13 @@ function executeVote() {
     if (!player.bot)
       Players.update(player._id, {$set: {nightActionDone: false}});
   });
+}
+
+function numWerewolves() {
+  // Get the number of players that have joined in the lobby
+  var numPlayers = Players.find({joined: true}).count();
+
+  return Math.floor(numPlayers / 3);
 }
 
 function arrayShuffle(array) {

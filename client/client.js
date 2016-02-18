@@ -1,5 +1,4 @@
 // These are the dependency trackers to make sure things are reactive
-var votesDep = new Tracker.Dependency;
 var startDep = new Tracker.Dependency;
 
 nightViewDep = new Tracker.Dependency;
@@ -194,19 +193,20 @@ Template.role.events({
   "click .vote-up": function() {
     if (getVote(this._id) != 1 && !getPlayer().ready) {
       console.log("Voted up: " + Roles.findOne(this._id).name);
-      changeVote(this._id, 1);
+      //changeVote(this._id, 1);
+      Meteor.call("changeRoleVote", getPlayer()._id, this._id, 1);
     }
   },
   "click .vote-neutral": function() {
     if (getVote(this._id) != 0 && !getPlayer().ready) {
       console.log("Voted neutral: " + Roles.findOne(this._id).name);
-      changeVote(this._id, 0);
+      Meteor.call("changeRoleVote", getPlayer()._id, this._id, 0);
     }
   },
   "click .vote-down": function() {
     if (getVote(this._id) != -1 && !getPlayer().ready) {
       console.log("Voted down: " + Roles.findOne(this._id).name);
-      changeVote(this._id, -1);
+      Meteor.call("changeRoleVote", getPlayer()._id, this._id, -1);
     }
   }
 });
@@ -219,8 +219,6 @@ Template.role.helpers({
     return vote ? vote.vote : 0;
   },
   "roleEnabled": function() {
-    votesDep.depend();
-
     var role = Roles.findOne(this._id);
 
     return role.enabled;
@@ -518,8 +516,6 @@ Template.nominationView.helpers({
 
 Template.nominationVoteView.helpers({
   "majority": function() {
-    votesDep.depend();
-
     var timeToExecute = GameVariables.findOne("timeToVoteExecution");
     var voteDirection = GameVariables.findOne("voteDirection").value;
     var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
@@ -581,8 +577,6 @@ Template.nominationVoteView.helpers({
     return Players.findOne(GameVariables.findOne("lynchVote").value[1]).name;
   },
   "majorityReached": function() {
-    votesDep.depend();
-
     return (GameVariables.findOne("timeToVoteExecution").enabled);
   }
 });
@@ -764,80 +758,6 @@ function generateVoteString(voteType) {
   voteList = voteList.substr(2);
 
   return voteList;
-}
-
-function changeVote(roleId, newVote) {
-  var player = getPlayer()._id;
-  var vote = RoleVotes.findOne({playerId: player, roleId: roleId});
-
-  // Check to see if an entry for this players vote exists, if so update it, else make one.
-  if (vote) {
-    RoleVotes.update(vote._id, {$set: {vote: newVote}});
-  } else {
-    RoleVotes.insert({
-      roleId: roleId,
-      playerId: player,
-      vote: newVote
-    });
-  }
-
-  // As the vote count for this role has now changed, recount the vote for this role
-  var votes = RoleVotes.find({roleId: roleId});
-  var tally = 0;
-
-  votes.forEach(function (vote) {
-    tally += vote.vote;
-  });
-
-  // Update the vote count to the role
-  Roles.update(roleId, {$set: {votes: tally}});
-
-  // Some debug console logs
-  console.log("Processing role votes for " + Roles.findOne(roleId).name);
-  console.log("Adding votes, tally: " + tally);
-
-  countVotes();
-
-  votesDep.changed();
-}
-
-// TODO this should be done server side!
-function countVotes() {
-  // We only want to do this for non critical roles.
-  var talliedRoles = Roles.find({critical: false}, {sort: {votes: -1}});
-
-  var count = 1;
-  talliedRoles.forEach(function(role) {
-    Roles.update(role._id, {$set: {order: count}});
-    count += 1;
-    //console.log(role.name + " got " + role.votes + " votes.");
-  });
-
-  // This is the calculation that determines is the role is enabled or not.
-  var numVillagers = Players.find({joined: true}).count() - numWerewolves();
-
-  //console.log("Number of villagers that can take on a role = " + numVillagers);
-
-  Roles.find({critical: false}).forEach(function(role) {
-    //console.log(role.name + "'s order is " + role.order);
-
-    var enabled = false;
-    // To be enabled, the role must have a positive vote score, and have a high enough order
-    if (role.votes > 0) {
-      if (role.order <= numVillagers) {
-        enabled = true;
-      }
-    }
-
-    Roles.update(role._id, {$set: {enabled: enabled}});
-  });
-}
-
-function numWerewolves() {
-  // Get the number of players that have joined in the lobby
-  var numPlayers = Players.find({joined: true}).count();
-
-  return Math.floor(numPlayers / 3);
 }
 
 function getVote(roleId) {
