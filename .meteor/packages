@@ -21,8 +21,7 @@ insecure                # Allow all DB writes from clients (for prototyping)
 accounts-password
 deps
 mizzao:timesync
-twbs:bootstrap
 peppelg:bootstrap-3-modal
-ian:accounts-ui-bootstrap-3
 semantic:ui
 flemay:less-autoprefixer
+accounts-ui
