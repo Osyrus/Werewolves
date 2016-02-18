@@ -78,10 +78,10 @@
   <div class="ui centered page grid main">
     <div class="row">
       <div class="column">
-        <div class="ui center aligned icon header">
+        <h1 class="ui center aligned icon header">
           <i class="paw icon"></i>
           You are a Werewolf
-        </div>
+        </h1>
       </div>
     </div>
 
@@ -89,7 +89,7 @@
       <div class="column">
         <div class="ui segment">
           You are a werewolf, so you must pick someone you wish to kill during the night.
-          All werewolves must choose the same player before the kill can occur!
+          All werewolves must choose the same player before the kill can occur.
         </div>
       </div>
     </div>
@@ -224,7 +224,12 @@
 </template>
 
 <template name="werewolvesTargetList">
-  <div class="list-group">
+  <div class="ui segments">
+    <div class="ui top attached red label">
+      Make your choice
+    </div>
+
+
     {{#each werewolfTargets}}
       {{> werewolfTarget}}
     {{/each}}
@@ -232,9 +237,10 @@
 </template>
 
 <template name="werewolfTarget">
-  <button class="list-group-item js-select-target {{targetTag}}">
+  <div class="ui {{targetTag}} segment js-select-target">
     {{playerName}} {{#if targeted}}({{targetString}}){{/if}}
-  </button>
+  </div>
+  <!-- Maybe put a secondary segment here for the target string? -->
 </template>
 
 <template name="nightResults">

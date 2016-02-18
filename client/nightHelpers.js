@@ -78,11 +78,11 @@ Template.werewolvesTargetList.helpers({
       targetString = targetString.slice(2); // Kill the first two characters
 
       // Set up the css tag depending on the players status
-      var targetTag = "list-group-item-info";
+      var targetTag = "";
       if (playersTarget) {
-        targetTag = "list-group-item-danger";
+        targetTag = "inverted red";
       } else if (targeted) {
-        targetTag = "list-group-item-warning";
+        targetTag = "inverted orange";
       }
 
       // Lets make the data structure that will fill the info for each target
