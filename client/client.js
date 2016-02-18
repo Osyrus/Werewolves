@@ -1,75 +1,23 @@
 // These are the dependency trackers to make sure things are reactive
-var votesDep = new Tracker.Dependency;
 var startDep = new Tracker.Dependency;
 
 nightViewDep = new Tracker.Dependency;
 
+Template.navbar.helpers({
+  inGame: function() {
+    var currentGameMode = GameVariables.findOne("gameMode").value;
+
+    return currentGameMode == "inGame";
+  }
+});
+
 Template.body.helpers({
-  players: function() {
-    return Players.find({joined: true});
-  },
-
-  roles: function() {
-    return Roles.find({critical: false});
-  },
-
-  playerCounter: function() {
-    var playersTotal = Players.find({joined: true}).count();
-    var playersReady = Players.find({ready: true}).count();
-
-    return String(playersReady) + "/" + String(playersTotal);
-  },
-
-  joined: function() {
-    var player = Players.findOne({userId: Meteor.user()._id});
-    return player != undefined ? player.joined : false;
-  },
-
-  ready: function() {
-    var player = Players.findOne({userId: Meteor.user()._id});
-
-    return player.ready;
-  },
-
-  allReady: function() {
-    return allReady();
-
-    // Testing this
-    //return ServerChecks.findOne("allReady");
-  },
-
-  counting: function() {
-    startDep.depend();
-
-    if (TimeSync.serverTime() <= GameVariables.findOne("timeToStart").value) {
-      return true;
-    }
-
-    if (GameVariables.findOne("timeToStart").enabled) {
-      console.log("Calling start game method from client.");
-      //Meteor.call("startGame");
-    }
-
-    return false;
-  },
-  countdown: function() {
-    startDep.depend();
-
-    var timeToStart = GameVariables.findOne("timeToStart").value;
-
-    if (TimeSync.serverTime() <= timeToStart) {
-      return Math.floor((timeToStart - TimeSync.serverTime())/1000);// Convert to seconds from ms
-    }
-
-    return 0;
-  },
-
   // These are the helpers that tell the html which screen to show
   lobby: function() {
     var currentGameMode = GameVariables.findOne("gameMode").value;
 
     if (Meteor.user() != null) {
-      var player = Players.findOne({userId: Meteor.user()._id});
+      var player = Players.findOne({userId: Meteor.userId()});
 
       if (player == undefined) {
         return true;
@@ -171,6 +119,72 @@ Template.body.events({
   }
 });
 
+Template.lobbyScreen.helpers({
+  players: function() {
+    return Players.find({joined: true});
+  },
+
+  roles: function() {
+    return Roles.find({critical: false});
+  },
+
+  playerCounter: function() {
+    var playersTotal = Players.find({joined: true}).count();
+    var playersReady = Players.find({ready: true}).count();
+
+    return String(playersReady) + "/" + String(playersTotal);
+  },
+
+  joined: function() {
+    var player = Players.findOne({userId: Meteor.user()._id});
+    return player != undefined ? player.joined : false;
+  },
+
+  ready: function() {
+    var player = Players.findOne({userId: Meteor.user()._id});
+
+    return player.ready;
+  },
+
+  allReady: function() {
+    return allReady();
+
+    // Testing this
+    //return ServerChecks.findOne("allReady");
+  },
+
+  counting: function() {
+    startDep.depend();
+
+    if (TimeSync.serverTime() <= GameVariables.findOne("timeToStart").value) {
+      return true;
+    }
+
+    if (GameVariables.findOne("timeToStart").enabled) {
+      console.log("Calling start game method from client.");
+      //Meteor.call("startGame");
+    }
+
+    return false;
+  },
+  countdown: function() {
+    startDep.depend();
+
+    var timeToStart = GameVariables.findOne("timeToStart").value;
+
+    if (TimeSync.serverTime() <= timeToStart) {
+      return Math.floor((timeToStart - TimeSync.serverTime())/1000);// Convert to seconds from ms
+    }
+
+    return 0;
+  },
+  inGame: function() {
+    var currentGameMode = GameVariables.findOne("gameMode").value;
+
+    return currentGameMode == "inGame";
+  }
+});
+
 Template.registerHelper("equals", function (a, b) {
   return (a == b);
 });
@@ -179,19 +193,20 @@ Template.role.events({
   "click .vote-up": function() {
     if (getVote(this._id) != 1 && !getPlayer().ready) {
       console.log("Voted up: " + Roles.findOne(this._id).name);
-      changeVote(this._id, 1);
+      //changeVote(this._id, 1);
+      Meteor.call("changeRoleVote", getPlayer()._id, this._id, 1);
     }
   },
   "click .vote-neutral": function() {
     if (getVote(this._id) != 0 && !getPlayer().ready) {
       console.log("Voted neutral: " + Roles.findOne(this._id).name);
-      changeVote(this._id, 0);
+      Meteor.call("changeRoleVote", getPlayer()._id, this._id, 0);
     }
   },
   "click .vote-down": function() {
     if (getVote(this._id) != -1 && !getPlayer().ready) {
       console.log("Voted down: " + Roles.findOne(this._id).name);
-      changeVote(this._id, -1);
+      Meteor.call("changeRoleVote", getPlayer()._id, this._id, -1);
     }
   }
 });
@@ -204,8 +219,6 @@ Template.role.helpers({
     return vote ? vote.vote : 0;
   },
   "roleEnabled": function() {
-    votesDep.depend();
-
     var role = Roles.findOne(this._id);
 
     return role.enabled;
@@ -238,7 +251,7 @@ Template.whoAmI.helpers({
     }
   },
   "roleText": function() {
-    if (Session.get("revealPressed")) {
+    if (true || Session.get("revealPressed")) {
       var roleString = "";
       switch(Session.get("roleGiven").name) {
         case "Werewolf":
@@ -304,7 +317,7 @@ Template.whoAmI.events({
   }
 });
 
-Template.eventsDisplay.helpers({
+Template.eventList.helpers({
   "events": function() {
     var player = getPlayer();
 
@@ -321,6 +334,63 @@ Template.eventsDisplay.helpers({
   }
 });
 
+Template.eventsDisplay.events({
+  "click .ok": function(event) {
+    // Update that the player has seen the events
+    Players.update(getPlayer()._id, {$set: {seenNewEvents: true}});
+  }
+});
+
+Template.eventDisplay.helpers({
+  revealRole: function() {
+    var cycle = this.cycleNumber;
+
+    if (cycle % 2 == 0) {
+      return GameVariables.findOne("revealRole").value.night;
+    } else {
+      return GameVariables.findOne("revealRole").value.day;
+    }
+  },
+  revealTag: function() {
+    // This requires the events list to be boostrapped first
+
+    // The idea here would be to pass a tag that would set the colour based on what the event information is.
+
+    // For example, if reveal role was disabled for this cycle, then just pass back the "info" tag.
+    // If the role is to be revealed on death, then pass the warning tag for a villager, and the danger tag for a werewolf.
+    // If the event is not to do with death, then send something to emphasise that (for example, the witch hexxing someone).
+
+    var tag = "";
+    var reveal = false;
+
+    var cycle = this.cycleNumber;
+
+    if (cycle % 2 == 0) {
+      reveal = GameVariables.findOne("revealRole").value.night;
+    } else {
+      reveal = GameVariables.findOne("revealRole").value.day;
+    }
+
+    if (reveal) {
+      var eventType = this.type;
+
+      switch (eventType) {
+        case "vDeath":
+          tag = "inverted red";
+          break;
+        case "wwDeath":
+          tag = "inverted green";
+          break;
+        case "warning":
+          tag = "inverted orange";
+          break;
+      }
+    }
+
+    return tag;
+  }
+});
+
 Template.dayNightCycle.helpers({
   "dayCycle": function() {
     var currentCycle = GameVariables.findOne("cycleNumber").value
@@ -333,14 +403,184 @@ Template.dayNightCycle.helpers({
     // If the clients player is in the list, the index will be 0 onwards, else it will be -1
     return playersNominating.indexOf(getPlayer()._id) >= 0;
   },
+  "voting": function() {
+    return GameVariables.findOne("lynchVote").enabled;
+  },
+  "showNightResults": function() {
+    nightViewDep.depend();
+
+    var player = getPlayer();
+
+    // Also need to show this if everyone hasn't finished seeing their results
+    //getCurrentCycle();
+
+    var cycleNum = GameVariables.findOne("cycleNumber").value;
+    var nightTime = cycleNum % 2 == 0;
+
+    if (!player.seenNightResults) {
+      return true;
+    }
+
+    return (nightTime && player.nightActionDone);
+  },
+  "showEvents": function() {
+    var currentCycle = GameVariables.findOne("cycleNumber").value;
+
+    var events = EventList.find({cycleNumber: (currentCycle - 1)});
+
+    return (events.count() > 0 && !getPlayer().seenNewEvents);
+  }
+});
+
+Template.dayView.helpers({
   "doingNothing": function() {
     return getPlayer().doNothing;
+  }
+});
+
+Template.dayView.events({
+  "click .nominate": function(event) {
+    // Get the list of people looking at the selection screen
+    var playersNominating = GameVariables.findOne("playersNominating").value;
+    // Add the current player (who pushed the button) to this list
+    playersNominating.push(getPlayer()._id);
+    // Update the list back to global space
+    GameVariables.update("playersNominating", {$set: {value: playersNominating}});
+    Players.update(getPlayer()._id, {$set: {doNothing: false}});
   },
+  "click .do-nothing": function(event) {
+    Players.update(getPlayer()._id, {$set: {doNothing: true}});
+
+    if (allPlayersDoingNothing()) {
+      Meteor.call("doingNothingToday");
+    }
+  }
+});
+
+Template.nominateTarget.helpers({
+  enabled: function() {
+    // Ensure the double jeopardy rule is enforced.
+    var player = getPlayer();
+    var targetId = this._id;
+
+    var previousNominations = player.previousNominations;
+
+    var enabled = true;
+    var tag = "";
+
+    // Only do this if this setting is enabled
+    var djEnabled = GameSettings.findOne("doubleJeopardy").enabled;
+
+    if (previousNominations && djEnabled) {
+      var numNominations = previousNominations.length;
+
+      for (i = 0; i < numNominations; i++) {
+        if (previousNominations[i] == targetId) {
+          enabled = false;
+          tag = "inverted grey";
+        }
+      }
+    }
+
+    return {
+      tag: tag,
+      disabled: !enabled, // Makes it easier on the handlebars html side
+      enabled: enabled
+    }
+  }
+});
+
+Template.nominateTarget.events({
+  "click .nominatePlayer": function(event) {
+    if (!Session.get("nominationTarget")) {
+      // Get the lynch target player and the nominator
+      var target = Players.findOne(this._id);
+
+      //console.log("Clicked nominate on " + target.name);
+
+      Session.set("nominationTarget", target);
+
+      // TODO is the Sessions reactivity causing this to fire multiple times?
+      // Perhaps a "hide others" behaviour will patch this (not fix it though...)
+      $('.ui.modal.nominateCheck')
+        .modal({
+          closable: false,
+          onApprove: function() {
+            //console.log("Clicked sure in nominate");
+            // Kill the array holding the number of players looking at the nominate selection screen
+            GameVariables.update("playersNominating", {$set: {value: []}});
+            // Set all the players votes back to abstain for the impending vote
+            var players = getAlivePlayers();
+            players.forEach(function (player) {
+              // Don't do this yet, for testing purposes (otherwise the bots votes get reset)
+              // TODO Remember this is here!!!
+              //Players.update(player._id, {$set: {voteChoice: 0}});
+            });
+            // Get the nominator and nominee
+            var target = Session.get("nominationTarget");
+            Session.set("nominationTarget", null);
+            var nominator = getPlayer();
+            // Set the variable to move to the yes/no vote
+            GameVariables.update("lynchVote", {$set: {value: [target._id, nominator._id], enabled: true}});
+            // The nominator starts voting to lynch the target
+            Players.update(nominator._id, {$set: {voteChoice: 1}});
+            // The nominator also needs this nomination tracked, to make sure they can't nominate
+            // the same person again in the same day cycle (double jeopardy rule).
+            Players.update(nominator._id, {$push: {previousNominations: target._id}});
+            // Let the server know that the lynch vote has started
+            Meteor.call("beginLynchVote");
+          },
+          onDeny: function() {
+            Session.set("nominationTarget", null);
+          }
+        })
+        .modal("show")
+        .modal('hide others', true)
+        .modal('refresh', true);
+    }
+  }
+});
+
+Template.nominationView.helpers({
   "targets": function() {
     return Players.find({joined: true, alive: true});
   },
-  "voting": function() {
-    return GameVariables.findOne("lynchVote").enabled;
+  "target": function() {
+    if (Session.get("nominationTarget"))
+      return Session.get("nominationTarget").name;
+    else
+      return "Unknown";
+  }
+});
+
+Template.nominationVoteView.helpers({
+  "majority": function() {
+    var timeToExecute = GameVariables.findOne("timeToVoteExecution");
+    var voteDirection = GameVariables.findOne("voteDirection").value;
+    var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
+
+    var majorityText = "Majority reached ";
+    majorityText += voteDirection ? "to lynch " : "not to lynch ";
+    majorityText += target.name + "!";
+
+    var majorityTag = "orange";
+
+    if (timeToExecute.enabled) {
+      majorityTag = voteDirection ? "red" : "blue";
+
+      if (TimeSync.serverTime() <= timeToExecute.value) {
+        majorityText += " In: " + Math.floor((timeToExecute.value - TimeSync.serverTime()) / 1000);// Convert to seconds from ms
+      }
+    } else {
+      var timeToTimeout = GameVariables.findOne("timeToVoteTimeout").value;
+
+      majorityText = "Voting time left: " + Math.floor((timeToTimeout - TimeSync.serverTime())/1000);
+    }
+
+    return {
+      text: majorityText,
+      tag: majorityTag
+    };
   },
   votingTitle: function() {
     var voteDetails = GameVariables.findOne("lynchVote");
@@ -376,108 +616,32 @@ Template.dayNightCycle.helpers({
     return Players.findOne(GameVariables.findOne("lynchVote").value[1]).name;
   },
   "majorityReached": function() {
-    votesDep.depend();
-
     return (GameVariables.findOne("timeToVoteExecution").enabled);
-  },
-  "majority": function() {
-    votesDep.depend();
-
-    var timeToExecute = GameVariables.findOne("timeToVoteExecution");
-    var voteDirection = GameVariables.findOne("voteDirection").value;
-    var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
-
-    var majorityText = "Majority reached ";
-    majorityText += voteDirection ? "to lynch " : "not to lynch ";
-    majorityText += target.name + "!";
-
-    var majorityTag = "panel-info";
-
-    if (timeToExecute.enabled) {
-      majorityTag = voteDirection ? "panel-danger" : "panel-primary";
-
-      if (TimeSync.serverTime() <= timeToExecute.value) {
-        majorityText += " In: " + Math.floor((timeToExecute.value - TimeSync.serverTime()) / 1000);// Convert to seconds from ms
-      }
-    } else {
-      var timeToTimeout = GameVariables.findOne("timeToVoteTimeout").value;
-
-      majorityText = "Time left: " + Math.floor((timeToTimeout - TimeSync.serverTime())/1000);
-    }
-
-    return {
-      text: majorityText,
-      tag: majorityTag
-    };
-  },
-  "showNightResults": function() {
-    nightViewDep.depend();
-
-    var player = getPlayer();
-
-    // Also need to show this if everyone hasn't finished seeing their results
-    //getCurrentCycle();
-
-    var cycleNum = GameVariables.findOne("cycleNumber").value;
-    var nightTime = cycleNum % 2 == 0;
-
-    if (!player.seenNightResults) {
-      return true;
-    }
-
-    return (nightTime && player.nightActionDone);
-  },
-  "showEvents": function() {
-    var currentCycle = GameVariables.findOne("cycleNumber").value;
-
-    var events = EventList.find({cycleNumber: (currentCycle - 1)});
-
-    return (events.count() > 0 && !getPlayer().seenNewEvents);
   }
 });
 
-Template.eventDisplay.helpers({
-  revealRole: function() {
-    var cycle = this.cycleNumber;
+Template.nominationVoteView.events({
+  "click .do-lynch": function(event) {
+    Meteor.call("changeLynchVote", getPlayer()._id, 1);
 
-    if (cycle % 2 == 0) {
-      return GameVariables.findOne("revealRole").value.night;
-    } else {
-      return GameVariables.findOne("revealRole").value.day;
-    }
+    //Players.update(getPlayer()._id, {$set: {voteChoice: 1}});
+    //checkLynchVotes();
   },
-  revealTag: function() {
-    // This requires the events list to be boostrapped first
+  "click .dont-lynch": function(event) {
+    Meteor.call("changeLynchVote", getPlayer()._id, 2);
 
-    // The idea here would be to pass a tag that would set the colour based on what the event information is.
+    //Players.update(getPlayer()._id, {$set: {voteChoice: 2}});
+    //checkLynchVotes();
+  },
+  "click .abstain": function(event) {
+    Meteor.call("changeLynchVote", getPlayer()._id, 0);
 
-    // For example, if reveal role was disabled for this cycle, then just pass back the "info" tag.
-    // If the role is to be revealed on death, then pass the warning tag for a villager, and the danger tag for a werewolf.
-    // If the event is not to do with death, then send something to emphasise that (for example, the witch hexxing someone).
+    //Players.update(getPlayer()._id, {$set: {voteChoice: 0}});
+    //checkLynchVotes();
   }
 });
 
 Template.dayNightCycle.events({
-  "click .lynch.nominate": function(event) {
-    // Get the list of people looking at the selection screen
-    var playersNominating = GameVariables.findOne("playersNominating").value;
-    // Add the current player (who pushed the button) to this list
-    playersNominating.push(getPlayer()._id);
-    // Update the list back to global space
-    GameVariables.update("playersNominating", {$set: {value: playersNominating}});
-    Players.update(getPlayer()._id, {$set: {doNothing: false}});
-  },
-  "click .lynch.do-nothing": function(event) {
-    Players.update(getPlayer()._id, {$set: {doNothing: true}});
-
-    if (allPlayersDoingNothing()) {
-      Meteor.call("doingNothingToday");
-    }
-  },
-  "click .events.ok": function(event) {
-    // Update that the player has seen the events
-    Players.update(getPlayer()._id, {$set: {seenNewEvents: true}});
-  },
   "click .cancel": function(event) {
     // Get the list of people looking at the selection screen
     var playersNominating = GameVariables.findOne("playersNominating").value;
@@ -486,49 +650,6 @@ Template.dayNightCycle.events({
     playersNominating.splice(playerIndex, 1);
     // Update the list back to global space
     GameVariables.update("playersNominating", {$set: {value: playersNominating}});
-  },
-  "click .vote.do-lynch": function(event) {
-    Meteor.call("changeLynchVote", getPlayer()._id, 1);
-
-    //Players.update(getPlayer()._id, {$set: {voteChoice: 1}});
-    //checkLynchVotes();
-  },
-  "click .vote.dont-lynch": function(event) {
-    Meteor.call("changeLynchVote", getPlayer()._id, 2);
-
-    //Players.update(getPlayer()._id, {$set: {voteChoice: 2}});
-    //checkLynchVotes();
-  },
-  "click .vote.abstain": function(event) {
-    Meteor.call("changeLynchVote", getPlayer()._id, 0);
-
-    //Players.update(getPlayer()._id, {$set: {voteChoice: 0}});
-    //checkLynchVotes();
-  }
-});
-
-Template.nominateTarget.events({
-  "click .nominatePlayer": function(event) {
-    // Get the lynch target player and the targetter
-    var target = Players.findOne(this._id);
-
-    var nominationDetails = {
-      nominatedPlayer: target._id,
-      nominator: getPlayer()._id
-    };
-
-    var titleText = "Are you sure you want to nominate " + target.name + "?";
-    var contentText = "If you are sure, a vote will be called for all players except " + target.name + ".";
-    contentText += " All players will also see that the vote was called by you.";
-
-    var modalData = {
-      title: titleText,
-      content: contentText,
-      sureTag: "nominate",
-      data: nominationDetails
-    };
-
-    Modal.show("areYouSureDialog", modalData);
   }
 });
 
@@ -572,12 +693,14 @@ Template.endGameScreen.helpers({
     var text = "This is the text that possibly describes the way the game ended or whatnot...";
 
     var villagersWon = GameVariables.findOne("lastGameResult").value;
+    var vWin = false;
 
     if (villagersWon) {
-      tag = "panel-success";
-      title = "The Villagers have won!!"
+      tag = "green";
+      title = "The Villagers have won!!";
+      vWin = true;
     } else {
-      tag = "panel-danger";
+      tag = "red";
       title = "The Werewolves have won!!";
     }
 
@@ -589,7 +712,8 @@ Template.endGameScreen.helpers({
     return {
       title: title,
       tag: tag,
-      text: text
+      text: text,
+      vWin: vWin
     }
   },
   roleList: function() {
@@ -605,24 +729,28 @@ Template.endGameScreen.helpers({
 
       // Generate the text and tag for the list
       var text = player.name + " was a " + role.name;
-      var tag = "list-group-item-info";
+      var tag = "";
 
       // Change the tag to suit the role
       if (role._id != villager._id) {
         if (role.name == "Werewolf") {
-          tag = "list-group-item-danger";
+          tag = "inverted red";
         } else if (role.aggressive) {
           // This includes roles like the Witch and the Saint
-          tag = "list-group-item-warning";
+          tag = "inverted orange";
         } else {
           // This includes roles like the Seer and Doctor
-          tag = "list-group-item-success";
+          tag = "inverted green";
         }
       }
 
-      var icon = "glyphicon-remove";
+      var icon = "black crosshairs"; // This looks like death, kinda...
       if (player.alive) {
-        icon = "glyphicon-heart";
+        if (tag == "inverted red") {
+          icon = "heart"; // Otherwise the werewolf role display will be a red heart on a red background!
+        } else {
+          icon = "red heart"; // This looks a lot like alive, so cool!
+        }
       }
 
       // Now add this entry to the list
@@ -669,79 +797,6 @@ function generateVoteString(voteType) {
   voteList = voteList.substr(2);
 
   return voteList;
-}
-
-function changeVote(roleId, newVote) {
-  var player = getPlayer()._id;
-  var vote = RoleVotes.findOne({playerId: player, roleId: roleId});
-
-  // Check to see if an entry for this players vote exists, if so update it, else make one.
-  if (vote) {
-    RoleVotes.update(vote._id, {$set: {vote: newVote}});
-  } else {
-    RoleVotes.insert({
-      roleId: roleId,
-      playerId: player,
-      vote: newVote
-    });
-  }
-
-  // As the vote count for this role has now changed, recount the vote for this role
-  var votes = RoleVotes.find({roleId: roleId});
-  var tally = 0;
-
-  votes.forEach(function (vote) {
-    tally += vote.vote;
-  });
-
-  // Update the vote count to the role
-  Roles.update(roleId, {$set: {votes: tally}});
-
-  // Some debug console logs
-  console.log("Processing role votes for " + Roles.findOne(roleId).name);
-  console.log("Adding votes, tally: " + tally);
-
-  countVotes();
-
-  votesDep.changed();
-}
-
-function countVotes() {
-  // We only want to do this for non critical roles.
-  var talliedRoles = Roles.find({critical: false}, {sort: {votes: -1}});
-
-  var count = 1;
-  talliedRoles.forEach(function(role) {
-    Roles.update(role._id, {$set: {order: count}});
-    count += 1;
-    //console.log(role.name + " got " + role.votes + " votes.");
-  });
-
-  // This is the calculation that determines is the role is enabled or not.
-  var numVillagers = Players.find({joined: true}).count() - numWerewolves();
-
-  console.log("Number of villagers that can take on a role = " + numVillagers);
-
-  Roles.find({critical: false}).forEach(function(role) {
-    console.log(role.name + "'s order is " + role.order);
-
-    var enabled = false;
-    // To be enabled, the role must have a positive vote score, and have a high enough order
-    if (role.votes > 0) {
-      if (role.order <= numVillagers) {
-        enabled = true;
-      }
-    }
-
-    Roles.update(role._id, {$set: {enabled: enabled}});
-  });
-}
-
-function numWerewolves() {
-  // Get the number of players that have joined in the lobby
-  var numPlayers = Players.find({joined: true}).count();
-
-  return Math.floor(numPlayers / 3);
 }
 
 function getVote(roleId) {

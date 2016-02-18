@@ -1,70 +1,23 @@
 <body>
-  <div class="container">
-    {{#if lobby}}
-      <header>
-        <h1>Players (Ready/Total): {{playerCounter}}</h1>
+  {{> navbar}}
 
-        {{> loginButtons}}
-
-        {{#if currentUser}}
-          <br>
-          {{#if joined}}
-            <button class="leave-game">Leave Game</button>
-            <button class="{{#if ready}}set-nready{{else}}set-ready{{/if}}">
-              {{#if ready}}
-                Not Ready
-              {{else}}
-                Ready
-              {{/if}}
-            </button>
-            <button class="start-game
-                {{#if allReady}}all-ready{{/if}}
-                {{#if counting}}counting{{/if}}">
-              {{#if counting}}
-                Cancel ({{countdown}})
-              {{else}}
-                Start Game
-              {{/if}}
-            </button>
-          {{else}}
-            {{#if inGame}}
-              <button class="game-running">Game in Progress</button>
-            {{else}}
-              <button class="join-game">Join Game</button>
-            {{/if}}
-          {{/if}}
-        {{/if}}
-      </header>
-
-      <ul>
-        {{#each players}}
-          {{> player}}
-        {{/each}}
-      </ul>
-
-      {{#if joined}}
-        <ul>
-          {{#each roles}}
-            {{> role}}
-          {{/each}}
-        </ul>
-      {{/if}}
-    {{else}} {{#if inGame}}
-      {{#if whoAmIScreen}}
-        {{> whoAmI}}
+  {{#if lobby}}
+    {{> lobbyScreen}}
+  {{else}} {{#if inGame}}
+    {{#if whoAmIScreen}}
+      {{> whoAmI}}
+    {{else}}
+      {{#if alive}}
+        {{> dayNightCycle}}
       {{else}}
-        {{#if alive}}
-          {{> dayNightCycle}}
+        {{#if seenDeath}}
+          {{> spectatorScreen}}
         {{else}}
-          {{#if seenDeath}}
-            {{> spectatorScreen}}
-          {{else}}
-            {{> youDiedScreen}}
-          {{/if}}
+          {{> youDiedScreen}}
         {{/if}}
       {{/if}}
-    {{else}} {{#if gameOver}}
-      {{> endGameScreen}}
-    {{/if}} {{/if}} {{/if}}
-  </div>
+    {{/if}}
+  {{else}} {{#if gameOver}}
+    {{> endGameScreen}}
+  {{/if}} {{/if}} {{/if}}
 </body>

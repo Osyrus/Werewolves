@@ -1,0 +1,22 @@
+<template name="navbar">
+  <div class="ui top fixed menu">
+    <a class="header item">
+      <i class="home icon"></i>
+      Lobby
+    </a>
+
+    <div class="right menu">
+      <!-- This is where the my role button will be when applicable-->
+      {{#if inGame}}
+        <a class="item whoami">
+          <i class="help icon"></i>
+          My Role
+        </a>
+      {{/if}}
+
+      <div class="item">
+        {{> loginButtons align="right"}}
+      </div>
+    </div>
+  </div>
+</template>

@@ -1,0 +1,158 @@
+<template name="dayView">
+  <div class="ui centered page grid main">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="yellow sun icon"></i>
+          It is Day
+        </h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <div class="ui raised segment">
+          <div class="ui top attached label">
+            Make your choice
+          </div>
+
+          <button class="fluid ui massive red button nominate">Nominate</button>
+
+          <div class="ui horizontal divider">Or</div>
+
+          <button class="fluid ui massive {{#if doingNothing}}grey{{else}}blue{{/if}} button do-nothing">
+            {{#if doingNothing}}
+              Doing Nothing
+            {{else}}
+              Do Nothing
+            {{/if}}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template name="nominationView">
+  <div class="ui centered page grid main">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="users icon"></i>
+          Make a Nomination
+        </h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <div class="ui segments">
+          <div class="ui top attached red label">
+            Make your nomination
+          </div>
+
+          {{#each targets}}
+            {{> nominateTarget}}
+          {{/each}}
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <button class="fluid ui blue massive button cancel">Cancel</button>
+      </div>
+    </div>
+
+    <!-- This is the modal for making sure the player is sure that they want to nominate the target -->
+    <div class="ui basic modal nominateCheck">
+      <div class="header">
+        Are you sure you want to nominate {{target}}?
+      </div>
+
+      <div class="content">
+        <p>
+          <!-- TODO this needs rewriting -->
+          This will call a vote to nominate {{target}}, all players will vote except for {{target}}.
+        </p>
+      </div>
+
+      <div class="actions">
+        <div class="ui cancel inverted blue button">Nevermind</div>
+        <div class="ui approve inverted red button">Nominate</div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template name="nominationVoteView">
+  <div class="ui centered page main grid">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="{{majority.tag}} warning icon"></i>
+          {{votingTitle}}
+        </h1>
+
+        <div class="ui divider"></div>
+
+        <div class="ui inverted {{majority.tag}} segment">
+          <p>{{majority.text}}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <div class="ui segments">
+          <div class="ui top attached label">
+            Cast your vote
+          </div>
+
+          <div class="ui segment">
+            <button class="fluid ui {{#if votingFor}}red{{/if}} massive button do-lynch">
+              Lynch {{lynchTarget}}!
+            </button>
+            <div class="meta"><i>Also for: {{playersVotingFor}}</i></div>
+          </div>
+
+          <div class="ui segment">
+            <button class="fluid ui {{#if votingAgainst}}blue{{/if}} massive button dont-lynch">
+              Don't Lynch {{lynchTarget}}!
+            </button>
+            <div class="meta"><i>Also against: {{playersVotingAgainst}}</i></div>
+          </div>
+
+          <div class="ui segment">
+            <button class="fluid ui {{#if abstaining}}grey{{/if}} massive button abstain">Abstain</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template name="eventsDisplay">
+  <div class="ui centered main page grid">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="announcement icon"></i>
+          Event List
+        </h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        {{> eventList}}
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <button class="ui fluid massive blue button ok">OK</button>
+      </div>
+    </div>
+  </div>
+</template>

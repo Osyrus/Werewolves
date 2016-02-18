@@ -35,3 +35,19 @@ saintDescription =
   " and you can be killed by the werewolves. However during the day they protect you by striking down any who harm you." +
   " This means that if you are nominated and are killed, the one who nominated you is smitten by the heavens and dies" +
   " with you." + passiveWinCondition;
+
+// TODO this might be a better way of distributing this information
+
+//var roles = Roles.find();
+
+//roles.forEach(function(role) {
+//  var description = "";
+//
+//  if (role.name == "Villager") {
+//    description = villagerDescription;
+//  } else if (role.name == "Werewolf") {
+//    // etc...
+//  }
+//
+//  Roles.update(role._id, {$set: {description: description}});
+//});

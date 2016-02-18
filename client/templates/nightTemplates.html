@@ -1,14 +1,6 @@
 <template name="nightTime">
-  <header>
-    <h1>It is night time</h1>
-
-    <br>
-
-    <button class="whoami">My Role</button>
-  </header>
-
-  <!-- This is where the players are given their individual screens -->
-  {{#if selecting}}
+  {{#if doingNightAction}}
+    <!-- This is where the players are given their individual screens -->
     {{#if passive}}
       {{> passiveScreen}}
     {{else}} {{#if werewolf}}
@@ -20,97 +12,224 @@
     {{else}} {{#if seer}}
       {{> seerScreen}}
     {{/if}} {{/if}} {{/if}} {{/if}} {{/if}}
+  {{else}}
+    <div class="ui centered page grid main">
+      <div class="row">
+        <div class="column">
+          <h1 class="ui center aligned icon header">
+            <i class="moon icon"></i>
+            It is Night
+          </h1>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="column">
+          {{#if nightActionDone}}
+            <div class="ui segment">
+              Night action completed, waiting for others.
+            </div>
+          {{else}}
+            <div class="ui segment">
+              <div class="ui top attached black label">
+                Make sure no-one can see your screen!
+              </div>
+
+              <button class="ui fluid massive blue button js-doNightAction">
+                Do night action
+              </button>
+            </div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
   {{/if}}
 </template>
 
 <template name="passiveScreen">
-  <div class="panel panel-default">
-    <div class="panel-body">
-      The villager/passive player screen.
-      The idea here is that there will be some mini-game to play before being allowed to move on.
+  <div class="ui centered page grid main">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="tree icon"></i>
+          You have nothing to do
+        </h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <div class="ui segment">
+          The villager/passive player screen.
+          The idea here is that there will be some mini-game to play before being allowed to move on.
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <button class="ui fluid massive blue button js-done">Dismiss</button>
+      </div>
     </div>
   </div>
-
-  <button class="btn btn-default js-done">Dismiss</button>
 </template>
 
 <template name="werewolfScreen">
-  <div class="panel panel-default">
-    <div class="panel-body">
-      You are a werewolf, so you must pick someone you wish to kill during the night.
-      All werewolves must choose the same player before the kill can occur!
+  <div class="ui centered page grid main">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="paw icon"></i>
+          You are a Werewolf
+        </h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <div class="ui segment">
+          You are a werewolf, so you must pick someone you wish to kill during the night.
+          All werewolves must choose the same player before the kill can occur.
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        {{> werewolvesTargetList}}
+      </div>
     </div>
   </div>
-
-  {{> werewolvesTargetList}}
 </template>
 
 <template name="doctorScreen">
-  <div class="panel panel-default">
-    <div class="panel-body">
-      You are the Doctor, you must choose someone to save.
-      The person you choose cannot be killed during the night by the werewolves.
+  <div class="ui centered page grid main">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="doctor icon"></i>
+          You are the Doctor
+        </h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <div class="ui segment">
+          You are the Doctor, you must choose someone to save.
+          The person you choose cannot be killed during the night by the werewolves.
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        {{> playerSelectionList}}
+      </div>
     </div>
   </div>
-
-  {{> playerSelectionList}}
 </template>
 
 <template name="witchScreen">
-  <div class="panel panel-default">
-    <div class="panel-body">
-      You are the Witch, you must choose someone to hex.
-      The person you choose will be unable to speak during the next day.
+  <div class="ui centered page grid main">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="lightning icon"></i>
+          You are the Witch
+        </h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <div class="ui segment">
+          You are the Witch, you must choose someone to hex.
+          The person you choose will be unable to speak during the next day.
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        {{> playerSelectionList}}
+      </div>
     </div>
   </div>
-
-  {{> playerSelectionList}}
 </template>
 
 <template name="seerScreen">
-  <div class="panel panel-default">
-    <div class="panel-body">
-      <h4>You are the seer, select someone find if they are a werewolf.</h4>
+  <div class="ui centered page grid main">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="unhide icon"></i>
+          You are the Seer
+        </h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <div class="ui segment">
+          You are the seer, select someone find if they are a werewolf.
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        {{> playerSelectionList}}
+      </div>
     </div>
   </div>
-
-  {{> playerSelectionList}}
-</template>
-
-<template name="nightResults">
-  <header>
-    <h1>Your actions this night</h1>
-  </header>
-
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h3 class="panel-title {{nightInfo.tag}}">
-        {{nightInfo.title}}
-      </h3>
-    </div>
-
-    <div class="panel-body">
-      {{nightInfo.body}}
-    </div>
-  </div>
-
-  <button class="ok results {{okButton.tag}}">{{okButton.text}}</button>
 </template>
 
 <template name="playerSelectionList">
-  <div class="list-group">
-    {{#each otherPlayers}}
-      {{> playerSelection}}
-    {{/each}}
+  <div class="ui segment">
+    <div class="ui top attached label">
+      Select a player
+    </div>
+
+    <div class="ui relaxed divided huge selection list">
+      {{#each otherPlayers}}
+        {{> playerSelection}}
+      {{/each}}
+    </div>
+  </div>
+
+  <div class="ui basic modal confirmCheck">
+    <div class="header">
+      {{confirm.title}}
+    </div>
+
+    <div class="content">
+      <p>{{confirm.text}}</p>
+    </div>
+
+    <div class="actions">
+      <div class="ui cancel inverted blue button">Nevermind</div>
+      <div class="ui approve inverted green button">I'm Sure</div>
+    </div>
   </div>
 </template>
 
 <template name="playerSelection">
-  <button type="button" class="list-group-item select-player">{{name}}</button>
+  <div class="item select-player">
+    <!-- Possibly put a little avatar here for the player? -->
+    <div class="content">
+      <div class="header">{{name}}</div>
+    </div>
+  </div>
 </template>
 
 <template name="werewolvesTargetList">
-  <div class="list-group">
+  <div class="ui segments">
+    <div class="ui top attached red label">
+      Make your choice
+    </div>
+
+
     {{#each werewolfTargets}}
       {{> werewolfTarget}}
     {{/each}}
@@ -118,7 +237,36 @@
 </template>
 
 <template name="werewolfTarget">
-  <button class="list-group-item js-select-target {{targetTag}}">
+  <div class="ui {{targetTag}} segment js-select-target">
     {{playerName}} {{#if targeted}}({{targetString}}){{/if}}
-  </button>
+  </div>
+  <!-- Maybe put a secondary segment here for the target string? -->
+</template>
+
+<template name="nightResults">
+  <div class="ui centered page grid main">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="info icon"></i>
+          Your actions this night
+        </h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <div class="ui segment">
+          <h2 class="ui {{nightInfo.tag}} header">{{nightInfo.title}}</h2>
+          <p>{{nightInfo.body}}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <button class="ui fluid massive {{okButton.tag}} button ok">{{okButton.text}}</button>
+      </div>
+    </div>
+  </div>
 </template>

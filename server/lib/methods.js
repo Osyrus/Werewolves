@@ -245,6 +245,13 @@ Meteor.methods({
     moveToNextCycle();
   },
   "setRoleTarget": function(roleId, targetId) {
+    var role = Roles.findOne(roleId);
+    var target = Players.findOne(targetId);
+
+    //console.log(roleId);
+
+    console.log("Setting " + role.name + " target to " + target.name);
+
     Roles.update(roleId, {$set: {target: targetId}});
   },
   "getRoleTarget": function(roleName) {
@@ -295,6 +302,66 @@ Meteor.methods({
 
       return false;
     }
+  },
+  "changeRoleVote": function(playerId, roleId, newVote) {
+    var vote = RoleVotes.findOne({playerId: playerId, roleId: roleId});
+
+    // Check to see if an entry for this players vote exists, if so update it, else make one.
+    if (vote) {
+      RoleVotes.update(vote._id, {$set: {vote: newVote}});
+    } else {
+      RoleVotes.insert({
+        roleId: roleId,
+        playerId: playerId,
+        vote: newVote
+      });
+    }
+
+    // As the vote count for this role has now changed, recount the vote for this role
+    var votes = RoleVotes.find({roleId: roleId});
+    var tally = 0;
+
+    votes.forEach(function (vote) {
+      tally += vote.vote;
+    });
+
+    // Update the vote count to the role
+    Roles.update(roleId, {$set: {votes: tally}});
+
+    // Some debug console logs
+    //console.log("Processing role votes for " + Roles.findOne(roleId).name);
+    //console.log("Adding votes, tally: " + tally);
+
+    // Now to count the votes
+
+    // We only want to do this for non critical roles.
+    var talliedRoles = Roles.find({critical: false}, {sort: {votes: -1}});
+
+    var count = 1;
+    talliedRoles.forEach(function(role) {
+      Roles.update(role._id, {$set: {order: count}});
+      count += 1;
+      //console.log(role.name + " got " + role.votes + " votes.");
+    });
+
+    // This is the calculation that determines is the role is enabled or not.
+    var numVillagers = Players.find({joined: true}).count() - numWerewolves();
+
+    //console.log("Number of villagers that can take on a role = " + numVillagers);
+
+    Roles.find({critical: false}).forEach(function(role) {
+      //console.log(role.name + "'s order is " + role.order);
+
+      var enabled = false;
+      // To be enabled, the role must have a positive vote score, and have a high enough order
+      if (role.votes > 0) {
+        if (role.order <= numVillagers) {
+          enabled = true;
+        }
+      }
+
+      Roles.update(role._id, {$set: {enabled: enabled}});
+    });
   }
 });
 
@@ -304,6 +371,9 @@ function moveToNextCycle() {
   // Reset all the variables for the players, to be ready for the next day/night cycle
   players.forEach(function(player) {
     Players.update(player._id, {$set: {seenNewEvents: false, target: 0}});
+
+    // Reset the double jeopardy rule
+    Players.update(player._id, {$set: {previousNominations: []}});
 
     if (!player.bot) {
       //Players.update(player._id, {$set: {nightActionDone: false}});
@@ -328,7 +398,6 @@ function moveToNextCycle() {
   // Increment the cycle
   GameVariables.update("cycleNumber", {$inc: {value: 1}});
 
-  // TODO Now after all that is done, we need to check if the game is over or not!!
   // 1. Specifically, we first need to check that there are still werewolves (villagers win).
   // 2. Then we need to check if the werewolves outnumber the villagers (werewolves win)
   // 3. In the case that the villagers outnumber the werewolves, the game continues.
@@ -426,40 +495,50 @@ function endGame(villagersWin) {
 }
 
 function startLynchCountdown() {
+  if (executeVoteCounter) {
+    Meteor.clearTimeout(executeVoteCounter);
+  }
+
   var milliDelay = 5100; // execute 5 seconds from now (magic number, I know...)
 
   var executeTime = (new Date()).valueOf() + milliDelay;
 
   GameVariables.update("timeToVoteExecution", {$set: {value: executeTime, enabled: true}});
 
-  if (executeVoteCounter) {
-    Meteor.clearTimeout(executeVoteCounter);
-  }
   executeVoteCounter = Meteor.setTimeout(executeVote, milliDelay);
 }
 
 function stopLynchCountdown() {
   GameVariables.update("timeToVoteExecution", {$set: {value: 0, enabled: false}});
 
-  Meteor.clearTimeout(executeVoteCounter);
-  executeVoteCounter = null;
+  // Lets not stop what isn't started
+  if (executeVoteCounter) {
+    Meteor.clearTimeout(executeVoteCounter);
+    executeVoteCounter = null;
+  }
 }
 
 function startLynchTimeout() {
-  var milliDelay = 60000; // 1 minute?
+  if (voteTimeout) {
+    console.log("Timeout counter already in progress");
+  } else {
+    var milliDelay = 60000; // 1 minute?
 
-  var timeoutTime = (new Date()).valueOf() + milliDelay;
+    var timeoutTime = (new Date()).valueOf() + milliDelay;
 
-  GameVariables.update("timeToVoteTimeout", {$set: {value: timeoutTime, enabled: true}});
+    GameVariables.update("timeToVoteTimeout", {$set: {value: timeoutTime, enabled: true}});
 
-  voteTimeout = Meteor.setTimeout(cancelVote, milliDelay);
+    voteTimeout = Meteor.setTimeout(cancelVote, milliDelay);
+  }
 }
 
 function stopLynchTimeout() {
   GameVariables.update("timeToVoteTimeout", {$set: {value: 0, enabled: false}});
 
-  Meteor.clearTimeout(voteTimeout);
-  voteTimeout = null;
+  if (voteTimeout) {
+    Meteor.clearTimeout(voteTimeout);
+    voteTimeout = null;
+  }
 }
 
 function startGameCountdown() {
@@ -631,6 +710,13 @@ function executeVote() {
     if (!player.bot)
       Players.update(player._id, {$set: {nightActionDone: false}});
   });
+}
+
+function numWerewolves() {
+  // Get the number of players that have joined in the lobby
+  var numPlayers = Players.find({joined: true}).count();
+
+  return Math.floor(numPlayers / 3);
 }
 
 function arrayShuffle(array) {

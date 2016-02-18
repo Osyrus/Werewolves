@@ -1,100 +1,79 @@
 <template name="player">
-  <li class="player-list">
-    <span class="player-name {{#if ready}}ready{{/if}}">{{name}}</span>
-  </li>
-</template>
-
-<template name="role">
-  <li class="vote-status">
-    <button class="vote-down {{#if equals vote -1}}sel{{/if}} {{#if cantVote}}done{{/if}}">
-      <a class="glyphicon glyphicon-thumbs-down" aria-hidden="true"></a>
-    </button>
-    <button class="vote-neutral {{#if equals vote 0}}sel{{/if}} {{#if cantVote}}done{{/if}}">
-      <a class="glyphicon glyphicon-option-horizontal" aria-hidden="true"></a>
-    </button>
-    <button class="vote-up {{#if equals vote 1}}sel{{/if}} {{#if cantVote}}done{{/if}}">
-      <a class="glyphicon glyphicon-thumbs-up" aria-hidden="true"></a>
-    </button>
-
-    <span class="role-name {{#if roleEnabled}}enabled{{/if}}">{{name}}</span>
-  </li>
-</template>
-
-<template name="whoAmI">
-  <div class="jumbotron role-jumbotron">
-    <h2>{{playerName}}, you are a {{#if roleRevealed}}{{roleName}}{{else}}...{{/if}}</h2>
-
-    <p>
-      {{roleText}}
-    </p>
-
-    <p class="whoami-buttons">
-      <a class="btn btn-primary btn-lg revealRole" href="#" role="button">Hold to reveal...</a>
-      <a class="btn btn-default btn-lg seen-role" href="#" role="button">OK, I'm good...</a>
-    </p>
+  <div class="item">
+    <!-- This is where the eventual user avatar will go as a "ui avatar image" -->
+    <div class="content">
+      <h3 class="ui {{#if ready}}green{{else}}orange{{/if}} header">
+        {{name}}
+      </h3>
+      <div class="description">
+        <!-- This could possibly have some of the players stats? -->
+        {{#if ready}}
+          Ready to play.
+        {{else}}
+          Not ready to play.
+        {{/if}}
+      </div>
+    </div>
   </div>
 </template>
 
-<template name="dayNightCycle">
-  {{#if showNightResults}}
-    {{> nightResults}}
-  {{else}}
-    {{#if showEvents}}
-      {{> eventsDisplay}}
-      <button class="ok events">OK</button>
-    {{else}}
-      {{#if dayCycle}}
-        <header>
-          {{#if voting}}
-            <h1>{{votingTitle}}</h1>
-          {{else}}
-            <h1>It is day time</h1>
-          {{/if}}
+<template name="role">
+  <div class="item">
+    <div class="right floated content">
+      <div class="ui icon buttons">
+        <button class="ui button vote-down {{#if equals vote -1}}red{{else}}{{#if cantVote}}grey{{/if}}{{/if}}">
+          <i class="thumbs down icon"></i>
+        </button>
+        <button class="ui button vote-neutral {{#if equals vote 0}}blue{{else}}{{#if cantVote}}grey{{/if}}{{/if}}">
+          <i class="ellipsis horizontal icon"></i>
+        </button>
+        <button class="ui button vote-up {{#if equals vote 1}}green{{else}}{{#if cantVote}}grey{{/if}}{{/if}}">
+          <i class="thumbs up icon"></i>
+        </button>
+      </div>
+    </div>
 
-          <br>
+    <div class="content">
+      <!-- Could actually put an image avatar here of the role -->
 
-          <button class="whoami">My Role</button>
-        </header>
+      <h3 class="ui large {{#if roleEnabled}}green{{else}}red{{/if}} header">
+        {{name}}
+      </h3>
 
-        {{#if nominating}}
-          <div class="list-group">
-            {{#each targets}}
-              {{> nominateTarget}}
-            {{/each}}
-          </div>
-          <button class="cancel">Cancel</button>
-        {{else}}
-          {{#if voting}}
-            <div class="panel {{majority.tag}}">
-              <div class="panel-heading">
-                <h1 class="panel-title">{{majority.text}}</h1>
-              </div>
-            </div>
+      <div class="meta">
+        <p>{{#if roleEnabled}}Enabled{{else}}Not Enabled{{/if}}</p>
+      </div>
 
-            <button class="vote do-lynch {{#if votingFor}}selected{{/if}}">Lynch {{lynchTarget}}!</button>
-            <span class="vote players-for"><i>Also for: {{playersVotingFor}}</i></span>
-            <button class="vote dont-lynch {{#if votingAgainst}}selected{{/if}}">Don't Lynch {{lynchTarget}}!</button>
-            <span class="vote players-against"><i>Also against: {{playersVotingAgainst}}</i></span>
-            <button class="vote abstain {{#if abstaining}}selected{{/if}}">Abstain</button>
-          {{else}}
-            <button class="lynch nominate">Nominate to Lynch</button>
-            <br>
-            <button class="lynch do-nothing {{#if doingNothing}}selected{{/if}}">Do nothing</button>
-          {{/if}}
-        {{/if}}
-      {{else}}
-        {{> nightTime}}
-      {{/if}}
-    {{/if}}
-  {{/if}}
+      <div class="description">
+        <!-- The role description could go here-->
+        <p>
+          {{shortDescription}}
+        </p>
+      </div>
+    </div>
+  </div>
 </template>
 
 <template name="nominateTarget">
-  <button class="nominatePlayer list-group-item">{{name}}</button>
+  <div class="ui {{enabled.tag}} segment {{#if enabled.enabled}}nominatePlayer{{/if}}">
+    {{#if enabled.disabled}}
+      <div class="ui right ribbon label">
+        <p>Already nominated today</p>
+      </div>
+    {{/if}}
+
+    <!-- This is where the players avatar could go (in a "ui avatar image")-->
+
+    <p>{{name}}</p>
+  </div>
 </template>
 
-<template name="eventsDisplay">
-  <ul class="list-group"> <!-- Think about perhaps using bootstrap panels here -->
+<template name="eventList">
+  <ul class="ui segments">
+    <div class="ui top attached blue label">
+      The events from the last cycle
+    </div>
+
     {{#each events}}
       {{> eventDisplay}}
     {{/each}}
@@ -102,11 +81,9 @@
 </template>
 
 <template name="eventDisplay">
-  <li class="list-group-item">
-    <span class="event-text {{#if revealRole}}{{type}}{{/if}}">
-      {{text}}
-    </span>
-  </li>
+  <div class="ui {{revealTag}} segment">
+    {{text}}
+  </div>
 </template>
 
 <template name="youDiedScreen">
@@ -121,49 +98,5 @@
 
 <template name="spectatorScreen">
   <span>You are spectating the game.</span>
-  {{> eventsDisplay}}
-</template>
-
-<template name="endGameScreen">
-  <div class="panel {{result.tag}}">
-    <div class="panel-heading">
-      <h1 class="panel-title">{{result.title}}</h1>
-    </div>
-
-    <div class="panel-body">
-      {{result.text}}
-    </div>
-  </div>
-
-  <div class="panel panel-info">
-    <div class="panel-heading">
-      <h2 class="panel-title">The last events...</h2>
-    </div>
-    <div class="panel-body">
-      {{> eventsDisplay}}
-    </div>
-  </div>
-
-  <div class="panel panel-default">
-    <!-- Default panel contents -->
-    <div class="panel-heading">
-      <h2 class="panel-title">The roles</h2>
-    </div>
-    <div class="panel-body">
-      <p>The roles were assigned as follows...</p>
-    </div>
-
-    <!-- List group -->
-    <ul class="list-group">
-      {{#each roleList}}
-        <li class="list-group-item {{tag}}">
-          <p class="glyphicon {{icon}}"></p> {{text}}
-        </li>
-      {{/each}}
-    </ul>
-  </div>
-
-  <button class="btn btn-primary btn-lg js-seenEndGame">
-    OK
-  </button>
+  {{> eventList}}
 </template>

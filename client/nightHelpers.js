@@ -26,10 +26,19 @@ Template.nightTime.helpers({
 
     return Session.equals("roleType", "seer");
   },
-  "selecting": function() {
+  "nightActionDone": function() {
     var player = getPlayer();
 
-    return !player.nightActionDone;
+    return player.nightActionDone;
+  },
+  "doingNightAction": function() {
+    return Session.get("doingNightAction");
+  }
+});
+
+Template.nightTime.events({
+  "click .js-doNightAction": function(event) {
+    Session.set("doingNightAction", true);
   }
 });
 
@@ -69,11 +78,11 @@ Template.werewolvesTargetList.helpers({
       targetString = targetString.slice(2); // Kill the first two characters
 
       // Set up the css tag depending on the players status
-      var targetTag = "list-group-item-info";
+      var targetTag = "";
       if (playersTarget) {
-        targetTag = "list-group-item-danger";
+        targetTag = "inverted red";
       } else if (targeted) {
-        targetTag = "list-group-item-warning";
+        targetTag = "inverted orange";
       }
 
       // Lets make the data structure that will fill the info for each target
@@ -131,81 +140,99 @@ Template.passiveScreen.events({
 Template.playerSelectionList.helpers({
   "otherPlayers": function() {
     return Players.find({alive: true, _id: {$not: getPlayer()._id}});
+  },
+  "confirm": function() {
+    var role = Roles.findOne(getPlayer().role);
+    var name = String(role.name).toLowerCase();
+
+    var target = Session.get("currentTarget");
+
+    if (!target) {
+      target = "nobody";
+    }
+
+    //console.log("Your role is " + name);
+
+    var contentText = "Are you sure that you want to ";
+    var titleText = "";
+
+    if (name == "doctor") {
+      titleText = "Save " + target + "?";
+      contentText += " save " + target + " from the werewolves?";
+    } else if (name == "witch") {
+      titleText = "Silence " + target + "?";
+      contentText += " silence " + target + ", preventing them from speaking during the next day?";
+    } else if (name == "seer") {
+      titleText = "View " + target + "?";
+      contentText += " gaze into the soul of " + target + " and see if they are a Werewolf?";
+      seerDep.changed();
+    }
+
+    return {
+      title: titleText,
+      text: contentText
+    }
   }
 });
 
+// TODO get rid of the Bootstrap modal call, also get rid of the Meteor call for the Id
 Template.playerSelection.events({
   "click .select-player": function(event) {
     var targetId = this._id;
     var target = Players.findOne(targetId);
 
-    // Changing to a more server-side system
-    Meteor.call("getRoleId", Meteor.user(), function(error, result) {
+    Session.set("currentTarget", target.name);
+    console.log("Clicked on " + target.name);
+
+    Meteor.call("setRoleTarget", getPlayer().role, targetId, function(error, params) {
       if (error) {
         console.log(error);
       } else {
-        var role = Roles.findOne(result);
-        var name = String(role.name).toLowerCase();
-
-        var contentText = "Are you sure that you want to ";
-        var titleText = "";
-
-        if (name == "doctor") {
-          titleText = "Save " + target.name + "?";
-          contentText += " save " + target.name + " from the werewolves?";
-        } else if (name == "witch") {
-          titleText = "Silence " + target.name + "?";
-          contentText += " silence " + target.name + ", preventing them from speaking during the next day?";
-        } else if (name == "seer") {
-          titleText = "View " + target.name + "?";
-          contentText += " gaze into the soul of " + target.name + " and see if they are a Werewolf?";
-          seerDep.changed();
-        }
-
-        Meteor.call("setRoleTarget", role._id, target._id);
-
-        var modalData = {
-          title: titleText,
-          content: contentText,
-          sureTag: "nightDone"
-        };
-
-        Modal.show("areYouSureDialog", modalData);
+        $('.ui.modal.confirmCheck')
+          .modal({
+            closable: false,
+            onApprove: function() {
+              finishedNightAction();
+            }
+          })
+          .modal("show")
+          .modal('hide others', true)
+          .modal('refresh', true);
       }
     });
   }
 });
 
-Template.areYouSureDialog.events({
-  "click .sure.nightDone": function() {
-    Modal.hide("areYouSureDialog");
-    finishedNightAction();
-  },
-  "click .sure.nominate": function() {
-    // This stuff is technically daytime stuff, but oh well
-    console.log("Clicked sure in nominate");
-    // Kill the array holding the number of players looking at the nominate selection screen
-    GameVariables.update("playersNominating", {$set: {value: []}});
-    // Set all the players votes back to abstain for the impending vote
-    var players = getAlivePlayers();
-    players.forEach(function(player) {
-      // Don't do this yet, for testing purposes (otherwise the bots votes get reset)
-      // TODO Remember this is here!!!
-      //Players.update(player._id, {$set: {voteChoice: 0}});
-    });
-    // Set the variable to move to the yes/no vote
-    GameVariables.update("lynchVote", {$set: {value: [this.data.nominatedPlayer, this.data.nominator], enabled: true}});
-    // The nominator starts voting to lynch the target
-    Players.update(this.data.nominator, {$set: {voteChoice: 1}});
-    // Let the server know that the lynch vote has started
-    Meteor.call("beginLynchVote");
-
-    Modal.hide("areYouSureDialog");
-  }
-});
+// TODO this is all now redundant
+//Template.areYouSureDialog.events({
+//  "click .sure.nightDone": function() {
+//    Modal.hide("areYouSureDialog");
+//    finishedNightAction();
+//  },
+//  "click .sure.nominate": function() {
+//    // This stuff is technically daytime stuff, but oh well
+//    console.log("Clicked sure in nominate");
+//    // Kill the array holding the number of players looking at the nominate selection screen
+//    GameVariables.update("playersNominating", {$set: {value: []}});
+//    // Set all the players votes back to abstain for the impending vote
+//    var players = getAlivePlayers();
+//    players.forEach(function(player) {
+//      // Don't do this yet, for testing purposes (otherwise the bots votes get reset)
+//      //Players.update(player._id, {$set: {voteChoice: 0}});
+//    });
+//    // Set the variable to move to the yes/no vote
+//    GameVariables.update("lynchVote", {$set: {value: [this.data.nominatedPlayer, this.data.nominator], enabled: true}});
+//    // The nominator starts voting to lynch the target
+//    Players.update(this.data.nominator, {$set: {voteChoice: 1}});
+//    // Let the server know that the lynch vote has started
+//    Meteor.call("beginLynchVote");
+//
+//    Modal.hide("areYouSureDialog");
+//  }
+//});
 
 Template.nightResults.events({
-  "click .results.ok": function() {
+  "click .ok": function() {
     Players.update(getPlayer()._id, {$set: {seenNightResults: true}});
   }
 });
@@ -245,12 +272,12 @@ Template.nightResults.helpers({
 
     var okButton = {
       text: "OK",
-      tag: ""
+      tag: "blue"
     };
 
     if (player.seenNightResults) {
       okButton.text = "Waiting for others...";
-      okButton.tag = "waiting";
+      okButton.tag = "grey";
     }
 
     return okButton;
@@ -265,7 +292,7 @@ function getWerewolfResults(targetId) {
   var werewolfTitle = "The werewolves chose to kill " + target.name;
   var werewolfContent = "The werewolves encountered " + target.name + " during the night. " +
     "You yourself don't remember exactly what happened, but it would be a miracle if they were to have survived...";
-  var werewolfTag = "aggressive";
+  var werewolfTag = "red";
 
   return {
     title: werewolfTitle,
@@ -279,7 +306,7 @@ function getDoctorResults(targetId) {
 
   var doctorTitle = "You have chosen to save " + target.name;
   var doctorContent = target.name + " cannot be killed this night by the werewolves, thanks to your skills.";
-  var doctorTag = "passive";
+  var doctorTag = "green";
 
   return {
     title: doctorTitle,
@@ -293,7 +320,7 @@ function getWitchResults(targetId) {
 
   var witchTitle = "You have chosen to silence " + target.name;
   var witchContent = target.name + " will not be able to talk tomorrow, as you hexxed them during the night.";
-  var witchTag = "aggressive";
+  var witchTag = "orange";
 
   return {
     title: witchTitle,
@@ -306,7 +333,7 @@ function getVillagerResults() {
   var villagerTitle = "You went to bed";
   var villagerContent = "Not having anything in particular to do at night time, you went to bed.";
   villagerContent += " Hopefully nothing bad happens while you're asleep...";
-  var villagerTag = "passive";
+  var villagerTag = "blue";
 
   return {
     title: villagerTitle,
@@ -337,11 +364,11 @@ function getSeerResults(targetId) {
       if (role.name == "Werewolf") {
         seerTitle = target.name + " is a Werewolf!";
         seerContent += "that " + target.name + " is a Werewolf!";
-        seerTag = "aggressive";
+        seerTag = "red";
       } else {
         seerTitle = target.name + " is not a Werewolf";
         seerContent += target.name + " is pure of heart, and not a Werewolf.";
-        seerTag = "passive";
+        seerTag = "green";
       }
 
       results.title = seerTitle;
@@ -359,6 +386,7 @@ function finishedNightAction() {
   Players.update(getPlayer()._id, {$set: {nightActionDone: true}});
   Players.update(getPlayer()._id, {$set: {seenNightResults: false}});
   Players.update(getPlayer()._id, {$set: {seenNewEvents: false}});
+  Session.set("doingNightAction", false);
 
   // Do a check to see if everyone has seen the results and if so, move to day.
   var players = getAlivePlayers();
