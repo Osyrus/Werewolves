@@ -47,6 +47,7 @@ Meteor.startup(function () {
   GameSettings.insert({_id: "doubleJeopardy", enabled: true});
   // TODO convert this to a game setting
   GameVariables.insert({_id: "revealRole", name: "Should the role be revealed after a death?", value: {day: true, night: true}, enabled: true});
+  // TODO bring the timeouts for the voting countdown into settings here as well
 });
 
 // Note: The order that the roles are added will determine their tiebreaker order (when counting votes)
