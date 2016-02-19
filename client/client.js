@@ -557,11 +557,32 @@ Template.nominationVoteView.helpers({
   "majority": function() {
     var timeToExecute = GameVariables.findOne("timeToVoteExecution");
     var voteDirection = GameVariables.findOne("voteDirection").value;
-    var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
+    var voteDetails = GameVariables.findOne("lynchVote");
+
+    var target = Players.findOne(voteDetails.value[0]);
+    var nominator = Players.findOne(voteDetails.value[1]);
+
+    var targeted = getPlayer()._id == target._id;
+
+    var majorityTitle = "Not voting yet...";
+
+
+    if (targeted) {
+      if (nominator._id == getPlayer._id)
+        majorityTitle = "You nominated yourself!"; // Why you retard?
+      else
+        majorityTitle = "You have been nominated by " + nominator.name;
+    }
+    else
+      majorityTitle = target.name + " has been nominated by " + nominator.name + ". Please cast your vote!";
 
     var majorityText = "Majority reached ";
     majorityText += voteDirection ? "to lynch " : "not to lynch ";
-    majorityText += target.name + "!";
+
+    if (targeted)
+      majorityText += "you!";
+    else
+      majorityText += target.name + "!";
 
     var majorityTag = "orange";
 
@@ -578,21 +599,11 @@ Template.nominationVoteView.helpers({
     }
 
     return {
+      title: majorityTitle,
       text: majorityText,
-      tag: majorityTag
+      tag: majorityTag,
+      you: targeted
     };
-  },
-  votingTitle: function() {
-    var voteDetails = GameVariables.findOne("lynchVote");
-
-    if (voteDetails.enabled) {
-      var target = Players.findOne(voteDetails.value[0]);
-      var nominator = Players.findOne(voteDetails.value[1]);
-
-      return target.name + " has been nominated by " + nominator.name + ". Please cast your vote!";
-    } else {
-      return "Not voting yet..."
-    }
   },
   "lynchTarget": function() {
     return Players.findOne(GameVariables.findOne("lynchVote").value[0]).name;

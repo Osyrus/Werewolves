@@ -91,7 +91,7 @@
       <div class="column">
         <h1 class="ui center aligned icon header">
           <i class="{{majority.tag}} warning icon"></i>
-          {{votingTitle}}
+          {{majority.title}}
         </h1>
 
         <div class="ui divider"></div>
@@ -104,29 +104,39 @@
 
     <div class="row">
       <div class="column">
-        <div class="ui segments">
-          <div class="ui top attached label">
-            Cast your vote
-          </div>
-
+        {{#if majority.you}}
           <div class="ui segment">
-            <button class="fluid ui {{#if votingFor}}red{{/if}} massive button do-lynch">
-              Lynch {{lynchTarget}}!
-            </button>
-            <div class="meta"><i>Also for: {{playersVotingFor}}</i></div>
-          </div>
+            <div class="ui header">
+              You are being nominated.
+            </div>
 
-          <div class="ui segment">
-            <button class="fluid ui {{#if votingAgainst}}blue{{/if}} massive button dont-lynch">
-              Don't Lynch {{lynchTarget}}!
-            </button>
-            <div class="meta"><i>Also against: {{playersVotingAgainst}}</i></div>
+            <!-- TODO Maybe make a two segment list here with the people voting for and against this player -->
           </div>
+        {{else}}
+          <div class="ui segments">
+            <div class="ui top attached label">
+              Cast your vote
+            </div>
 
-          <div class="ui segment">
-            <button class="fluid ui {{#if abstaining}}grey{{/if}} massive button abstain">Abstain</button>
+            <div class="ui segment">
+              <button class="fluid ui {{#if votingFor}}red{{/if}} massive button do-lynch">
+                Lynch {{lynchTarget}}!
+              </button>
+              <div class="meta"><i>Also for: {{playersVotingFor}}</i></div>
+            </div>
+
+            <div class="ui segment">
+              <button class="fluid ui {{#if votingAgainst}}blue{{/if}} massive button dont-lynch">
+                Don't Lynch {{lynchTarget}}!
+              </button>
+              <div class="meta"><i>Also against: {{playersVotingAgainst}}</i></div>
+            </div>
+
+            <div class="ui segment">
+              <button class="fluid ui {{#if abstaining}}grey{{/if}} massive button abstain">Abstain</button>
+            </div>
           </div>
-        </div>
+        {{/if}}
       </div>
     </div>
   </div>
