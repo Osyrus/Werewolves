@@ -1,8 +1,14 @@
 <body>
   {{> navbar}}
 
-  {{#if lobby}}
-    {{> lobbyScreen}}
+  {{#if spectating}}
+    {{> spectatorScreen}}
+  {{else}} {{#if lobby}}
+    {{#if viewingLastGame}}
+      {{> endGameScreen}}
+    {{else}}
+      {{> lobbyScreen}}
+    {{/if}}
   {{else}} {{#if inGame}}
     {{#if whoAmIScreen}}
       {{> whoAmI}}
@@ -10,14 +16,8 @@
       {{#if alive}}
         {{> dayNightCycle}}
       {{else}}
-        {{#if seenDeath}}
-          {{> spectatorScreen}}
-        {{else}}
-          {{> youDiedScreen}}
-        {{/if}}
+        {{> youDiedScreen}}
       {{/if}}
     {{/if}}
-  {{else}} {{#if gameOver}}
-    {{> endGameScreen}}
   {{/if}} {{/if}} {{/if}}
 </body>

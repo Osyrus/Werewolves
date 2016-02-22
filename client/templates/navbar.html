@@ -1,22 +1,28 @@
 <template name="navbar">
   <div class="ui top fixed menu">
-    <a class="header item">
+    <div class="header item">
       <i class="home icon"></i>
       Lobby
-    </a>
+    </div>
+
+    <div class="item">
+      {{> loginButtons align="right"}}
+    </div>
 
     <div class="right menu">
-      <!-- This is where the my role button will be when applicable-->
       {{#if inGame}}
+        <!-- During the game we want to allow the player to double check their role -->
         <a class="item whoami">
           <i class="help icon"></i>
           My Role
         </a>
+      {{else}}
+        <!-- In the lobby this position is for the game settings (which shouldn't be changed in game anyway!) -->
+        <a class="item settings">
+          <i class="wrench icon"></i>
+          Settings
+        </a>
       {{/if}}
-
-      <div class="item">
-        {{> loginButtons align="right"}}
-      </div>
     </div>
   </div>
 </template>

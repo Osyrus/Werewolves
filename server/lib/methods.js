@@ -214,7 +214,7 @@ Meteor.methods({
       var wwKillText = target.name + " has been killed during the night!";
 
       // Are we revealing the roles of the dead during the night?
-      if (GameVariables.findOne("revealRole").value.night) {
+      if (GameSettings.findOne("revealRole").night) {
         var targetsRole = Roles.findOne(target.role);
 
         if (targetsRole.name == "Villager") {
@@ -334,36 +334,43 @@ Meteor.methods({
 
     // Now to count the votes
 
-    // We only want to do this for non critical roles.
-    var talliedRoles = Roles.find({critical: false}, {sort: {votes: -1}});
-
-    var count = 1;
-    talliedRoles.forEach(function(role) {
-      Roles.update(role._id, {$set: {order: count}});
-      count += 1;
-      //console.log(role.name + " got " + role.votes + " votes.");
-    });
-
-    // This is the calculation that determines is the role is enabled or not.
-    var numVillagers = Players.find({joined: true}).count() - numWerewolves();
-
-    //console.log("Number of villagers that can take on a role = " + numVillagers);
-
-    Roles.find({critical: false}).forEach(function(role) {
-      //console.log(role.name + "'s order is " + role.order);
-
-      var enabled = false;
-      // To be enabled, the role must have a positive vote score, and have a high enough order
-      if (role.votes > 0) {
-        if (role.order <= numVillagers) {
-          enabled = true;
-        }
-      }
-
-      Roles.update(role._id, {$set: {enabled: enabled}});
-    });
+    countVotes();
+  },
+  "recountRoleVotes": function() {
+    countVotes();
   }
 });
+
+function countVotes() {
+  // We only want to do this for non critical roles.
+  var talliedRoles = Roles.find({critical: false}, {sort: {votes: -1}});
+
+  var count = 1;
+  talliedRoles.forEach(function(role) {
+    Roles.update(role._id, {$set: {order: count}});
+    count += 1;
+    //console.log(role.name + " got " + role.votes + " votes.");
+  });
+
+  // This is the calculation that determines is the role is enabled or not.
+  var numVillagers = Players.find({joined: true}).count() - numWerewolves();
+
+  //console.log("Number of villagers that can take on a role = " + numVillagers);
+
+  Roles.find({critical: false}).forEach(function(role) {
+    //console.log(role.name + "'s order is " + role.order);
+
+    var enabled = false;
+    // To be enabled, the role must have a positive vote score, and have a high enough order
+    if (role.votes > 0) {
+      if (role.order <= numVillagers) {
+        enabled = true;
+      }
+    }
+
+    Roles.update(role._id, {$set: {enabled: enabled}});
+  });
+}
 
 function moveToNextCycle() {
   var players = Players.find({alive: true});
@@ -499,7 +506,7 @@ function startLynchCountdown() {
     Meteor.clearTimeout(executeVoteCounter);
   }
 
-  var milliDelay = 5100; // execute 5 seconds from now (magic number, I know...)
+  var milliDelay = GameSettings.findOne("timeDelays").countdown; // execute 5 seconds from now (magic number, I know...)
 
   var executeTime = (new Date()).valueOf() + milliDelay;
 
@@ -522,7 +529,7 @@ function startLynchTimeout() {
   if (voteTimeout) {
     console.log("Timeout counter already in progress");
   } else {
-    var milliDelay = 60000; // 1 minute?
+    var milliDelay = GameSettings.findOne("timeDelays").timeout;
 
     var timeoutTime = (new Date()).valueOf() + milliDelay;
 
@@ -542,7 +549,7 @@ function stopLynchTimeout() {
 }
 
 function startGameCountdown() {
-  var milliDelay = 5100; // start 5 seconds from now (magic number, I know...)
+  var milliDelay = GameSettings.findOne("timeDelays").countdown;
 
   var startTime = (new Date()).valueOf() + milliDelay;
 
@@ -656,7 +663,7 @@ function executeVote() {
     var targetsRole = Roles.findOne(target.role);
 
     var targetDiedText = target.name + " has been lynched!";
-    if (GameVariables.findOne("revealRole").value.day) {
+    if (GameSettings.findOne("revealRole").day) {
       if (targetsRole.name != "Werewolf" && targetsRole.name != "Villager")
         targetDiedText += " They were the " + targetsRole.name + ".";
       else
@@ -681,7 +688,7 @@ function executeVote() {
       var nominatorDiedText = nominator.name + " has been struck down by the heavens because ";
       nominatorDiedText += target.name + " was a Saint!";
 
-      if (GameVariables.findOne("revealRole").value.day) {
+      if (GameSettings.findOne("revealRole").day) {
         if (nominatorsRole.name != "Werewolf" && nominatorsRole.name != "Villager")
           nominatorDiedText += " They were the " + nominatorsRole.name + ".";
         else
