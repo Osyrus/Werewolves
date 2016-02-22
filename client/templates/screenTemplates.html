@@ -71,11 +71,15 @@
   <div class="ui centered page grid main menuBottom">
     <div class="row">
       <div class="column">
-        <div class="ui raised segment">
-          <h1 class="ui header">
-            {{playerName}}, you are a {{#if roleRevealed}}{{roleName}}{{else}}...{{/if}}
-          </h1>
-        </div>
+        <h1 class="ui center aligned icon header">
+          {{#if roleRevealed}}
+            <i class="{{roleIcon}} icon"></i>
+            You are a {{roleName}}
+          {{else}}
+            <i class="help icon"></i>
+            Role Hidden
+          {{/if}}
+        </h1>
       </div>
     </div>
 
@@ -84,23 +88,15 @@
 
     <div class="row">
       <div class="column">
-        <div class="ui card">
-          <div class="content">
-            <h2 class="ui header">
-              {{roleName}}
-            </h2>
-          </div>
-
-          <div class="image">
-            <img src="werewolf.jpg" class="ui image">
-          </div>
-
-          <div class="description">
-            <div class="meta">
-              <p>Role Description</p>
+        <div class="ui raised segment">
+          {{#if roleRevealed}}
+            <div class="ui header">
+              {{roleName}} Description
             </div>
             {{roleText}}
-          </div>
+          {{else}}
+            Hold button below to reveal you role. Make sure nobody is looking at your screen!
+          {{/if}}
         </div>
       </div>
     </div>

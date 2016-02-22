@@ -241,26 +241,50 @@ Template.whoAmI.helpers({
   },
   "roleName": function() {
     if (GameVariables.findOne("gameMode").value == "inGame") {
-      Meteor.call("getRoleId", Meteor.user(), function (error, result) {
-        if (error) {
-          console.log(error);
-        } else {
-          Session.set("roleGiven", result);
-        }
-      });
-
-      if (Roles.findOne(Session.get("roleGiven")))
-        return Roles.findOne(Session.get("roleGiven")).name;
-
-      return "";
+      return Roles.findOne(getPlayer().role).name;
     } else {
       return "";
+    }
+  },
+  "roleIcon": function() {
+    if (GameVariables.findOne("gameMode").value == "inGame") {
+      var role = Roles.findOne(getPlayer().role);
+      var icon = "help";
+
+      // TODO Perhaps make the icon part of the role itself? Yes, do that, later...
+      switch (role.name) {
+        case "Villager":
+          icon = "green tree";
+          break;
+        case "Witch":
+          icon = "purple wizard";
+          break;
+        case "Saint":
+          icon = "yellow lightning";
+          break;
+        case "Knight":
+          icon = "grey protect";
+          break;
+        case "Doctor":
+          icon = "blue doctor";
+          break;
+        case "Werewolf":
+          icon = "red paw";
+          break;
+        case "Seer":
+          icon = "violet unhide";
+          break;
+      }
+
+      return icon;
+    } else {
+      return "help";
     }
   },
   "roleText": function() {
     if ((true || Session.get("revealPressed")) && Session.get("roleGiven")) {
       var roleString = "";
-      switch(Session.get("roleGiven").name) {
+      switch(Roles.findOne(getPlayer().role).name) {
         case "Werewolf":
           var wolfId = Roles.findOne({name: "Werewolf"})._id;
           var theWolves = Players.find({role: wolfId});
