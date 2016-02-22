@@ -68,7 +68,7 @@
 </template>
 
 <template name="whoAmI">
-  <div class="ui centered page grid main whoAmI">
+  <div class="ui centered page grid main menuBottom">
     <div class="row">
       <div class="column">
         <div class="ui raised segment">
@@ -105,11 +105,11 @@
       </div>
     </div>
 
-    <div class="ui bottom fixed one item menu">
-      <div class="item">
+    <div class="ui bottom fixed huge one item menu">
+      <div class="fitted item">
         <div class="two ui large buttons">
-          <button class="ui blue button revealRole">Hold to Reveal...</button>
-          <button class="ui grey button seen-role">OK</button>
+          <button class="ui blue massive button revealRole">Hold to Reveal...</button>
+          <button class="ui grey massive button seen-role">OK</button>
         </div>
       </div>
     </div>
@@ -206,6 +206,59 @@
         <button class="ui fluid large blue button js-seenEndGame">
           OK
         </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template name="spectatorScreen">
+  <div class="ui bottom fixed huge one item menu">
+    <div class="fitted item">
+      <button class="ui fluid massive blue button js-endSpectate">Stop Spectating</button>
+    </div>
+  </div>
+
+  <div class="ui centered page grid main menuBottom">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="find icon"></i>
+          You are Spectating
+        </h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        {{> eventList}}
+      </div>
+    </div>
+  </div>
+</template>
+
+<template name="youDiedScreen">
+  <div class="ui bottom fixed huge one item menu">
+    <div class="fitted item">
+      <button class="ui fluid huge blue button js-seen-death">Spectate Game</button>
+    </div>
+  </div>
+
+  <div class="ui centered page grid main menuBottom">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="red crosshairs icon"></i>
+          You are Dead!
+        </h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <div class="ui raised segment">
+          During the {{deathCycle}} you were {{deathCause}},
+          you are now a ghost who can only spectate the rest of the game!
+        </div>
       </div>
     </div>
   </div>

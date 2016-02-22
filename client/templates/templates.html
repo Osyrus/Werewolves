@@ -69,15 +69,23 @@
 </template>
 
 <template name="eventList">
-  <ul class="ui segments">
-    <div class="ui top attached blue label">
-      The events from the last cycle
+  {{#if spectating}}
+    <div class="ui relaxed list">
+      {{#each spectatorEvents}}
+        {{> spectatorEventDisplay}}
+      {{/each}}
     </div>
+  {{else}}
+    <ul class="ui segments">
+      <div class="ui top attached blue label">
+        The events from the last cycle
+      </div>
 
-    {{#each events}}
-      {{> eventDisplay}}
-    {{/each}}
-  </ul>
+      {{#each events}}
+        {{> eventDisplay}}
+      {{/each}}
+    </ul>
+  {{/if}}
 </template>
 
 <template name="eventDisplay">
@@ -86,17 +94,17 @@
   </div>
 </template>
 
-<template name="youDiedScreen">
-  <div class="jumbotron">
-    <h1 class="lynched-title">You have been {{deathCause}}!!</h1>
+<template name="spectatorEventDisplay">
+  <div class="item">
+    <div class="ui segments">
+      <div class="ui top attached {{cycleTag}} label">
+        <i class="{{cycleIcon}} icon"></i>
+        Events during {{cycle}}
+      </div>
 
-    <p>During the {{deathCycle}} you were {{deathCause}}, you are now a ghost who can only spectate the rest of the game!</p>
-
-    <button class="btn btn-primary btn-lg js-seen-death">OK...</button>
+      {{#each cycleEvents}}
+        {{> eventDisplay}}
+      {{/each}}
+    </div>
   </div>
-</template>
-
-<template name="spectatorScreen">
-  <span>You are spectating the game.</span>
-  {{> eventList}}
 </template>

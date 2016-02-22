@@ -5,42 +5,46 @@ nightViewDep = new Tracker.Dependency;
 
 Template.navbar.helpers({
   inGame: function() {
-    var currentGameMode = GameVariables.findOne("gameMode").value;
+    var currentGameMode = GameVariables.findOne("gameMode");
 
-    return currentGameMode == "inGame";
+    return currentGameMode ? currentGameMode.value == "inGame" : false;
+  }
+});
+
+Template.navbar.events({
+  "click .whoami": function() {
+    Session.set("seenRole", false);
   }
 });
 
 Template.body.helpers({
   // These are the helpers that tell the html which screen to show
   lobby: function() {
-    var currentGameMode = GameVariables.findOne("gameMode").value;
+    var currentGameMode = GameVariables.findOne("gameMode");
 
-    if (Meteor.user() != null) {
+    if (Meteor.user() != null && currentGameMode) {
       var player = Players.findOne({userId: Meteor.userId()});
 
       if (player == undefined) {
         return true;
       } else if (!player.joined) {
         return true;
-      } else if (!player.seenEndgame) {
-        return false;
       } else {
-        return currentGameMode == "lobby";
+        return currentGameMode.value == "lobby";
       }
     } else {
-      return true;
+      return true; // This could force the login page here
     }
+  },
+  viewingLastGame: function() {
+    var player = getPlayer();
+
+    return player ? !player.seenEndgame : false;
   },
   inGame: function() {
     var currentGameMode = GameVariables.findOne("gameMode").value;
 
     return currentGameMode == "inGame";
-  },
-  gameOver: function() {
-    var player = getPlayer();
-
-    return !player.seenEndgame;
   },
   whoAmIScreen: function() {
     var currentGameMode = GameVariables.findOne("gameMode").value;
@@ -56,14 +60,12 @@ Template.body.helpers({
 
     return !player.seenNightResults ? true : player.alive;
   },
-  seenDeath: function() {
-    var player = getPlayer();
-
-    return player.joined ? player.seenDeath : true;
+  spectating: function() {
+    return Session.get("spectating");
   }
 });
 
-Template.body.events({
+Template.lobbyScreen.events({
   "click .join-game": function() {
     if (GameVariables.findOne("gameMode").value == "lobby") {
       var player = getPlayer();
@@ -79,7 +81,7 @@ Template.body.events({
       Session.set("seenRole", false);
 
       // As the enabled roles vote count is dependant on the number of people, we need to do a recount.
-      countVotes();
+      Meteor.call("recountRoleVotes");
     }
   },
   "click .leave-game": function() {
@@ -91,7 +93,7 @@ Template.body.events({
     Meteor.call("stopStartCountdown");
 
     // Number of people in the game changed, so need a recount
-    countVotes();
+    Meteor.call("recountRoleVotes");
   },
 
   "click .set-ready": function() {
@@ -113,9 +115,8 @@ Template.body.events({
       startDep.changed();
     }
   },
-
-  "click .whoami": function() {
-    Session.set("seenRole", false);
+  "click game-running": function() {
+    Session.set("spectating", true);
   }
 });
 
@@ -213,8 +214,12 @@ Template.role.events({
 
 Template.role.helpers({
   "vote": function() {
-    var player = getPlayer()._id;
-    var vote = RoleVotes.findOne({playerId: player, roleId: this._id});
+    var player = getPlayer();
+
+    var vote = 0;
+    if (player) {
+      vote = RoleVotes.findOne({playerId: player._id, roleId: this._id});
+    }
 
     return vote ? vote.vote : 0;
   },
@@ -224,7 +229,9 @@ Template.role.helpers({
     return role.enabled;
   },
   "cantVote": function() {
-    return getPlayer().ready;
+    var player = getPlayer();
+
+    return player ? getPlayer().ready : true;
   }
 });
 
@@ -251,7 +258,7 @@ Template.whoAmI.helpers({
     }
   },
   "roleText": function() {
-    if (true || Session.get("revealPressed")) {
+    if ((true || Session.get("revealPressed")) && Session.get("roleGiven")) {
       var roleString = "";
       switch(Session.get("roleGiven").name) {
         case "Werewolf":
@@ -321,16 +328,57 @@ Template.eventList.helpers({
   "events": function() {
     var player = getPlayer();
 
-    // TODO This needs some work here to make it more clear what to show on game end, rather than spectating
-    // Perhaps add a "spectating" variable to the players
-    if (player.alive && player.joined) {
-      // This should show on the game end screen
+    if (player) {
       var currentCycle = GameVariables.findOne("cycleNumber").value;
       return EventList.find({cycleNumber: (currentCycle - 1)});
     } else {
-      // This should only show when spectating
-      return EventList.find({}, {sort: {timeAdded: -1}});
+      return [];
     }
+  },
+  spectating: function() {
+    return Session.get("spectating");
+  },
+  spectatorEvents: function() {
+    var numCycles = GameVariables.findOne("cycleNumber").value;
+
+    var cycles = [];
+
+    for (i = numCycles; i > 0; i--) {
+      var cycleEvents = EventList.find({cycleNumber: i});
+
+      if (cycleEvents) {
+        if (cycleEvents.count() > 0) {
+          var cycleName = "";
+          var cycleTag = "";
+          var cycleIcon = "";
+
+          if (!(i % 2 == 0)) {
+            cycleName = "Day " + Math.ceil(i/2);
+            cycleTag = "yellow";
+            cycleIcon = "sun";
+          } else {
+            cycleName = "Night " + i/2;
+            cycleTag = "black";
+            cycleIcon = "moon";
+          }
+
+          cycles.push({
+            cycleEvents: cycleEvents,
+            cycle: cycleName,
+            cycleTag: cycleTag,
+            cycleIcon: cycleIcon
+          });
+        }
+      }
+    }
+
+    return cycles;
+  }
+});
+
+Template.spectatorScreen.events({
+  "click .js-endSpectate": function() {
+    Session.set("spectating", false);
   }
 });
 
@@ -346,9 +394,9 @@ Template.eventDisplay.helpers({
     var cycle = this.cycleNumber;
 
     if (cycle % 2 == 0) {
-      return GameVariables.findOne("revealRole").value.night;
+      return GameSettings.findOne("revealRole").night;
     } else {
-      return GameVariables.findOne("revealRole").value.day;
+      return GameSettings.findOne("revealRole").day;
     }
   },
   revealTag: function() {
@@ -366,9 +414,9 @@ Template.eventDisplay.helpers({
     var cycle = this.cycleNumber;
 
     if (cycle % 2 == 0) {
-      reveal = GameVariables.findOne("revealRole").value.night;
+      reveal = GameSettings.findOne("revealRole").night;
     } else {
-      reveal = GameVariables.findOne("revealRole").value.day;
+      reveal = GameSettings.findOne("revealRole").day;
     }
 
     if (reveal) {
@@ -562,40 +610,44 @@ Template.nominationVoteView.helpers({
     var target = Players.findOne(voteDetails.value[0]);
     var nominator = Players.findOne(voteDetails.value[1]);
 
-    var targeted = getPlayer()._id == target._id;
-
     var majorityTitle = "Not voting yet...";
+    var majorityText = "Nothing to see here...";
+    var majorityTag = "grey";
+    var targeted = false;
 
+    if (target) {
+      targeted = getPlayer()._id == target._id;
 
-    if (targeted) {
-      if (nominator._id == getPlayer._id)
-        majorityTitle = "You nominated yourself!"; // Why you retard?
-      else
-        majorityTitle = "You have been nominated by " + nominator.name;
-    }
-    else
-      majorityTitle = target.name + " has been nominated by " + nominator.name + ". Please cast your vote!";
-
-    var majorityText = "Majority reached ";
-    majorityText += voteDirection ? "to lynch " : "not to lynch ";
-
-    if (targeted)
-      majorityText += "you!";
-    else
-      majorityText += target.name + "!";
-
-    var majorityTag = "orange";
-
-    if (timeToExecute.enabled) {
-      majorityTag = voteDirection ? "red" : "blue";
-
-      if (TimeSync.serverTime() <= timeToExecute.value) {
-        majorityText += " In: " + Math.floor((timeToExecute.value - TimeSync.serverTime()) / 1000);// Convert to seconds from ms
+      if (targeted) {
+        if (nominator._id == getPlayer._id)
+          majorityTitle = "You nominated yourself!"; // Why you retard?
+        else
+          majorityTitle = "You have been nominated by " + nominator.name;
       }
-    } else {
-      var timeToTimeout = GameVariables.findOne("timeToVoteTimeout").value;
+      else
+        majorityTitle = target.name + " has been nominated by " + nominator.name + ". Please cast your vote!";
 
-      majorityText = "Voting time left: " + Math.floor((timeToTimeout - TimeSync.serverTime())/1000);
+      majorityText = "Majority reached ";
+      majorityText += voteDirection ? "to lynch " : "not to lynch ";
+
+      if (targeted)
+        majorityText += "you!";
+      else
+        majorityText += target.name + "!";
+
+      majorityTag = "orange";
+
+      if (timeToExecute.enabled) {
+        majorityTag = voteDirection ? "red" : "blue";
+
+        if (TimeSync.serverTime() <= timeToExecute.value) {
+          majorityText += " In: " + Math.floor((timeToExecute.value - TimeSync.serverTime()) / 1000);// Convert to seconds from ms
+        }
+      } else {
+        var timeToTimeout = GameVariables.findOne("timeToVoteTimeout").value;
+
+        majorityText = "Voting time left: " + Math.floor((timeToTimeout - TimeSync.serverTime()) / 1000);
+      }
     }
 
     return {
@@ -690,10 +742,10 @@ Template.youDiedScreen.helpers({
 });
 
 Template.youDiedScreen.events({
+  // TODO change this js class name, it makes no sense now
   "click .js-seen-death": function() {
-    var player = getPlayer();
-
-    Players.update(player._id, {$set: {seenDeath: true}});
+    // The player has clicked the spectate button on the you died screen
+    Session.set("spectating", true);
   }
 });
 

@@ -35,19 +35,21 @@ Meteor.startup(function () {
   GameVariables.insert({_id: "voteDirection", name: "The direction the vote should be executed. value: for/against (true/false)", value: false, enabled: false});
   GameVariables.insert({_id: "lastGameResult", name: "The last games result", value: {villagersWon: false}, enabled: false});
 
+  // These server check things may be rubbish that should not exist
+
   ServerChecks.remove({});
 
   ServerChecks.insert({_id: "allReady", value: false});
 
   // The default game settings
   // Eventually make it so that these don't get reset each time
+  // These will be modifiable via a settings menu
 
   GameSettings.remove({});
 
   GameSettings.insert({_id: "doubleJeopardy", enabled: true});
-  // TODO convert this to a game setting
-  GameVariables.insert({_id: "revealRole", name: "Should the role be revealed after a death?", value: {day: true, night: true}, enabled: true});
-  // TODO bring the timeouts for the voting countdown into settings here as well
+  GameSettings.insert({_id: "revealRole", day: true, night: true});
+  GameSettings.insert({_id: "timeDelays", timeout: 60100, countdown: 5100});
 });
 
 // Note: The order that the roles are added will determine their tiebreaker order (when counting votes)
