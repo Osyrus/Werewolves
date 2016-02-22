@@ -42,9 +42,9 @@ Template.body.helpers({
     return player ? !player.seenEndgame : false;
   },
   inGame: function() {
-    var currentGameMode = GameVariables.findOne("gameMode").value;
+    var currentGameMode = GameVariables.findOne("gameMode");
 
-    return currentGameMode == "inGame";
+    return currentGameMode ? currentGameMode.value == "inGame" : false;
   },
   whoAmIScreen: function() {
     var currentGameMode = GameVariables.findOne("gameMode").value;
