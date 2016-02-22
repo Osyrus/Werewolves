@@ -47,7 +47,7 @@ Meteor.startup(function () {
 
   GameSettings.remove({});
 
-  GameSettings.insert({_id: "doubleJeopardy", enabled: true});
+  GameSettings.insert({_id: "doubleJeopardy", enabled: false});
   GameSettings.insert({_id: "revealRole", day: true, night: true});
   GameSettings.insert({_id: "timeDelays", timeout: 60100, countdown: 5100});
 });

@@ -105,12 +105,24 @@
     <div class="row">
       <div class="column">
         {{#if majority.you}}
-          <div class="ui segment">
-            <div class="ui header">
-              You are being nominated.
+          <!-- TODO Maybe make a two segment list here with the people voting for and against this player -->
+          <div class="ui segments">
+            <div class="ui inverted red segment">
+              <h4 class="ui centered header">
+                Players for Lynching you
+              </h4>
+              <h3 class="ui centered header">
+                {{playersVotingFor}}
+              </h3>
             </div>
-
-            <!-- TODO Maybe make a two segment list here with the people voting for and against this player -->
+            <div class="ui inverted blue segment">
+              <h4 class="ui centered header">
+                Players against Lynching you
+              </h4>
+              <h3 class="ui centered header">
+                {{playersVotingAgainst}}
+              </h3>
+            </div>
           </div>
         {{else}}
           <div class="ui segments">
