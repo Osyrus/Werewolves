@@ -36,7 +36,7 @@ saintDescription =
   " This means that if you are nominated and are killed, the one who nominated you is smitten by the heavens and dies" +
   " with you." + passiveWinCondition;
 
-// TODO this might be a better way of distributing this information
+// TODO this might be a better way of distributing this information, but do it on the server
 
 //var roles = Roles.find();
 

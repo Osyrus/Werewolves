@@ -282,7 +282,7 @@ Template.whoAmI.helpers({
     }
   },
   "roleText": function() {
-    if ((true || Session.get("revealPressed")) && Session.get("roleGiven")) {
+    if ((true || Session.get("revealPressed"))) {
       var roleString = "";
       switch(Roles.findOne(getPlayer().role).name) {
         case "Werewolf":
@@ -334,13 +334,13 @@ Template.whoAmI.helpers({
 });
 
 Template.whoAmI.events({
-  "mousedown .revealRole": function(event) {
-    event.preventDefault();
+  "mousedown .revealRole": function() {
     Session.set("revealPressed", true);
-    console.log("Reveal pressed");
   },
-  "mouseup .revealRole": function(event) {
-    event.preventDefault();
+  "mouseup .revealRole": function() {
+    Session.set("revealPressed", false);
+  },
+  "mouseout .revealRole": function() {
     Session.set("revealPressed", false);
   },
   "click .seen-role": function() {
@@ -584,9 +584,9 @@ Template.nominateTarget.events({
             // Set all the players votes back to abstain for the impending vote
             var players = getAlivePlayers();
             players.forEach(function (player) {
-              // Don't do this yet, for testing purposes (otherwise the bots votes get reset)
-              // TODO Remember this is here!!!
-              //Players.update(player._id, {$set: {voteChoice: 0}});
+              // Don't do this if the player is a bot (otherwise the vote gets reset)
+              if (!player.bot)
+                Players.update(player._id, {$set: {voteChoice: 0}});
             });
             // Get the nominator and nominee
             var target = Session.get("nominationTarget");
@@ -766,8 +766,7 @@ Template.youDiedScreen.helpers({
 });
 
 Template.youDiedScreen.events({
-  // TODO change this js class name, it makes no sense now
-  "click .js-seen-death": function() {
+  "click .js-spectate": function() {
     // The player has clicked the spectate button on the you died screen
     Session.set("spectating", true);
   }
