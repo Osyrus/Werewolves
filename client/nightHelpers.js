@@ -67,7 +67,7 @@ Template.werewolvesTargetList.helpers({
       // Lets check this player against all the werewolves and their own targets
       werewolves.forEach(function(werewolf) {
         if (werewolf.target == player._id) {
-          // This make it so that the target has the string next to them of all the werewolves that have selected them.
+          // This makes it so that the target has the string next to them of all the werewolves that have selected them.
           targeted = true;
 
           if (thisPlayer.target == player._id) {
@@ -121,6 +121,9 @@ Template.werewolfTarget.events({
     var targetId = this.playerId;
     // Now we can quite easily update this werewolf's target
     Players.update(werewolf._id, {$set: {target: targetId}});
+
+    // TODO This needs to change, think about what happens to all the 
+    // werewolves that aren't the one that voted last!!
 
     // Now we need to check if all the werewolves have clicked on the same target
     Meteor.call("checkWerewolvesAgree", function(error, result) {
