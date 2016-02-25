@@ -38,6 +38,12 @@ Template.nightTime.helpers({
 
 Template.nightTime.events({
   "click .js-doNightAction": function(event) {
+    // This is where perhaps the game that the passive player will play is chosen.
+
+    if (getPlayer().role == Roles.findOne({name: "Villager"})._id) {
+      Session.set("gameVars", generateColourGameVars());
+    }
+
     Session.set("doingNightAction", true);
   }
 });
@@ -382,7 +388,7 @@ function getSeerResults(targetId) {
   return Session.get("seerResults");
 }
 
-function finishedNightAction() {
+finishedNightAction = function() {
   Players.update(getPlayer()._id, {$set: {nightActionDone: true}});
   Players.update(getPlayer()._id, {$set: {seenNightResults: false}});
   Players.update(getPlayer()._id, {$set: {seenNewEvents: false}});
@@ -401,7 +407,7 @@ function finishedNightAction() {
   if (allDone) {
     Meteor.call("endNightCycle");
   }
-}
+};
 
 function getRoleType() {
   Meteor.call("getRoleId", Meteor.user(), function(error, result) {
