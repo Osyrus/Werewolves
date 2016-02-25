@@ -122,7 +122,7 @@ Template.werewolfTarget.events({
     // Now we can quite easily update this werewolf's target
     Players.update(werewolf._id, {$set: {target: targetId}});
 
-    // TODO This needs to change, think about what happens to all the 
+    // TODO This needs to change, think about what happens to all the
     // werewolves that aren't the one that voted last!!
 
     // Now we need to check if all the werewolves have clicked on the same target
