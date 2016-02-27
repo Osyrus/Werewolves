@@ -70,7 +70,7 @@ Template.werewolvesTargetList.helpers({
           // This makes it so that the target has the string next to them of all the werewolves that have selected them.
           targeted = true;
 
-          if (thisPlayer.target == player._id) {
+          if (werewolf._id == thisPlayer._id) {
             // This makes it so that this player has a more immediate colour as it is THIS players target
             playersTarget = true;
             // Make it obvious that it is indeed this player that has selected this player
@@ -247,6 +247,24 @@ Template.nightResults.helpers({
     }
 
     return okButton;
+  }
+});
+
+Template.werewolfScreen.helpers({
+  werewolfInfo: function() {
+    var text = "All werewolves must choose the same player before the kill can occur.";
+    var tag = "";
+
+    timeToKill = GameVariables.findOne("timeToKill");
+    if (timeToKill.enabled) {
+      text = "The werewolves all agree! Killing in " + Math.floor((timeToKill.value - TimeSync.serverTime()) / 1000);
+      tag = "inverted orange";
+    }
+
+    return {
+      text: text,
+      tag: tag
+    };
   }
 });
 

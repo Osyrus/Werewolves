@@ -292,10 +292,14 @@ Template.whoAmI.helpers({
           if (theWolves.count() > 1) {
             var wolfArray = [];
             theWolves.forEach(function (wolf) {
-              wolfArray.push(wolf.name);
+              if (wolf._id != getPlayer()._id)
+                wolfArray.push(wolf.name);
             });
 
-            roleString += "The other werewolves are " + wolfArray.join(", ") + ".";
+            if (wolfArray.length == 1)
+              roleString += "The other werewolf is " + wolfArray.join(", ") + ". ";
+            else
+              roleString += "The other werewolves are " + wolfArray.join(", ") + ". ";
           }
 
           roleString += werewolfDescription;
