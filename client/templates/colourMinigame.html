@@ -1,0 +1,39 @@
+<template name="coloursGame">
+  <div class="ui page grid main">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned dividing header">
+          The Colours Game
+        </h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <h2 class="ui center aligned {{gameVars.colourTag}} header">
+          The colour is {{gameVars.colour}}
+        </h2>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <div class="ui segments">
+          <div class="ui top attached centered label">
+            {{statusText}}
+          </div>
+
+          {{#each gameVars.answers}}
+            {{>colourOption}}
+          {{/each}}
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template name="colourOption">
+  <div class="ui center aligned inverted {{colourTag}} segment {{jsTag}}">
+    {{text}}
+  </div>
+</template>

@@ -3,17 +3,65 @@ var startDep = new Tracker.Dependency;
 
 nightViewDep = new Tracker.Dependency;
 
+var checkDep = new Tracker.Dependency;
+
 Template.navbar.helpers({
   inGame: function() {
     var currentGameMode = GameVariables.findOne("gameMode");
 
     return currentGameMode ? currentGameMode.value == "inGame" : false;
+  },
+  settingStates: function() {
+    checkDep.depend();
+    var doubleJeopardyTag = "";
+    if (GameSettings.findOne("doubleJeopardy").enabled)
+      doubleJeopardyTag = 'checked';
+
+    console.log("Updating settings");
+
+    return {
+      double: doubleJeopardyTag
+    }
   }
 });
 
 Template.navbar.events({
   "click .whoami": function() {
     Session.set("seenRole", false);
+  },
+  "click #doubleJeopardy": function() {
+    console.log("Checked double jeopardy");
+    GameSettings.update("doubleJeopardy", {$set: {enabled: true}});
+  },
+  "click .settings": function() {
+    $('.checkbox.doubleJeopardy')
+      .checkbox()
+      .first().checkbox({
+      onChecked: function() {
+        console.log("Checked double jeopardy");
+        GameSettings.update("doubleJeopardy", {$set: {enabled: true}});
+        checkDep.changed();
+      },
+      onUnchecked: function() {
+        console.log("Unchecked double jeopardy");
+        GameSettings.update("doubleJeopardy", {$set: {enabled: false}});
+        checkDep.changed();
+      }
+    });
+
+    $('.checkbox.revealNight')
+      .checkbox()
+      .first().checkbox({
+      onChecked: function() {
+        console.log("Checked reveal night");
+      },
+      onUnchecked: function() {
+        console.log("Unchecked reveal night");
+      }
+    });
+
+    $('.ui.modal.settingsModal')
+      .modal("show");
   }
 });
 
@@ -282,7 +330,7 @@ Template.whoAmI.helpers({
     }
   },
   "roleText": function() {
-    if ((true || Session.get("revealPressed")) && Session.get("roleGiven")) {
+    if ((true || Session.get("revealPressed"))) {
       var roleString = "";
       switch(Roles.findOne(getPlayer().role).name) {
         case "Werewolf":
@@ -292,10 +340,14 @@ Template.whoAmI.helpers({
           if (theWolves.count() > 1) {
             var wolfArray = [];
             theWolves.forEach(function (wolf) {
-              wolfArray.push(wolf.name);
+              if (wolf._id != getPlayer()._id)
+                wolfArray.push(wolf.name);
             });
 
-            roleString += "The other werewolves are " + wolfArray.join(", ") + ".";
+            if (wolfArray.length == 1)
+              roleString += "The other werewolf is " + wolfArray.join(", ") + ". ";
+            else
+              roleString += "The other werewolves are " + wolfArray.join(", ") + ". ";
           }
 
           roleString += werewolfDescription;
@@ -334,13 +386,13 @@ Template.whoAmI.helpers({
 });
 
 Template.whoAmI.events({
-  "mousedown .revealRole": function(event) {
-    event.preventDefault();
+  "mousedown .revealRole": function() {
     Session.set("revealPressed", true);
-    console.log("Reveal pressed");
   },
-  "mouseup .revealRole": function(event) {
-    event.preventDefault();
+  "mouseup .revealRole": function() {
+    Session.set("revealPressed", false);
+  },
+  "mouseout .revealRole": function() {
     Session.set("revealPressed", false);
   },
   "click .seen-role": function() {
@@ -584,9 +636,9 @@ Template.nominateTarget.events({
             // Set all the players votes back to abstain for the impending vote
             var players = getAlivePlayers();
             players.forEach(function (player) {
-              // Don't do this yet, for testing purposes (otherwise the bots votes get reset)
-              // TODO Remember this is here!!!
-              //Players.update(player._id, {$set: {voteChoice: 0}});
+              // Don't do this if the player is a bot (otherwise the vote gets reset)
+              if (!player.bot)
+                Players.update(player._id, {$set: {voteChoice: 0}});
             });
             // Get the nominator and nominee
             var target = Session.get("nominationTarget");
@@ -766,8 +818,7 @@ Template.youDiedScreen.helpers({
 });
 
 Template.youDiedScreen.events({
-  // TODO change this js class name, it makes no sense now
-  "click .js-seen-death": function() {
+  "click .js-spectate": function() {
     // The player has clicked the spectate button on the you died screen
     Session.set("spectating", true);
   }

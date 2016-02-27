@@ -32,13 +32,19 @@ Template.nightTime.helpers({
     return player.nightActionDone;
   },
   "doingNightAction": function() {
-    return Session.get("doingNightAction");
+    return Players.findOne(getPlayer()._id).doingNightAction;
   }
 });
 
 Template.nightTime.events({
   "click .js-doNightAction": function(event) {
-    Session.set("doingNightAction", true);
+    // This is where perhaps the game that the passive player will play is chosen.
+
+    if (getPlayer().role == Roles.findOne({name: "Villager"})._id) {
+      Session.set("gameVars", generateColourGameVars());
+    }
+
+    Players.update(getPlayer()._id, {$set: {doingNightAction: true}});
   }
 });
 
@@ -61,10 +67,10 @@ Template.werewolvesTargetList.helpers({
       // Lets check this player against all the werewolves and their own targets
       werewolves.forEach(function(werewolf) {
         if (werewolf.target == player._id) {
-          // This make it so that the target has the string next to them of all the werewolves that have selected them.
+          // This makes it so that the target has the string next to them of all the werewolves that have selected them.
           targeted = true;
 
-          if (thisPlayer.target == player._id) {
+          if (werewolf._id == thisPlayer._id) {
             // This makes it so that this player has a more immediate colour as it is THIS players target
             playersTarget = true;
             // Make it obvious that it is indeed this player that has selected this player
@@ -114,26 +120,14 @@ Template.werewolfTarget.events({
     // We also need the target, luckily we included an id data entry that we gave to our template
     var targetId = this.playerId;
     // Now we can quite easily update this werewolf's target
-    Players.update(werewolf._id, {$set: {target: targetId}});
-
-    // Now we need to check if all the werewolves have clicked on the same target
-    Meteor.call("checkWerewolvesAgree", function(error, result) {
-      if (error) {
-        console.log(error);
-      } else {
-        if (result) {
-          // This will ensure that if the server says that all the werewolves agree,
-          // then finishedNightAction() will be called
-          finishedNightAction();
-        }
-      }
-    });
+    // Moving to serverside stuff
+    Meteor.call("changeWerewolfVote", werewolf._id, targetId);
   }
 });
 
 Template.passiveScreen.events({
   "click .js-done": function(event) {
-    finishedNightAction();
+    Meteor.call("finishedNightAction", getPlayer()._id);
   }
 });
 
@@ -192,7 +186,7 @@ Template.playerSelection.events({
           .modal({
             closable: false,
             onApprove: function() {
-              finishedNightAction();
+              Meteor.call("finishedNightAction", getPlayer()._id);
             }
           })
           .modal("show")
@@ -202,34 +196,6 @@ Template.playerSelection.events({
     });
   }
 });
-
-// TODO this is all now redundant
-//Template.areYouSureDialog.events({
-//  "click .sure.nightDone": function() {
-//    Modal.hide("areYouSureDialog");
-//    finishedNightAction();
-//  },
-//  "click .sure.nominate": function() {
-//    // This stuff is technically daytime stuff, but oh well
-//    console.log("Clicked sure in nominate");
-//    // Kill the array holding the number of players looking at the nominate selection screen
-//    GameVariables.update("playersNominating", {$set: {value: []}});
-//    // Set all the players votes back to abstain for the impending vote
-//    var players = getAlivePlayers();
-//    players.forEach(function(player) {
-//      // Don't do this yet, for testing purposes (otherwise the bots votes get reset)
-//      //Players.update(player._id, {$set: {voteChoice: 0}});
-//    });
-//    // Set the variable to move to the yes/no vote
-//    GameVariables.update("lynchVote", {$set: {value: [this.data.nominatedPlayer, this.data.nominator], enabled: true}});
-//    // The nominator starts voting to lynch the target
-//    Players.update(this.data.nominator, {$set: {voteChoice: 1}});
-//    // Let the server know that the lynch vote has started
-//    Meteor.call("beginLynchVote");
-//
-//    Modal.hide("areYouSureDialog");
-//  }
-//});
 
 Template.nightResults.events({
   "click .ok": function() {
@@ -281,6 +247,24 @@ Template.nightResults.helpers({
     }
 
     return okButton;
+  }
+});
+
+Template.werewolfScreen.helpers({
+  werewolfInfo: function() {
+    var text = "All werewolves must choose the same player before the kill can occur.";
+    var tag = "";
+
+    timeToKill = GameVariables.findOne("timeToKill");
+    if (timeToKill.enabled) {
+      text = "The werewolves all agree! Killing in " + Math.floor((timeToKill.value - TimeSync.serverTime()) / 1000);
+      tag = "inverted orange";
+    }
+
+    return {
+      text: text,
+      tag: tag
+    };
   }
 });
 
@@ -380,27 +364,6 @@ function getSeerResults(targetId) {
   });
 
   return Session.get("seerResults");
-}
-
-function finishedNightAction() {
-  Players.update(getPlayer()._id, {$set: {nightActionDone: true}});
-  Players.update(getPlayer()._id, {$set: {seenNightResults: false}});
-  Players.update(getPlayer()._id, {$set: {seenNewEvents: false}});
-  Session.set("doingNightAction", false);
-
-  // Do a check to see if everyone has seen the results and if so, move to day.
-  var players = getAlivePlayers();
-  var allDone = true;
-
-  players.forEach(function(player) {
-    if (!player.nightActionDone) {
-      allDone = false;
-    }
-  });
-
-  if (allDone) {
-    Meteor.call("endNightCycle");
-  }
 }
 
 function getRoleType() {

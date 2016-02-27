@@ -2,7 +2,8 @@
   {{#if doingNightAction}}
     <!-- This is where the players are given their individual screens -->
     {{#if passive}}
-      {{> passiveScreen}}
+      <!--{{> passiveScreen}} It could be that this swaps out for different games depending. -->
+      {{> coloursGame}}
     {{else}} {{#if werewolf}}
       {{> werewolfScreen}}
     {{else}} {{#if doctor}}
@@ -87,9 +88,8 @@
 
     <div class="row">
       <div class="column">
-        <div class="ui segment">
-          You are a werewolf, so you must pick someone you wish to kill during the night.
-          All werewolves must choose the same player before the kill can occur.
+        <div class="ui {{werewolfInfo.tag}} segment">
+          {{werewolfInfo.text}}
         </div>
       </div>
     </div>
