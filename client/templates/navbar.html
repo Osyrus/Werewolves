@@ -1,41 +1,28 @@
 <template name="navbar">
   <div class="ui top fixed menu">
     <div class="header item">
-      {{#if location.ingame}}
-        <i class="game icon"></i>
-        In Game
-      {{else}} {{#if location.lobby}}
-        <i class="home icon"></i>
-        Lobby
-      {{else}} {{#if location.whoami}}
-        <i class="help icon"></i>
-        Who Am I
-      {{else}} {{#if location.spectating}}
-        <i class="find icon"></i>
-        Spectating
-      {{/if}} {{/if}} {{/if}} {{/if}}
+      <i class="home icon"></i>
+      Lobby
     </div>
 
     <div class="item">
       {{> loginButtons align="right"}}
     </div>
 
-    {{#if location.whoami}} {{else}}
-      <div class="right menu">
-        {{#if inGame}}
-          <!-- During the game we want to allow the player to double check their role -->
-          <a class="item whoami">
-            <i class="help icon"></i>
-            My Role
-          </a>
-        {{else}}
-          <!-- In the lobby this position is for the game settings (which shouldn't be changed in game anyway!) -->
-          <a class="item settings">
-            <i class="wrench icon"></i>
-            Settings
-          </a>
-        {{/if}}
-      </div>
-    {{/if}}
+    <div class="right menu">
+      {{#if inGame}}
+        <!-- During the game we want to allow the player to double check their role -->
+        <a class="item whoami">
+          <i class="help icon"></i>
+          My Role
+        </a>
+      {{else}}
+        <!-- In the lobby this position is for the game settings (which shouldn't be changed in game anyway!) -->
+        <a class="item settings">
+          <i class="wrench icon"></i>
+          Settings
+        </a>
+      {{/if}}
+    </div>
   </div>
 </template>
