@@ -18,7 +18,7 @@ Template.coloursGame.events({
     Session.set("statusText", "Correct, good work!");
 
     Meteor.setTimeout(function() {
-      finishedNightAction();
+      Meteor.call("finishedNightAction", getPlayer()._id);
     }, 3000);
   },
   "click .js-incorrect": function() {

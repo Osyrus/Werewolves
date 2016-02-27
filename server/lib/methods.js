@@ -179,71 +179,6 @@ Meteor.methods({
 
     moveToNextCycle();
   },
-  "endNightCycle": function() {
-    var cycleNumber = GameVariables.findOne("cycleNumber").value;
-
-    var nightEndText = "The night has ended...";
-    EventList.insert({type: "info", cycleNumber: cycleNumber, text: nightEndText, timeAdded: new Date()});
-
-    // Here is where the night cycle needs to be computed
-
-    // Need to kill whoever the werewolves picked UNLESS they have the "save" effect, or are the Knight
-      // Need to generate an event based on that
-
-    // Get the werewol(f/ves) target id
-    var werewolf = Roles.findOne({name: "Werewolf"});
-    var werewolfTargetId = werewolf.target;
-    // Get the doctors target id
-    var doctorsTargetId = Roles.findOne({name: "Doctor"}).target;
-    // Get the saints id
-    var knight = Players.findOne({role: Roles.findOne({name: "Knight"})._id});
-    var knightId = 0;
-    if (knight != undefined) {
-      knightId = knight._id;
-    }
-
-    // Now lets check if the werewolves are indeed allowed to kill their target (not saved, not the knight)
-    if (werewolfTargetId != doctorsTargetId && werewolfTargetId != knightId && werewolfTargetId != 0) {
-      // It seems this player is doomed
-      var target = Players.findOne(werewolfTargetId);
-
-      // Sorry mate...
-      Players.update(werewolfTargetId, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "werewolf"}}});
-
-      // Now lets inform everyone
-      var wwKillText = target.name + " has been killed during the night!";
-
-      // Are we revealing the roles of the dead during the night?
-      if (GameSettings.findOne("revealRole").night) {
-        var targetsRole = Roles.findOne(target.role);
-
-        if (targetsRole.name == "Villager") {
-          wwKillText += " They were a villager.";
-        } else {
-          wwKillText += " They were the " + targetsRole.name + ".";
-        }
-      }
-
-      EventList.insert({type: "vDeath", cycleNumber: cycleNumber, text: wwKillText, timeAdded: new Date()});
-    } else {
-      // Phew, that player sure is happy about this outcome...
-
-      // Better let everybody know the good news
-      var noDeathText = "Nobody was killed during the night";
-      EventList.insert({type: "info", cycleNumber: cycleNumber, text: noDeathText, timeAdded: new Date()});
-    }
-
-    // Need to generate an event for what the witch has done
-    var witchesTargetId = Roles.findOne({name: "Witch"}).target;
-    var witchesTarget = Players.findOne(witchesTargetId);
-    // Now to generate some text and the event
-    if (witchesTarget != undefined) {
-      var witchesText = witchesTarget.name + " was hexxed during the night, and can't speak today!";
-      EventList.insert({type: "warning", cycleNumber: cycleNumber, text: witchesText, timeAdded: new Date()});
-    }
-
-    moveToNextCycle();
-  },
   "setRoleTarget": function(roleId, targetId) {
     var role = Roles.findOne(roleId);
     var target = Players.findOne(targetId);
@@ -258,50 +193,6 @@ Meteor.methods({
     var role = Roles.findOne({name: roleName});
 
     return Players.findOne(role.target);
-  },
-  "checkWerewolvesAgree": function() {
-    // Lets get the werewolves in question (all of them...)
-    var werewolfId = Roles.findOne({name: "Werewolf"})._id;
-    var werewolves = Players.find({role: werewolfId});
-
-    // Lets make a list of all the targets id's
-    var targets = [];
-    werewolves.forEach(function(werewolf) {
-      targets.push(werewolf.target);
-    });
-
-    // Lets now check to see if they are all the same and thus the werewolves all agree on a target
-    var potentialTargetId = targets[0];
-    var allAgree = true;
-    for (var i = 1; i < targets.length; i++) {
-      if (potentialTargetId != targets[i]) {
-        // One werewolf does not agree, then they don't all agree. Duh.
-        allAgree = false;
-      }
-    }
-
-    // OK, so what was the outcome of that? Are the werewolves all in agreement, or no?
-    if (allAgree) {
-      // As not all the wolves will be calling the finishedNightAction() function in the client,
-      // we need to make sure that they have the important variables set anyway.
-      werewolves.forEach(function(werewolf) {
-        Players.update(werewolf._id, {$set: {nightActionDone: true}});
-        Players.update(werewolf._id, {$set: {seenNightResults: false}});
-        Players.update(werewolf._id, {$set: {seenNewEvents: false}});
-      });
-
-      Roles.update(werewolfId, {$set: {target: potentialTargetId}});
-
-      var agreedTarget = Players.findOne(potentialTargetId);
-      console.log("Werewolves have all targeted: " + agreedTarget.name);
-
-      return true;
-    } else {
-      // No agreement yet
-      Roles.update(werewolfId, {$set: {target: 0}});
-
-      return false;
-    }
   },
   "changeRoleVote": function(playerId, roleId, newVote) {
     var vote = RoleVotes.findOne({playerId: playerId, roleId: roleId});
@@ -338,8 +229,80 @@ Meteor.methods({
   },
   "recountRoleVotes": function() {
     countVotes();
+  },
+  "changeWerewolfVote": function(playerId, targetId) {
+    // Update the werewolf that requested it
+    Players.update(playerId, {$set: {target: targetId}});
+
+    // Now let's check if they all agree or not...
+
+    // Lets get the werewolves in question (all of them...)
+    var werewolfId = Roles.findOne({name: "Werewolf"})._id;
+    var werewolves = Players.find({role: werewolfId});
+
+    // Lets make a list of all the targets id's
+    var targets = [];
+    werewolves.forEach(function(werewolf) {
+      targets.push(werewolf.target);
+    });
+
+    // Lets now check to see if they are all the same and thus the werewolves all agree on a target
+    var potentialTargetId = targets[0];
+    var allAgree = true;
+    for (var i = 1; i < targets.length; i++) {
+      if (potentialTargetId != targets[i]) {
+        // One werewolf does not agree, then they don't all agree. Duh.
+        allAgree = false;
+      }
+    }
+
+    // OK, so what was the outcome of that? Are the werewolves all in agreement, or no?
+    if (allAgree) {
+      werewolves.forEach(function(werewolf) {
+        finishedNightAction(werewolf._id);
+      });
+
+      Roles.update(werewolfId, {$set: {target: potentialTargetId}});
+
+      var agreedTarget = Players.findOne(potentialTargetId);
+      console.log("Werewolves have all targeted: " + agreedTarget.name);
+
+      checkNightEnded();
+    } else {
+      // No agreement yet
+      Roles.update(werewolfId, {$set: {target: 0}});
+    }
+  },
+  "finishedNightAction": function(playerId) {
+    finishedNightAction(playerId);
+    checkNightEnded();
   }
 });
+
+function finishedNightAction(playerId) {
+  Players.update(playerId, {$set: {
+    nightActionDone: true,
+    seenNightResults: false,
+    seenNewEvents: false,
+    doingNightAction: false
+  }});
+}
+
+function checkNightEnded() {
+  // Do a check to see if everyone has seen the results and if so, move to day.
+  var players = Players.find({alive: true});
+  var allDone = true;
+
+  players.forEach(function(player) {
+    if (!player.nightActionDone) {
+      allDone = false;
+    }
+  });
+
+  if (allDone) {
+    endNightCycle();
+  }
+}
 
 function countVotes() {
   // We only want to do this for non critical roles.
@@ -458,6 +421,72 @@ function moveToNextCycle() {
     // 3. If we get here, that means there are more villagers than werewolves, so do nothing.
     console.log("The game continues...");
   }
+}
+
+function endNightCycle() {
+  var cycleNumber = GameVariables.findOne("cycleNumber").value;
+
+  var nightEndText = "The night has ended...";
+  EventList.insert({type: "info", cycleNumber: cycleNumber, text: nightEndText, timeAdded: new Date()});
+
+  // Here is where the night cycle needs to be computed
+
+  // Need to kill whoever the werewolves picked UNLESS they have the "save" effect, or are the Knight
+  // Need to generate an event based on that
+
+  // Get the werewol(f/ves) target id
+  var werewolf = Roles.findOne({name: "Werewolf"});
+  var werewolfTargetId = werewolf.target;
+  // Get the doctors target id
+  var doctorsTargetId = Roles.findOne({name: "Doctor"}).target;
+  // Get the saints id
+  var knight = Players.findOne({role: Roles.findOne({name: "Knight"})._id});
+  var knightId = 0;
+  if (knight != undefined) {
+    knightId = knight._id;
+  }
+
+  // Now lets check if the werewolves are indeed allowed to kill their target (not saved, not the knight)
+  if (werewolfTargetId != doctorsTargetId && werewolfTargetId != knightId && werewolfTargetId != 0) {
+    // It seems this player is doomed
+    var target = Players.findOne(werewolfTargetId);
+
+    // Sorry mate...
+    Players.update(werewolfTargetId, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "werewolf"}}});
+
+    // Now lets inform everyone
+    var wwKillText = target.name + " has been killed during the night!";
+
+    // Are we revealing the roles of the dead during the night?
+    if (GameSettings.findOne("revealRole").night) {
+      var targetsRole = Roles.findOne(target.role);
+
+      if (targetsRole.name == "Villager") {
+        wwKillText += " They were a villager.";
+      } else {
+        wwKillText += " They were the " + targetsRole.name + ".";
+      }
+    }
+
+    EventList.insert({type: "vDeath", cycleNumber: cycleNumber, text: wwKillText, timeAdded: new Date()});
+  } else {
+    // Phew, that player sure is happy about this outcome...
+
+    // Better let everybody know the good news
+    var noDeathText = "Nobody was killed during the night";
+    EventList.insert({type: "info", cycleNumber: cycleNumber, text: noDeathText, timeAdded: new Date()});
+  }
+
+  // Need to generate an event for what the witch has done
+  var witchesTargetId = Roles.findOne({name: "Witch"}).target;
+  var witchesTarget = Players.findOne(witchesTargetId);
+  // Now to generate some text and the event
+  if (witchesTarget != undefined) {
+    var witchesText = witchesTarget.name + " was hexxed during the night, and can't speak today!";
+    EventList.insert({type: "warning", cycleNumber: cycleNumber, text: witchesText, timeAdded: new Date()});
+  }
+
+  moveToNextCycle();
 }
 
 // This function ends the game, the boolean input is true if the villagers won, false if the werewolves win.
