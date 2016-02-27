@@ -5,7 +5,6 @@ Meteor.startup(function () {
   addTestPlayer("Fred", 1);
   addTestPlayer("Steve", 1);
   addTestPlayer("Bob", 2);
-  addTestPlayer("Gary", 0);
 
   // Create the roles
   Roles.remove({});
@@ -35,7 +34,6 @@ Meteor.startup(function () {
   GameVariables.insert({_id: "timeToVoteTimeout", name: "Seconds until the vote times out and the lynch fails", value: 0, enabled: false});
   GameVariables.insert({_id: "voteDirection", name: "The direction the vote should be executed. value: for/against (true/false)", value: false, enabled: false});
   GameVariables.insert({_id: "lastGameResult", name: "The last games result", value: {villagersWon: false}, enabled: false});
-  GameVariables.insert({_id: "timeToKill", name: "Seconds until the werewolves make the kill", value: 0, enabled: false});
 
   // These server check things may be rubbish that should not exist
 
