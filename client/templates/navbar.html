@@ -33,16 +33,21 @@
       </div>
 
       <div class="content">
-        <div class="ui list">
+        <div class="ui divided list">
           <div class="item">
-            <div class="ui toggle read-only {{settingStates.double}} checkbox doubleJeopardy">
-              <input type="checkbox" id="doubleJeopardy">
-              <label>Double Jeopardy</label>
+            <div class="right floated content">
+              <button class="ui {{settingStates.doubleTag}} button doubleJeopardy">{{settingStates.doubleText}}</button>
+            </div>
+            <div class="content">
+              <div class="header">
+                Double Jeopardy
+              </div>
+              This is the double jeopardy rule.
             </div>
           </div>
 
-          <div class="item">
-            <div class="ui toggle checkbox revealNight">
+          <div class="item revealNight">
+            <div class="ui read-only toggle {{settingStates.revealNight}} checkbox">
               <input type="checkbox" name="revealNight">
               <label>Reveal Role at Night</label>
             </div>
