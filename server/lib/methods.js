@@ -1,6 +1,7 @@
 var startGameCounter = null;
 var executeVoteCounter = null;
 var voteTimeout = null;
+var killCounter = null;
 
 Meteor.methods({
   addPlayer: function(user) {
@@ -238,7 +239,7 @@ Meteor.methods({
 
     // Lets get the werewolves in question (all of them...)
     var werewolfId = Roles.findOne({name: "Werewolf"})._id;
-    var werewolves = Players.find({role: werewolfId});
+    var werewolves = Players.find({role: werewolfId, alive: true, joined: true});
 
     // Lets make a list of all the targets id's
     var targets = [];
@@ -250,7 +251,7 @@ Meteor.methods({
     var potentialTargetId = targets[0];
     var allAgree = true;
     for (var i = 1; i < targets.length; i++) {
-      if (potentialTargetId != targets[i]) {
+      if (potentialTargetId != targets[i] || !targets[i] || targets[i] == 0) {
         // One werewolf does not agree, then they don't all agree. Duh.
         allAgree = false;
       }
@@ -258,18 +259,39 @@ Meteor.methods({
 
     // OK, so what was the outcome of that? Are the werewolves all in agreement, or no?
     if (allAgree) {
-      werewolves.forEach(function(werewolf) {
-        finishedNightAction(werewolf._id);
-      });
+      var countdownDelay = GameSettings.findOne("timeDelays").countdown;
 
-      Roles.update(werewolfId, {$set: {target: potentialTargetId}});
+      GameVariables.update("timeToKill", {$set: {
+        value: (new Date()).valueOf() + countdownDelay,
+        enabled: true
+      }});
 
       var agreedTarget = Players.findOne(potentialTargetId);
       console.log("Werewolves have all targeted: " + agreedTarget.name);
 
-      checkNightEnded();
+      if (!killCounter) {
+        killCounter = Meteor.setTimeout(function () {
+          werewolves.forEach(function (werewolf) {
+            finishedNightAction(werewolf._id);
+          });
+
+          Roles.update(werewolfId, {$set: {target: potentialTargetId}});
+
+          checkNightEnded();
+        }, countdownDelay);
+      }
     } else {
       // No agreement yet
+      if (killCounter) {
+        Meteor.clearTimeout(killCounter);
+        killCounter = null;
+      }
+
+      GameVariables.update("timeToKill", {$set: {
+        value: 0,
+        enabled: false
+      }});
+
       Roles.update(werewolfId, {$set: {target: 0}});
     }
   },
