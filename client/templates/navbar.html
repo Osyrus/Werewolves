@@ -1,12 +1,8 @@
 <template name="navbar">
   <div class="ui top fixed menu">
     <div class="header item">
-      <i class="home icon"></i>
-      Lobby
-    </div>
-
-    <div class="item">
-      {{> loginButtons align="right"}}
+      <i class="game icon"></i>
+      Werewolves
     </div>
 
     <div class="right menu">
@@ -23,6 +19,43 @@
           Settings
         </a>
       {{/if}}
+
+      <div class="item">
+        {{> loginButtons align="right"}}
+      </div>
+    </div>
+
+    <div class="ui modal settingsModal">
+      <i class="close icon"></i>
+      <div class="header">
+        <i class="wrench icon"></i>
+        Settings
+      </div>
+
+      <div class="content">
+        <div class="ui list">
+          <div class="item">
+            <div class="ui toggle read-only {{settingStates.double}} checkbox doubleJeopardy">
+              <input type="checkbox" id="doubleJeopardy">
+              <label>Double Jeopardy</label>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="ui toggle checkbox revealNight">
+              <input type="checkbox" name="revealNight">
+              <label>Reveal Role at Night</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <div class="ui ok blue button">
+          <i class="checkmark icon"></i>
+          Done
+        </div>
+      </div>
     </div>
   </div>
 </template>

@@ -3,17 +3,65 @@ var startDep = new Tracker.Dependency;
 
 nightViewDep = new Tracker.Dependency;
 
+var checkDep = new Tracker.Dependency;
+
 Template.navbar.helpers({
   inGame: function() {
     var currentGameMode = GameVariables.findOne("gameMode");
 
     return currentGameMode ? currentGameMode.value == "inGame" : false;
+  },
+  settingStates: function() {
+    checkDep.depend();
+    var doubleJeopardyTag = "";
+    if (GameSettings.findOne("doubleJeopardy").enabled)
+      doubleJeopardyTag = 'checked';
+
+    console.log("Updating settings");
+
+    return {
+      double: doubleJeopardyTag
+    }
   }
 });
 
 Template.navbar.events({
   "click .whoami": function() {
     Session.set("seenRole", false);
+  },
+  "click #doubleJeopardy": function() {
+    console.log("Checked double jeopardy");
+    GameSettings.update("doubleJeopardy", {$set: {enabled: true}});
+  },
+  "click .settings": function() {
+    $('.checkbox.doubleJeopardy')
+      .checkbox()
+      .first().checkbox({
+      onChecked: function() {
+        console.log("Checked double jeopardy");
+        GameSettings.update("doubleJeopardy", {$set: {enabled: true}});
+        checkDep.changed();
+      },
+      onUnchecked: function() {
+        console.log("Unchecked double jeopardy");
+        GameSettings.update("doubleJeopardy", {$set: {enabled: false}});
+        checkDep.changed();
+      }
+    });
+
+    $('.checkbox.revealNight')
+      .checkbox()
+      .first().checkbox({
+      onChecked: function() {
+        console.log("Checked reveal night");
+      },
+      onUnchecked: function() {
+        console.log("Unchecked reveal night");
+      }
+    });
+
+    $('.ui.modal.settingsModal')
+      .modal("show");
   }
 });
 
