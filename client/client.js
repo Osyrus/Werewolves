@@ -8,6 +8,14 @@ Template.navbar.helpers({
     var currentGameMode = GameVariables.findOne("gameMode");
 
     return currentGameMode ? currentGameMode.value == "inGame" : false;
+  },
+  location: function() {
+    return {
+      lobby: Session.get("location") == "lobby",
+      ingame: Session.get("location") == "ingame",
+      whoami: Session.get("location") == "whoami",
+      spectating: Session.get("location") == "spectating"
+    };
   }
 });
 
@@ -26,10 +34,13 @@ Template.body.helpers({
       var player = Players.findOne({userId: Meteor.userId()});
 
       if (player == undefined) {
+        Session.set("location", "lobby");
         return true;
       } else if (!player.joined) {
+        Session.set("location", "lobby");
         return true;
       } else {
+        Session.set("location", "lobby");
         return currentGameMode.value == "lobby";
       }
     } else {
@@ -44,13 +55,23 @@ Template.body.helpers({
   inGame: function() {
     var currentGameMode = GameVariables.findOne("gameMode");
 
-    return currentGameMode ? currentGameMode.value == "inGame" : false;
+    if (currentGameMode) {
+      if (currentGameMode.value == "inGame") {
+        Session.set("location", "ingame");
+        return true;
+      }
+    }
+
+    return false;
   },
   whoAmIScreen: function() {
     var currentGameMode = GameVariables.findOne("gameMode").value;
 
     if (currentGameMode == "inGame") {
-      return !Session.get("seenRole");
+      if (!Session.get("seenRole")) {
+        Session.set("location", "whoami");
+        return true;
+      }
     }
 
     return false;
@@ -61,7 +82,11 @@ Template.body.helpers({
     return !player.seenNightResults ? true : player.alive;
   },
   spectating: function() {
-    return Session.get("spectating");
+    if (Session.get("spectating")) {
+      Session.set("location", "spectating");
+      return true;
+    }
+    return false;
   }
 });
 
@@ -349,6 +374,7 @@ Template.whoAmI.events({
   },
   "click .seen-role": function() {
     Session.set("seenRole", true);
+    Session.set("location", "ingame");
   }
 });
 
