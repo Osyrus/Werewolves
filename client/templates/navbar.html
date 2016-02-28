@@ -33,19 +33,79 @@
       </div>
 
       <div class="content">
-        <div class="ui list">
+        <div class="ui center aligned header">
+          Game Rules
+          <div class="sub header">
+            Turn these on or off by pressing the button.
+          </div>
+        </div>
+
+        <div class="ui divided list">
           <div class="item">
-            <div class="ui toggle read-only {{settingStates.double}} checkbox doubleJeopardy">
-              <input type="checkbox" id="doubleJeopardy">
-              <label>Double Jeopardy</label>
+            <div class="right floated content">
+              <button class="ui {{settingStates.doubleTag}} button doubleJeopardy">{{settingStates.doubleText}}</button>
+            </div>
+            <div class="content">
+              <div class="header">
+                Double Jeopardy
+              </div>
+              Players can nominate the same person twice in one day.
             </div>
           </div>
 
           <div class="item">
-            <div class="ui toggle checkbox revealNight">
-              <input type="checkbox" name="revealNight">
-              <label>Reveal Role at Night</label>
+            <div class="right floated content">
+              <button class="ui {{settingStates.revealDTag}} button revealDay">{{settingStates.revealDText}}</button>
             </div>
+            <div content="content">
+              <div class="header">
+                Reveal Role (<i class="sun icon"></i> Day)
+              </div>
+              Players roles are revealed upon death during the day.
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="right floated content">
+              <button class="ui {{settingStates.revealNTag}} button revealNight">{{settingStates.revealNText}}</button>
+            </div>
+            <div content="content">
+              <div class="header">
+                Reveal Role (<i class="moon icon"></i> Night)
+              </div>
+              Players roles are revealed upon death at night.
+            </div>
+          </div>
+        </div>
+
+        <div class="ui center aligned header">
+          Game Timings
+          <div class="sub header">
+            Slide to change the delay times.
+          </div>
+        </div>
+
+        <div class="ui divided list">
+          <div class="item">
+            <div class="content">
+              <div class="header">
+                Countdown Time
+              </div>
+              This is countdown time until lynching, etc.
+            </div>
+            <div class="ui range" id="countdown-range"></div>
+            Current setting: {{settingStates.countdown}} seconds.
+          </div>
+
+          <div class="item">
+            <div class="content">
+              <div class="header">
+                Lynch Timout Delay
+              </div>
+              This is the amount of time the lynching vote can go without a majority.
+            </div>
+            <div class="ui range" id="timeout-range"></div>
+            Current setting: {{settingStates.timeout}} seconds.
           </div>
         </div>
       </div>
