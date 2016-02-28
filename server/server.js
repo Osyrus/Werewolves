@@ -37,13 +37,7 @@ Meteor.startup(function () {
   GameVariables.insert({_id: "lastGameResult", name: "The last games result", value: {villagersWon: false}, enabled: false});
   GameVariables.insert({_id: "timeToKill", name: "Seconds until the werewolves make the kill", value: 0, enabled: false});
 
-  // These server check things may be rubbish that should not exist
-
-  ServerChecks.remove({});
-
-  ServerChecks.insert({_id: "allReady", value: false});
-
-  // The default game settings for if they don't exist in the database already.
+  // Set the game settings to their default if they don't exist in the database already.
 
   if (!GameSettings.findOne("doubleJeopardy")) {
     GameSettings.insert({_id: "doubleJeopardy", enabled: true});
