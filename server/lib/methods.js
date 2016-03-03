@@ -159,6 +159,14 @@ Meteor.methods({
     }
   },
   "beginLynchVote": function() {
+    var cycleNumber = GameVariables.findOne("cycleNumber").value;
+    var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
+    var nominator = Players.findOne(GameVariables.findOne("lynchVote").value[1]);
+
+    var lynchNominationMadeText = nominator.name + " has nominated " + target.name + " to be lynched.";
+
+    EventList.insert({type: "info", cycleNumber: cycleNumber, text: lynchNominationMadeText, timeAdded: new Date()});
+
     startLynchTimeout();
   },
   "executeVote": function() { // This isn't used anymore
@@ -699,15 +707,16 @@ function executeVote() {
   var cycleNumber = GameVariables.findOne("cycleNumber").value;
   var voteDirection = GameVariables.findOne("voteDirection").value;
   var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
+  var nominator = Players.findOne(GameVariables.findOne("lynchVote").value[1]);
   stopLynchCountdown();
 
+  var voteText = nominator.name + "'s nomination for " + target.name + " to be lynched";
+
+  // Fill in the rest of the vote text depending on outcome of vote
+  voteText += voteDirection ? " has passed." : " has failed.";
+  EventList.insert({type: "info", cycleNumber: cycleNumber, text: voteText, timeAdded: new Date()});
+
   if (voteDirection) {
-    // This means the day is over, so make an event for that
-
-    var dayEndedOnLynchText = "The vote is complete and with that marks the end of the day.";
-
-    EventList.insert({type: "info", cycleNumber: cycleNumber, text: dayEndedOnLynchText, timeAdded: new Date()});
-
     // Lynch the target!!
     Players.update(target._id, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "lynch"}}});
 
@@ -731,7 +740,6 @@ function executeVote() {
 
     // We should also check if the target is the saint, as they take the nominator with them
     if (targetsRole.name == "Saint") {
-      var nominator = Players.findOne(GameVariables.findOne("lynchVote").value[1]);
       var nominatorsRole = Roles.findOne(nominator.role);
 
       Players.update(nominator._id, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "saint"}}});
