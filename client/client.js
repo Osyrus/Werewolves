@@ -164,6 +164,30 @@ Template.body.helpers({
   }
 });
 
+Template.player.helpers({
+  // This is how to get the profile pic;
+  // "http://graph.facebook.com/" + user.services.facebook.id + "/picture/?type=large"
+  facebook: function() {
+    var user = Meteor.users.findOne(this.userId);
+
+    var login = false;
+    var profilePic = "";
+    var name = "";
+
+    if (user) {
+      login = user.services.facebook ? true : false;
+      profilePic = "http://graph.facebook.com/" + user.services.facebook.id + "/picture/?type=large";
+      name = user.profile.name;
+    }
+
+    return {
+      login: login,
+      profilePic: profilePic,
+      name: name
+    };
+  }
+});
+
 Template.lobbyScreen.events({
   "click .join-game": function() {
     if (GameVariables.findOne("gameMode").value == "lobby") {
