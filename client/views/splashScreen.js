@@ -110,5 +110,15 @@ Template.splashScreen.events({
     event.preventDefault();
 
     FlowRouter.go('/spectate');
+  },
+  "click .js-logout": function(event) {
+    event.preventDefault();
+
+    AccountsTemplates.logout();
+  },
+  "click .js-view-last-game": function(event) {
+    event.preventDefault();
+
+  // TODO this is where the client is redirected to the view of the last game
   }
 });

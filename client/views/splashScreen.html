@@ -25,6 +25,20 @@
           <button class="ui fluid massive {{btn2.colour}} button {{btn2.tag}}">
             {{btn2.text}}
           </button>
+
+          <div class="ui divider"></div>
+
+          <div class="ui fluid large buttons">
+            <button class="ui purple button js-view-last-game">
+              View last game
+            </button>
+            {{#if currentUser}}
+              <button class="ui black button js-logout">
+                <i class="sign out icon"></i>
+                Logout
+              </button>
+            {{/if}}
+          </div>
         </div>
       </div>
     </div>
