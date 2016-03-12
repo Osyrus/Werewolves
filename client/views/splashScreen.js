@@ -119,6 +119,6 @@ Template.splashScreen.events({
   "click .js-view-last-game": function(event) {
     event.preventDefault();
 
-  // TODO this is where the client is redirected to the view of the last game
+  // TODO this is where the client will be redirected to the view of the last game
   }
 });
