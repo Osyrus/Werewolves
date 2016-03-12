@@ -73,7 +73,12 @@
 
     <!-- This is where the players avatar could go (in a "ui avatar image")-->
 
-    <p>{{name}}</p>
+    {{#if facebookLogin}}
+      <img class="ui avatar image" src="{{avatar}}">
+    {{else}}
+      <i class="circular user icon"></i>
+    {{/if}}
+    <span>{{name}}</span>
   </div>
 </template>
 

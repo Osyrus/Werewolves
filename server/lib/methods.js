@@ -614,7 +614,13 @@ function stopLynchTimeout() {
 }
 
 function startGameCountdown() {
-  var milliDelay = GameSettings.findOne("timeDelays").countdown;
+  var milliDelay = GameSettings.findOne("timeDelays").startgame;
+
+  // TODO This shouldn't be necessary but for some reason the reset isn't working in server??
+  if(!milliDelay) {
+    GameSettings.update("timeDelays", {$set: {startgame: 5100}});
+    milliDelay = 5100;
+  }
 
   var startTime = (new Date()).valueOf() + milliDelay;
 
