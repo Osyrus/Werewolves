@@ -4,10 +4,16 @@ var voteTimeout = null;
 var killCounter = null;
 
 Meteor.methods({
-  addPlayer: function(user) {
+  addPlayer: function() {
+    var user = Meteor.user();
+
+    var facebook = user.services.facebook ? true : false;
+
     Players.insert({
       userId: user._id,
-      name:   user.username,
+      facebookLogin: facebook,
+      name:   facebook ? user.profile.name : user.username,
+      avatar: facebook ? "http://graph.facebook.com/" + user.services.facebook.id + "/picture/?type=large" : "",
       role:   0,
       status: 0,
       alive: true,

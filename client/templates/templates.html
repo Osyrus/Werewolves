@@ -1,8 +1,8 @@
 <template name="player">
   <div class="item">
-    {{#if facebook.login}}
+    {{#if facebookLogin}}
       <div class="image">
-        <img class="ui avatar image" src="{{facebook.profilePic}}">
+        <img class="ui mini image" src="{{avatar}}">
       </div>
     {{else}} <!-- TODO Line up these so that the name starts at the same place -->
       <div class="image">
@@ -12,11 +12,7 @@
 
     <div class="middle aligned content">
       <div class="ui {{#if ready}}green{{else}}orange{{/if}} header">
-        {{#if facebook.login}}
-          {{facebook.name}}
-        {{else}}
-          {{name}}
-        {{/if}}
+        {{name}}
       </div>
       <div class="description">
         <!-- This could possibly have some of the players stats? -->
