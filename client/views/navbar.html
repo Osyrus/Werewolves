@@ -1,9 +1,11 @@
 <template name="navbar">
   <div class="ui top fixed menu">
-    <div class="header item">
-      <i class="game icon"></i>
-      Werewolves
-    </div>
+    {{#if playerName}}
+      <div class="header item">
+        <i class="user icon"></i>
+        {{playerName}}
+      </div>
+    {{/if}}
 
     <div class="right menu">
       {{#if inGame}}
@@ -20,9 +22,10 @@
         </a>
       {{/if}}
 
-      <div class="item">
-        {{> loginButtons align="right"}}
-      </div>
+      <a class="item logout">
+        <i class="sign out icon"></i>
+        Logout
+      </a>
     </div>
 
     <div class="ui modal settingsModal">
@@ -106,6 +109,28 @@
             </div>
             <div class="ui range" id="timeout-range"></div>
             Current setting: {{settingStates.timeout}} seconds.
+          </div>
+        </div>
+
+        <div class="ui center aligned header">
+          System
+          <div class="sub header">
+            System settings and actions
+          </div>
+        </div>
+
+        <div class="ui divided list">
+          <div class="item">
+            <div class="right floated content">
+              <button class="ui red button js-restart">Restart</button>
+            </div>
+
+            <div class="content">
+              <div class="header">
+                Restart Server
+              </div>
+              Warning!! Actually restarts the server and resets all variables!!
+            </div>
           </div>
         </div>
       </div>

@@ -1,10 +1,19 @@
 <template name="player">
   <div class="item">
-    <!-- This is where the eventual user avatar will go as a "ui avatar image" -->
+    {{#if facebookLogin}}
+      <div class="ui middle aligned image">
+        <img class="ui avatar image" src="{{avatar}}">
+      </div>
+    {{else}}
+      <div class="ui middle aligned image">
+        <i class="circular user icon"></i>
+      </div>
+    {{/if}}
+
     <div class="content">
-      <h3 class="ui {{#if ready}}green{{else}}orange{{/if}} header">
+      <div class="ui {{#if ready}}green{{else}}orange{{/if}} header">
         {{name}}
-      </h3>
+      </div>
       <div class="description">
         <!-- This could possibly have some of the players stats? -->
         {{#if ready}}
@@ -64,7 +73,12 @@
 
     <!-- This is where the players avatar could go (in a "ui avatar image")-->
 
-    <p>{{name}}</p>
+    {{#if facebookLogin}}
+      <img class="ui avatar image" src="{{avatar}}">
+    {{else}}
+      <i class="circular user icon"></i>
+    {{/if}}
+    <span>{{name}}</span>
   </div>
 </template>
 

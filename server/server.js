@@ -46,7 +46,7 @@ Meteor.startup(function () {
     GameSettings.insert({_id: "revealRole", day: false, night: false});
   }
   if (!GameSettings.findOne("timeDelays")) {
-    GameSettings.insert({_id: "timeDelays", timeout: 60100, countdown: 7100});
+    GameSettings.insert({_id: "timeDelays", timeout: 60100, countdown: 7100, startgame: 5100});
   }
 });
 

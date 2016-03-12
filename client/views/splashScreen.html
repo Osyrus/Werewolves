@@ -1,0 +1,46 @@
+<template name="splashScreen">
+  <div class="ui centered page grid main">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="game icon"></i>
+          Werewolves and Villagers
+        </h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        <div class="ui raised segment">
+          <div class="ui top attached {{btnLabel.colour}} label">
+            {{btnLabel.text}}
+          </div>
+
+          <button class="ui fluid massive {{btn1.colour}} button {{btn1.tag}}">
+            {{btn1.text}}
+          </button>
+
+          <div class="ui divider"></div>
+
+          <button class="ui fluid massive {{btn2.colour}} button {{btn2.tag}}">
+            {{btn2.text}}
+          </button>
+
+          <div class="ui divider"></div>
+
+          <div class="ui fluid large buttons">
+            <button class="ui purple button js-view-last-game">
+              View last game
+            </button>
+            {{#if currentUser}}
+              <button class="ui black button js-logout">
+                <i class="sign out icon"></i>
+                Logout
+              </button>
+            {{/if}}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
