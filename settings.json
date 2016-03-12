@@ -1,0 +1,7 @@
+{
+  "galaxy.meteor.com": {
+    "env": {
+      "MONGO_URL": "mongodb://werewolves:villagers@ds011399.mlab.com:11399/osyrus-mongodb"
+    }
+  }
+}
