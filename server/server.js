@@ -48,6 +48,20 @@ Meteor.startup(function () {
   if (!GameSettings.findOne("timeDelays")) {
     GameSettings.insert({_id: "timeDelays", timeout: 60100, countdown: 7100, startgame: 5100});
   }
+
+  // This is where the Facebook stuff is set up (not hardcoded...)
+  var fbSettings = GameSettings.findOne("facebookSecret");
+  if (fbSettings) {
+    ServiceConfiguration.configurations.remove({
+      service: 'facebook'
+    });
+
+    ServiceConfiguration.configurations.insert({
+      service: 'facebook',
+      appId: fbSettings.appId,
+      secret: fbSettings.secret
+    });
+  }
 });
 
 // Note: The order that the roles are added will determine their tiebreaker order (when counting votes)
