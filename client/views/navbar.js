@@ -44,6 +44,9 @@ Template.navbar.events({
   "click .logout": function() {
     AccountsTemplates.logout();
   },
+  "click .js-restart": function() {
+    Meteor.call("restartServer");
+  },
   "click .whoami": function() {
     Session.set("seenRole", false);
   },

@@ -312,6 +312,9 @@ Meteor.methods({
   "finishedNightAction": function(playerId) {
     finishedNightAction(playerId);
     checkNightEnded();
+  },
+  "restartServer": function() {
+    process.exit();
   }
 });
 
