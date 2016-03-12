@@ -2,10 +2,10 @@ Meteor.startup(function () {
   // Create the fake players for testing
   Players.remove({});
 
-  addTestPlayer("Fred", 1);
-  addTestPlayer("Steve", 1);
-  addTestPlayer("Bob", 2);
-  addTestPlayer("Gary", 0);
+  //addTestPlayer("Fred", 1);
+  //addTestPlayer("Steve", 1);
+  //addTestPlayer("Bob", 2);
+  //addTestPlayer("Gary", 0);
 
   // Create the roles
   Roles.remove({});
