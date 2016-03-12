@@ -1,16 +1,16 @@
 <template name="player">
   <div class="item">
     {{#if facebookLogin}}
-      <div class="image">
-        <img class="ui mini image" src="{{avatar}}">
+      <div class="ui middle aligned image">
+        <img class="ui avatar image" src="{{avatar}}">
       </div>
-    {{else}} <!-- TODO Line up these so that the name starts at the same place -->
-      <div class="image">
-        <i class="user icon"></i>
+    {{else}}
+      <div class="ui middle aligned image">
+        <i class="circular user icon"></i>
       </div>
     {{/if}}
 
-    <div class="middle aligned content">
+    <div class="content">
       <div class="ui {{#if ready}}green{{else}}orange{{/if}} header">
         {{name}}
       </div>
