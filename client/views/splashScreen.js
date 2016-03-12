@@ -26,9 +26,9 @@ Template.splashScreen.helpers({
             colour = "green";
             tag = "js-goto-game";
           } else {
-            text = "You died...";
+            text = "You died... (join anyway)";
             colour = "red";
-            tag = "";
+            tag = "js-goto-game";
           }
         }
       }
