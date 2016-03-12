@@ -26,3 +26,5 @@ semantic:ui
 flemay:less-autoprefixer
 accounts-ui
 accounts-facebook
+kadira:flow-router
+kadira:blaze-layout

@@ -1,0 +1,21 @@
+<template name="gameScreen">
+  {{#if spectating}}
+    {{> spectatorScreen}}
+  {{else}} {{#if lobby}}
+    {{#if viewingLastGame}}
+      {{> endGameScreen}}
+    {{else}}
+      {{> lobbyScreen}}
+    {{/if}}
+  {{else}} {{#if inGame}}
+    {{#if whoAmIScreen}}
+      {{> whoAmI}}
+    {{else}}
+      {{#if alive}}
+        {{> dayNightCycle}}
+      {{else}}
+        {{> youDiedScreen}}
+      {{/if}}
+    {{/if}}
+  {{/if}} {{/if}} {{/if}}
+</template>
