@@ -17,7 +17,7 @@ Meteor.methods({
       role:   0,
       status: 0,
       alive: true,
-      joined: true,
+      joined: false,
       ready:  false,
       voteChoice: 0,
       doNothing: false,

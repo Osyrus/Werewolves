@@ -34,10 +34,16 @@ Template.navbar.helpers({
       countdown: countdownTime,
       timeout: timeoutTime
     }
+  },
+  playerName: function() {
+    return getPlayer().name;
   }
 });
 
 Template.navbar.events({
+  "click .logout": function() {
+    AccountsTemplates.logout();
+  },
   "click .whoami": function() {
     Session.set("seenRole", false);
   },

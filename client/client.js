@@ -8,11 +8,7 @@ Template.lobbyScreen.events({
     if (GameVariables.findOne("gameMode").value == "lobby") {
       var player = getPlayer();
 
-      if (player) {
-        Players.update(player._id, {$set: {joined: true, seenEndgame: true}});
-      } else {
-        Meteor.call("addPlayer");
-      }
+      Players.update(player._id, {$set: {joined: true, seenEndgame: true}});
 
       // Reset the start game countdown
       Meteor.call("stopStartCountdown");

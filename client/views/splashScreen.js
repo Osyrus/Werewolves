@@ -90,12 +90,21 @@ Template.splashScreen.events({
   "click .js-goto-game": function(event) {
     event.preventDefault();
 
+    // Make sure there is a player before they go to the game screen
+    var player = getPlayer();
+
+    if (player) {
+      Players.update(player._id, {$set: {joined: false, seenEndgame: true}});
+    } else {
+      Meteor.call("addPlayer");
+    }
+
     FlowRouter.go('/game');
   },
   "click .js-goto-login": function(event) {
     event.preventDefault();
 
-    // TODO add the route to the useraccounts login page
+    FlowRouter.go('/sign-in');
   },
   "click .js-goto-spectate": function(event) {
     event.preventDefault();
