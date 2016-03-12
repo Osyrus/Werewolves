@@ -43,6 +43,7 @@ Template.navbar.helpers({
 Template.navbar.events({
   "click .logout": function() {
     AccountsTemplates.logout();
+    FlowRouter.go('/');
   },
   "click .js-restart": function() {
     Meteor.call("restartServer");
