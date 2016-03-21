@@ -94,7 +94,10 @@ Template.splashScreen.events({
     var player = getPlayer();
 
     if (player) {
-      Players.update(player._id, {$set: {joined: false, seenEndgame: true}});
+      var gameMode = GameVariables.findOne("gameMode").value;
+      // Only change the players joined state if they are heading into the lobby
+      if (gameMode == "lobby")
+        Players.update(player._id, {$set: {joined: false, seenEndgame: true}});
     } else {
       Meteor.call("addPlayer");
     }
