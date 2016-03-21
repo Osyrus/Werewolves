@@ -374,8 +374,8 @@ function countVotes() {
   });
 }
 
-function moveToNextCycle() {
-  var players = Players.find({alive: true});
+function moveToNextCycle(killedPlayer) {
+  var players = Players.find({alive: true, joined: true});
 
   // Reset all the variables for the players, to be ready for the next day/night cycle
   players.forEach(function(player) {
@@ -390,6 +390,48 @@ function moveToNextCycle() {
     }
   });
 
+  //// Game history stuff
+
+  // Initialise the game event object to store the stuff from this cycle
+  var cycleNumber = GameVariables.findOne("cycleNumber").value;
+  var gameEvent = {
+    cycleNum: cycleNumber
+  };
+
+  // Get the events that happened this cycle
+  var events = [];
+  var theseEvents = EventList.find({cycleNumber: cycleNumber});
+  // Now pull out the relevant information to store
+  theseEvents.forEach(function (event) {
+    events.push({
+      text: event.text,
+      type: event.type
+    });
+  });
+  gameEvent.events = events;
+
+  // Lets get the current alive players, and the player that just died
+  var playerList = [];
+  // Store the relevant data from each player
+  players.forEach(function (player) {
+    playerList.push({
+      name: player.name,
+      userId: player.userId,
+      role: player.role,
+      justDied: false
+    });
+  });
+  // Also add the player that just died, if there was one
+  if (killedPlayer) {
+    playerList.push({
+      name: killedPlayer.name,
+      userId: killedPlayer.userId,
+      role: killedPlayer.role,
+      justDied: true
+    });
+  }
+  gameEvent.playerList = playerList;
+
   // Do a check to see what cycle we are moving from, just in case there is anything cycle specific
   var werewolfId = Roles.findOne({name: "Werewolf"})._id;
   var lastCycle = GameVariables.findOne("cycleNumber").value;
@@ -397,12 +439,79 @@ function moveToNextCycle() {
     // It was just day
     console.log("End day cycle has been called.");
 
+    //// Game history stuff
+
+    // This event was during day time
+    gameEvent.day = true;
+
+    // Now let's check what happened with the lynch vote, if anything
+    var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
+    if (killedPlayer) {
+      // A lynch indeed occurred lets record that
+
+      var nominator = Players.findOne(GameVariables.findOne("lynchVote").value[1]);
+
+      gameEvent.lynchResult = {
+        targetId: target.userId,
+        targetName: target.name,
+        targetRole: target.role,
+        nominatorId: nominator.userId,
+        nominatorName: nominator.name,
+        nominatorRole: nominator.role
+      }
+    } else {
+      // Nobody was lynched when the day ended, nothing to record.
+
+      gameEvent.lynchResult = null;
+    }
+
     // The werewolves target needs to be reset after leaving the day cycle
     Roles.update(werewolfId, {$set: {target: 0}});
   } else {
     // It was just night
     console.log("End night cycle has been called.");
+
+    //// Game history stuff
+
+    // This event was at night time
+    gameEvent.day = false;
+
+    // Now we want an object that records how the werewolves night action went.
+    var werewolfRole = Roles.findOne(werewolfId);
+    gameEvent.werewolfAction = {
+      target: werewolfRole.target,
+      succeeded: killedPlayer != null
+    };
+
+    // TODO, I was a witch and I targeted someone but it did not show as an action!!
+
+    // Now I would like to generate a list of the actions performed this night, for the game history entry.
+    var actions = [];
+    // I want to get all the active roles that performed an action, except the werewolves
+    var enabledRoles = Roles.find({enabled: true, passive: false});
+    // Now let's fill in the actions based on what all the active roles did.
+    // This should be all the information relevant to what happened, but no more.
+    enabledRoles.forEach(function (role) {
+      var player = Players.findOne({role: role._id});
+      var target = Players.findOne(role.target);
+      // Strip out the essential information
+      if (target) { // Bots won't have a target, so check just in case
+        actions.push({
+          playerId: player.userId,
+          playerName: player.name,
+          playerRole: role._id,
+          targetId: target.userId,
+          targetName: target.name,
+          targetRole: target.role
+        });
+      }
+    });
+    gameEvent.nightActions = actions;
   }
+
+  // Store the game event for this cycle to this games game history collection
+  var historyId = GameVariables.findOne("historyId").value;
+  GameHistory.upsert(historyId, {$push: {gameEvents: gameEvent}});
 
   // Increment the cycle
   GameVariables.update("cycleNumber", {$inc: {value: 1}});
@@ -419,7 +528,7 @@ function moveToNextCycle() {
   var knight = Roles.findOne({name: "Knight"});
   var doctor = Roles.findOne({name: "Doctor"});
 
-  // Count the werewolves/villagers
+  // Count the werewolves/villagers (this is too see if the game is over)
   var numWerewolves = 0;
   var numVillagers = 0;
   players.forEach(function(player) {
@@ -464,6 +573,7 @@ function moveToNextCycle() {
 
 function endNightCycle() {
   var cycleNumber = GameVariables.findOne("cycleNumber").value;
+  var killedPlayer = null;
 
   var nightEndText = "The night has ended...";
   EventList.insert({type: "info", cycleNumber: cycleNumber, text: nightEndText, timeAdded: new Date()});
@@ -487,11 +597,11 @@ function endNightCycle() {
 
   // Now lets check if the werewolves are indeed allowed to kill their target (not saved, not the knight)
   if (werewolfTargetId != doctorsTargetId && werewolfTargetId != knightId && werewolfTargetId != 0) {
-    // It seems this player is doomed
-    var target = Players.findOne(werewolfTargetId);
-
     // Sorry mate...
     Players.update(werewolfTargetId, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "werewolf"}}});
+
+    var target = Players.findOne(werewolfTargetId);
+    killedPlayer = target;
 
     // Now lets inform everyone
     var wwKillText = target.name + " has been killed during the night!";
@@ -525,48 +635,7 @@ function endNightCycle() {
     EventList.insert({type: "warning", cycleNumber: cycleNumber, text: witchesText, timeAdded: new Date()});
   }
 
-  moveToNextCycle();
-}
-
-// This function ends the game, the boolean input is true if the villagers won, false if the werewolves win.
-function endGame(villagersWin) {
-  console.log("Endgame called");
-
-  var cycleNumber = GameVariables.findOne("cycleNumber").value - 1;
-  var winnerText = "";
-
-  if (villagersWin) {
-    console.log("Villagers win");
-    winnerText = "The Villagers have won!";
-  } else {
-    console.log("Werewolves win");
-    winnerText = "The Werewolves have won!";
-  }
-
-  EventList.insert({type: "info", cycleNumber: cycleNumber, text: winnerText, timeAdded: new Date()});
-
-  GameVariables.update("lastGameResult", {$set: {value: villagersWin, enabled: true}});
-
-  var players = Players.find({joined: true});
-  var werewolfId = Roles.findOne({name: "Werewolf"})._id;
-
-  // Let's set the variables for all the players that were in the game
-  players.forEach(function(player) {
-    Players.update(player._id, {$set: {seenEndgame: false, ready: false}});
-
-    if (villagersWin) {
-      if (player.role == werewolfId) {
-        Players.update(player._id, {$set: {alive: false}});
-      }
-    } else {
-      if (player.role != werewolfId) {
-        Players.update(player._id, {$set: {alive: false}});
-      }
-    }
-  });
-
-  // Re-enable the lobby
-  GameVariables.update("gameMode", {$set: {value: "lobby"}});
+  moveToNextCycle(killedPlayer);
 }
 
 function startLynchCountdown() {
@@ -640,6 +709,19 @@ function stopGameCountdown() {
 }
 
 function startGame() {
+  // Reset all game variables
+  resetGameVariables();
+
+  // Create a new game history entry for this game and record it's ID
+  var historyId = GameHistory.insert({
+    gameStartedAt: new Date()
+  });
+  GameVariables.update("historyId", {$set: {enabled: true, value: historyId}});
+
+  // TODO clear unfinished games
+  // It might be worth going through and wiping any game histories that weren't ended
+  // They may have been unfinished and the server restarted in between...
+  
   // Set the variables dealing with the game starting
   GameVariables.update("timeToStart", {$set: {value: 0, enabled: false}});
   GameVariables.update("gameMode", {$set: {value: "inGame"}});
@@ -712,6 +794,54 @@ function startGame() {
   }
 }
 
+// This function ends the game, the boolean input is true if the villagers won, false if the werewolves win.
+function endGame(villagersWin) {
+  console.log("Endgame called");
+
+  var cycleNumber = GameVariables.findOne("cycleNumber").value - 1;
+  var winnerText = "";
+
+  if (villagersWin) {
+    console.log("Villagers win");
+    winnerText = "The Villagers have won!";
+  } else {
+    console.log("Werewolves win");
+    winnerText = "The Werewolves have won!";
+  }
+
+  EventList.insert({type: "info", cycleNumber: cycleNumber, text: winnerText, timeAdded: new Date()});
+
+  GameVariables.update("lastGameResult", {$set: {value: villagersWin, enabled: true}});
+
+  var players = Players.find({joined: true});
+  var werewolfId = Roles.findOne({name: "Werewolf"})._id;
+
+  // Let's set the variables for all the players that were in the game
+  players.forEach(function(player) {
+    Players.update(player._id, {$set: {seenEndgame: false, ready: false}});
+
+    if (villagersWin) {
+      if (player.role == werewolfId) {
+        Players.update(player._id, {$set: {alive: false}});
+      }
+    } else {
+      if (player.role != werewolfId) {
+        Players.update(player._id, {$set: {alive: false}});
+      }
+    }
+  });
+
+  // Update the corresponding game history object that will be used to show the game stats screen.
+  var historyId = GameVariables.findOne("historyId").value;
+  GameHistory.update(historyId, {$set: {
+    gameEndedAt: new Date(),
+    villagersWon: villagersWin
+  }});
+
+  // Re-enable the lobby
+  GameVariables.update("gameMode", {$set: {value: "lobby"}});
+}
+
 function cancelVote() {
   GameVariables.update("voteDirection", {$set: {value: false, enabled: true}});
   executeVote();
@@ -730,10 +860,12 @@ function executeVote() {
   // Fill in the rest of the vote text depending on outcome of vote
   voteText += voteDirection ? " has passed." : " has failed.";
   EventList.insert({type: "info", cycleNumber: cycleNumber, text: voteText, timeAdded: new Date()});
+  var killedPlayer = null;
 
   if (voteDirection) {
     // Lynch the target!!
     Players.update(target._id, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "lynch"}}});
+    killedPlayer = Players.findOne(target._id);
 
     var targetsRole = Roles.findOne(target.role);
 
@@ -777,7 +909,7 @@ function executeVote() {
       EventList.insert({type: deathType, cycleNumber: cycleNumber, text: nominatorDiedText, timeAdded: new Date()});
     }
 
-    moveToNextCycle();
+    moveToNextCycle(killedPlayer);
   }
 
   // Reset the related global variables

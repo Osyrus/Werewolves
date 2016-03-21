@@ -94,7 +94,11 @@ Template.splashScreen.events({
     var player = getPlayer();
 
     if (player) {
-      Players.update(player._id, {$set: {joined: false, seenEndgame: true}});
+      var gameMode = GameVariables.findOne("gameMode").value;
+      if (gameMode == "lobby")
+        Players.update(player._id, {$set: {joined: false, seenEndgame: true}});
+      else
+        Players.update(player._id, {$set: {joined: true, seenEndgame: true}});
     } else {
       Meteor.call("addPlayer");
     }
