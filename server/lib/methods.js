@@ -4,34 +4,6 @@ var voteTimeout = null;
 var killCounter = null;
 
 Meteor.methods({
-  addPlayer: function() {
-    var user = Meteor.user();
-
-    var facebook = user.services.facebook ? true : false;
-
-    Players.insert({
-      userId: user._id,
-      facebookLogin: facebook,
-      name:   facebook ? user.profile.name : user.username,
-      avatar: facebook ? "http://graph.facebook.com/" + user.services.facebook.id + "/picture/?type=large" : "",
-      role:   0,
-      status: 0,
-      alive: true,
-      joined: false,
-      ready:  false,
-      voteChoice: 0,
-      doNothing: false,
-      seenNewEvents: false,
-      seenNightResults: true,
-      nightActionDone: false,
-      effect: "none",
-      bot: false,
-      seenDeath: false,
-      deathDetails: {cycle: 0, type: "none"},
-      target: 0,
-      seenEndgame: true
-    });
-  },
   // This is called when one of the clients wants to start/stop the game
   startStopGame: function() {
     //if ((new Date()).valueOf() < GameVariables.findOne("timeToStart").value) {
@@ -51,20 +23,8 @@ Meteor.methods({
   stopStartCountdown: function() {
     stopGameCountdown();
   },
-  "getRoleId": function(user) {
-    return Roles.findOne(Players.findOne({userId: user._id}).role);
-  },
-  "getRoleFromId": function(playerId) {
-    return Roles.findOne(Players.findOne(playerId).role);
-  },
-  "currentCycle": function() {
-    return GameVariables.findOne("cycleNumber").value;
-  },
-  "changeLynchVote": function(playerId, vote) {
-    // A client has called that it would likes it's players vote to be changed
-
-    // First, we update the vote for that player
-    Players.update(playerId, {$set: {voteChoice: vote}});
+  checkLynchVotes: function() {
+    //// A players vote has been changed, and hence this function was called to check for any consequences
 
     // Now we need to get a hold of all the alive players excluding the target
     var lynchTarget = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
@@ -164,7 +124,7 @@ Meteor.methods({
       }
     }
   },
-  "beginLynchVote": function() {
+  beginLynchVote: function() {
     var cycleNumber = GameVariables.findOne("cycleNumber").value;
     var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
     var nominator = Players.findOne(GameVariables.findOne("lynchVote").value[1]);
@@ -175,10 +135,12 @@ Meteor.methods({
 
     startLynchTimeout();
   },
-  "executeVote": function() { // This isn't used anymore
-    executeVote();
-  },
-  "doingNothingToday": function() {
+  doingNothingToday: function() {
+    //// This is called by the last player to say they aren't doing anything
+
+    // It could be that this function should actually be called by each player when making this decision.
+    // Thus it would be up to the server to count and make sure everyone has pressed it or not...
+
     var cycleNumber = GameVariables.findOne("cycleNumber").value;
 
     var didNothingText = "The day moves into night with the villagers choosing not to lynch anyone.";
@@ -194,34 +156,8 @@ Meteor.methods({
 
     moveToNextCycle();
   },
-  "setRoleTarget": function(roleId, targetId) {
-    var role = Roles.findOne(roleId);
-    var target = Players.findOne(targetId);
-
-    //console.log(roleId);
-
-    console.log("Setting " + role.name + " target to " + target.name);
-
-    Roles.update(roleId, {$set: {target: targetId}});
-  },
-  "getRoleTarget": function(roleName) {
-    var role = Roles.findOne({name: roleName});
-
-    return Players.findOne(role.target);
-  },
-  "changeRoleVote": function(playerId, roleId, newVote) {
-    var vote = RoleVotes.findOne({playerId: playerId, roleId: roleId});
-
-    // Check to see if an entry for this players vote exists, if so update it, else make one.
-    if (vote) {
-      RoleVotes.update(vote._id, {$set: {vote: newVote}});
-    } else {
-      RoleVotes.insert({
-        roleId: roleId,
-        playerId: playerId,
-        vote: newVote
-      });
-    }
+  checkRoleVote: function(roleId) {
+    //// The client has changed their vote for one of the roles, let's check how that changes things.
 
     // As the vote count for this role has now changed, recount the vote for this role
     var votes = RoleVotes.find({roleId: roleId});
@@ -242,14 +178,11 @@ Meteor.methods({
 
     countVotes();
   },
-  "recountRoleVotes": function() {
+  recountRoleVotes: function() {
     countVotes();
   },
-  "changeWerewolfVote": function(playerId, targetId) {
-    // Update the werewolf that requested it
-    Players.update(playerId, {$set: {target: targetId}});
-
-    // Now let's check if they all agree or not...
+  checkWerewolfVote: function() {
+    //// A werewolf has changed their vote and now we are going to check it.
 
     // Lets get the werewolves in question (all of them...)
     var werewolfId = Roles.findOne({name: "Werewolf"})._id;
@@ -309,11 +242,15 @@ Meteor.methods({
       Roles.update(werewolfId, {$set: {target: 0}});
     }
   },
-  "finishedNightAction": function(playerId) {
-    finishedNightAction(playerId);
+  finishedNightAction: function() {
+    finishedNightAction(getPlayer()._id);
     checkNightEnded();
   },
-  "restartServer": function() {
+  restartServer: function() {
+    // This doesn't actually seem to do anything...
+
+    // Instead, this could do the same as resetting all of the game variables and players.
+
     process.exit();
   }
 });

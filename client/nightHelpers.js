@@ -2,29 +2,19 @@ var seerDep = new Tracker.Dependency;
 
 Template.nightTime.helpers({
   "passive": function() {
-    getRoleType();
-
-    return Session.equals("roleType", "passive");
+    return isRoleType("passive");
   },
   "werewolf": function() {
-    getRoleType();
-
-    return Session.equals("roleType", "werewolf");
+    return isRoleType("werewolf");
   },
   "doctor": function() {
-    getRoleType();
-
-    return Session.equals("roleType", "doctor");
+    return isRoleType("doctor");
   },
   "witch": function() {
-    getRoleType();
-
-    return Session.equals("roleType", "witch");
+    return isRoleType("witch");
   },
   "seer": function() {
-    getRoleType();
-
-    return Session.equals("roleType", "seer");
+    return isRoleType("seer");
   },
   "nightActionDone": function() {
     var player = getPlayer();
@@ -115,19 +105,16 @@ Template.werewolvesTargetList.helpers({
 
 Template.werewolfTarget.events({
   "click .js-select-target": function() {
-    // Get the current player (who is a werewolf of course, or else how are they here?)
-    var werewolf = getPlayer();
     // We also need the target, luckily we included an id data entry that we gave to our template
     var targetId = this.playerId;
     // Now we can quite easily update this werewolf's target
-    // Moving to serverside stuff
-    Meteor.call("changeWerewolfVote", werewolf._id, targetId);
+    Meteor.call("changeWerewolfVote", targetId);
   }
 });
 
 Template.passiveScreen.events({
   "click .js-done": function(event) {
-    Meteor.call("finishedNightAction", getPlayer()._id);
+    Meteor.call("finishedNightAction");
   }
 });
 
@@ -185,7 +172,7 @@ Template.playerSelection.events({
           .modal({
             closable: false,
             onApprove: function() {
-              Meteor.call("finishedNightAction", getPlayer()._id);
+              Meteor.call("finishedNightAction");
             }
           })
           .modal("show")
@@ -327,57 +314,41 @@ function getVillagerResults() {
 
 function getSeerResults(targetId) {
   var target = Players.findOne(targetId);
+  var targetsRole = Roles.findOne(Players.findOne(playerId).role);
   var results = {
     title: "",
     body: "",
     tag: ""
   };
 
-  Meteor.call("getRoleFromId", targetId, function(error, role) {
-    if (error) {
-      console.log(error);
+  var seerTitle = "";
+  var seerContent = "You have gazed into their soul and found ";
+  var seerTag = "";
 
-      results.title = "Error";
-      results.body = error.response;
-    } else {
-      var seerTitle = "";
-      var seerContent = "You have gazed into their soul and found ";
-      var seerTag = "";
+  if (targetsRole.name == "Werewolf") {
+    seerTitle = target.name + " is a Werewolf!";
+    seerContent += "that " + target.name + " is a Werewolf!";
+    seerTag = "red";
+  } else {
+    seerTitle = target.name + " is not a Werewolf";
+    seerContent += target.name + " is pure of heart, and not a Werewolf.";
+    seerTag = "green";
+  }
 
-      if (role.name == "Werewolf") {
-        seerTitle = target.name + " is a Werewolf!";
-        seerContent += "that " + target.name + " is a Werewolf!";
-        seerTag = "red";
-      } else {
-        seerTitle = target.name + " is not a Werewolf";
-        seerContent += target.name + " is pure of heart, and not a Werewolf.";
-        seerTag = "green";
-      }
+  results.title = seerTitle;
+  results.body = seerContent;
+  results.tag = seerTag;
 
-      results.title = seerTitle;
-      results.body = seerContent;
-      results.tag = seerTag;
-    }
-
-    Session.set("seerResults", results);
-  });
-
-  return Session.get("seerResults");
+  return results;
 }
 
-function getRoleType() {
-  Meteor.call("getRoleId", Meteor.user(), function(error, result) {
-    if (error) {
-      console.log(error);
-    } else {
-      var role = Roles.findOne(result);
-      var name = String(role.name).toLowerCase();
+function isRoleType(roleName) {
+  var role = Roles.findOne(getPlayer().role);
+  var name = String(role.name).toLowerCase();
 
-      if (name == "villager" || name == "saint" || name == "knight") {
-        Session.set("roleType", "passive");
-      } else {
-        Session.set("roleType", name);
-      }
-    }
-  });
+  if (name == "villager" || name == "saint" || name == "knight") {
+    return "passive" == roleName;
+  } else {
+    return name == roleName;
+  }
 }
