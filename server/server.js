@@ -10,13 +10,13 @@ Meteor.startup(function () {
   // Create the roles
   Roles.remove({});
 
-  addRole("Villager", true, false);
-  addRole("Werewolf", true, true);
-  addRole("Doctor", false, false);
-  addRole("Witch", false, true);
-  addRole("Seer", false, false);
-  addRole("Knight", false, false);
-  addRole("Saint", false, true);
+  addRole("Villager");
+  addRole("Werewolf");
+  addRole("Doctor");
+  addRole("Witch");
+  addRole("Seer");
+  addRole("Knight");
+  addRole("Saint");
 
   // Clear the votes upon server restart
   RoleVotes.remove({});
@@ -71,18 +71,22 @@ resetGameVariables = function() {
 };
 
 // Note: The order that the roles are added will determine their tiebreaker order (when counting votes)
-function addRole(name, critical, aggressive) {
+function addRole(name) {
   var description = "";
   var passive = false;
+  var critical = false;
+  var aggressive = false;
 
   // This is a short description used for giving the gist of the role
   switch(name) {
     case "Villager":
       description = "The Villager is the basic role that has no active abilities.";
       passive = true;
+      critical = true;
       break;
     case "Werewolf":
       description = "The Werewolf is the role that is against the villagers, and can kill people at night.";
+      critical = true;
       break;
     case "Doctor":
       description = "The Doctor is a active villager role that can save people at night from Werewolves.";
@@ -92,10 +96,16 @@ function addRole(name, critical, aggressive) {
       break;
     case "Knight":
       description = "The Knight is a passive villager role that cannot be killed by werewolves at night";
+      passive = true;
       break;
     case "Saint":
       description = "The Saint is a passive villager role that, if lynched, takes the nominator with them.";
       passive = true;
+      aggressive = true;
+      break;
+    case "Witch":
+      description = "The Witch is an active villager role that can silence people at night.";
+      aggressive = true;
       break;
     default:
       description = "This role does not have a description written for it yet.";

@@ -420,8 +420,6 @@ function moveToNextCycle(killedPlayer) {
       succeeded: killedPlayer != null
     };
 
-    // TODO, I was a witch and I targeted someone but it did not show as an action!!
-
     // Now I would like to generate a list of the actions performed this night, for the game history entry.
     var actions = [];
     // I want to get all the active roles that performed an action, except the werewolves
