@@ -119,9 +119,9 @@ Template.splashScreen.events({
 
     AccountsTemplates.logout();
   },
-  "click .js-view-last-game": function(event) {
+  "click .js-viewGameHistories": function(event) {
     event.preventDefault();
 
-  // TODO this is where the client will be redirected to the view of the last game
+    FlowRouter.go('/gameHistories');
   }
 });

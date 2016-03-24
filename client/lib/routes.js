@@ -68,3 +68,9 @@ FlowRouter.route('/spectate', {
     BlazeLayout.render("mainLayout", {content: "spectatorScreen"});
   }
 });
+
+FlowRouter.route('/gameHistories', {
+  action: function() {
+    BlazeLayout.render("mainLayout", {content: "gameHistories"});
+  }
+});
