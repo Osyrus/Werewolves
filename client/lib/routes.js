@@ -74,3 +74,9 @@ FlowRouter.route('/gameHistories', {
     BlazeLayout.render("mainLayout", {content: "gameHistories"});
   }
 });
+
+FlowRouter.route('/gameDetail/:id', {
+  action: function() {
+    BlazeLayout.render("mainLayout", {content: "gameDetail"});
+  }
+});
