@@ -1,0 +1,22 @@
+<template name="gameHistories">
+  <div class="ui centered page grid main">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="book icon"></i>
+          Game Histories
+        </h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="column">
+        {{#each previousGames}}
+          <button class="ui huge blue button js-gotoGameHistory">
+            {{gameName}}
+          </button>
+        {{/each}}
+      </div>
+    </div>
+  </div>
+</template>
