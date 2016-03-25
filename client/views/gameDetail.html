@@ -1,5 +1,5 @@
 <template name="gameDetail">
-  <div class="ui centered page grid main menuBottom">
+  <div class="ui centered page grid main">
     <div class="row">
       <div class="column">
         <h1 class="ui center aligned icon header">
@@ -54,6 +54,17 @@
             {{> playerListing}}
           {{/each}}
         </div>
+      </div>
+    </div>
+
+    <div class="ui divider"></div>
+
+    <div class="row">
+      <div class="column">
+        <button class="ui fluid massive blue button js-backToHistories">
+          <i class="reply icon"></i>
+          Back to List
+        </button>
       </div>
     </div>
   </div>

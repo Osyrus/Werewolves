@@ -142,5 +142,9 @@ Template.gameDetail.helpers({
 });
 
 Template.gameDetail.events({
+  "click .js-backToHistories": function(event) {
+    event.preventDefault();
 
+    FlowRouter.go('/gameHistories');
+  }
 });
