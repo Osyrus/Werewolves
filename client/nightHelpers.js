@@ -178,7 +178,7 @@ Template.playerSelection.events({
             }
           })
           .modal("show")
-          .modal('hide others', true)
+          //.modal('hide others', true) // This seems to cause more problems than it fixed.
           .modal('refresh', true);
       }
     });

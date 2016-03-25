@@ -31,3 +31,4 @@ useraccounts:flow-routing
 service-configuration
 semantic:ui-css
 momentjs:moment
+momentjs:twix
