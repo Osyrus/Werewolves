@@ -36,7 +36,12 @@ Template.navbar.helpers({
     }
   },
   playerName: function() {
-    return getPlayer().name;
+    var player = getPlayer();
+
+    if (player)
+      return getPlayer().name;
+    else
+      console.log("For some reason you have no player object...");
   }
 });
 

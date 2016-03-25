@@ -265,6 +265,11 @@ Template.werewolfScreen.helpers({
 function getWerewolfResults(targetId) {
   var target = Players.findOne(targetId);
 
+  if (!target) {
+    console.log("Has the target not loaded yet?");
+    return;
+  }
+
   //console.log("Werewolves targeted" + target.name);
 
   var werewolfTitle = "The werewolves chose to kill " + target.name;
@@ -322,7 +327,7 @@ function getVillagerResults() {
 
 function getSeerResults(targetId) {
   var target = Players.findOne(targetId);
-  var targetsRole = Roles.findOne(Players.findOne(playerId).role);
+  var targetsRole = Roles.findOne(target.role);
   var results = {
     title: "",
     body: "",

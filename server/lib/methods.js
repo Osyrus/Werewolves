@@ -185,8 +185,7 @@ Meteor.methods({
     //// A werewolf has changed their vote and now we are going to check it.
 
     // Lets get the werewolves in question (all of them...)
-    var werewolfId = Roles.findOne({name: "Werewolf"})._id;
-    var werewolves = Players.find({role: werewolfId, alive: true, joined: true});
+    var werewolves = Players.find({role: "werewolf", alive: true, joined: true});
 
     // Lets make a list of all the targets id's
     var targets = [];
@@ -217,18 +216,22 @@ Meteor.methods({
       console.log("Werewolves have all targeted: " + agreedTarget.name);
 
       if (!killCounter) {
+        console.log("Setting countdown to ending werewolves turn.");
         killCounter = Meteor.setTimeout(function () {
+          console.log("Werewolves turn end called");
           werewolves.forEach(function (werewolf) {
             finishedNightAction(werewolf._id);
           });
 
-          Roles.update(werewolfId, {$set: {target: potentialTargetId}});
+          Roles.update("werewolf", {$set: {target: potentialTargetId}});
 
+          killCounter = null;
           checkNightEnded();
         }, countdownDelay);
       }
     } else {
       // No agreement yet
+      console.log("Werewolves do not agree yet.");
       if (killCounter) {
         Meteor.clearTimeout(killCounter);
         killCounter = null;
@@ -239,7 +242,7 @@ Meteor.methods({
         enabled: false
       }});
 
-      Roles.update(werewolfId, {$set: {target: 0}});
+      Roles.update("werewolf", {$set: {target: 0}});
     }
   },
   finishedNightAction: function() {
