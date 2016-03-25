@@ -118,6 +118,12 @@ Template.gameDetail.helpers({
         }
       }
 
+      //// This is where each cycles events must get parsed
+      // The day and night cycles will have different info to show,
+      // so the template will need a boolean flag to alternate the required template.
+
+      // TODO write the events each cycle parsing and loading system
+
       return {
         titleText: titleText,
         titleIcon: titleIcon,

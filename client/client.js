@@ -538,7 +538,7 @@ Template.nominateTarget.events({
           }
         })
         .modal("show")
-        .modal('hide others', true)
+        //.modal('hide others', true)
         .modal('refresh', true);
     }
   }
