@@ -3,7 +3,7 @@ var timeout = null;
 
 Template.coloursGame.helpers({
   gameVars: function() {
-    var vars = Session.get("gameVars");
+    var vars = getPlayer().gameVars;
     Session.set("statusText", "Choose the colour as it is written.");
 
     return vars ? vars : [];
@@ -18,7 +18,7 @@ Template.coloursGame.events({
     Session.set("statusText", "Correct, good work!");
 
     Meteor.setTimeout(function() {
-      Meteor.call("finishedNightAction", getPlayer()._id);
+      Meteor.call("finishedNightAction");
     }, 3000);
   },
   "click .js-incorrect": function() {

@@ -1,0 +1,85 @@
+<template name="gameDetail">
+  <div class="ui centered page grid main">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="{{game.titleIcon}} icon"></i>
+          {{game.titleText}}
+        </h1>
+      </div>
+    </div>
+
+    <h4 class="ui horizontal divider header">
+      <i class="wait icon"></i>
+      Time Details
+    </h4>
+
+    <div class="row">
+      <div class="column">
+        <div class="ui segments">
+          <div class="ui segment">
+            <p>{{game.gameEndedAt}}</p>
+          </div>
+          <div class="ui secondary segment">
+            <p>{{game.gameDuration}} {{game.numCycles}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h4 class="ui horizontal divider header">
+      <i class="heartbeat icon"></i>
+      Surviving Players
+    </h4>
+
+    <div class="row">
+      <div class="column">
+        <div class="ui relaxed divided list">
+          {{#each game.survivingPlayers}}
+            {{> playerListing}}
+          {{/each}}
+        </div>
+      </div>
+    </div>
+
+    <h4 class="ui horizontal divider header">
+      <i class="remove icon"></i>
+      Killed Players
+    </h4>
+
+    <div class="row">
+      <div class="column">
+        <div class="ui relaxed divided list">
+          {{#each game.killedPlayers}}
+            {{> playerListing}}
+          {{/each}}
+        </div>
+      </div>
+    </div>
+
+    <div class="ui divider"></div>
+
+    <div class="row">
+      <div class="column">
+        <button class="ui fluid massive blue button js-backToHistories">
+          <i class="reply icon"></i>
+          Back to List
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template name="playerListing">
+  <div class="item">
+    {{#if facebook}}
+      <img class="ui avatar image" src="{{avatar}}">
+    {{else}}
+      <i class="circular user icon"></i>
+    {{/if}}
+    <div class="content">
+      <div class="header">{{name}}</div>
+      <div class="description">Role: {{role}}</div>
+    </div>
+  </div>
+</template>

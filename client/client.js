@@ -127,21 +127,20 @@ Template.registerHelper("equals", function (a, b) {
 Template.role.events({
   "click .vote-up": function() {
     if (getVote(this._id) != 1 && !getPlayer().ready) {
-      console.log("Voted up: " + Roles.findOne(this._id).name);
-      //changeVote(this._id, 1);
-      Meteor.call("changeRoleVote", getPlayer()._id, this._id, 1);
+      // console.log("Voted up: " + Roles.findOne(this._id).name);
+      Meteor.call("changeRoleVote", this._id, 1);
     }
   },
   "click .vote-neutral": function() {
     if (getVote(this._id) != 0 && !getPlayer().ready) {
-      console.log("Voted neutral: " + Roles.findOne(this._id).name);
-      Meteor.call("changeRoleVote", getPlayer()._id, this._id, 0);
+      // console.log("Voted neutral: " + Roles.findOne(this._id).name);
+      Meteor.call("changeRoleVote", this._id, 0);
     }
   },
   "click .vote-down": function() {
     if (getVote(this._id) != -1 && !getPlayer().ready) {
-      console.log("Voted down: " + Roles.findOne(this._id).name);
-      Meteor.call("changeRoleVote", getPlayer()._id, this._id, -1);
+      // console.log("Voted down: " + Roles.findOne(this._id).name);
+      Meteor.call("changeRoleVote", this._id, -1);
     }
   }
 });
@@ -539,7 +538,7 @@ Template.nominateTarget.events({
           }
         })
         .modal("show")
-        .modal('hide others', true)
+        //.modal('hide others', true)
         .modal('refresh', true);
     }
   }
@@ -640,23 +639,14 @@ Template.nominationVoteView.helpers({
 });
 
 Template.nominationVoteView.events({
-  "click .do-lynch": function(event) {
-    Meteor.call("changeLynchVote", getPlayer()._id, 1);
-
-    //Players.update(getPlayer()._id, {$set: {voteChoice: 1}});
-    //checkLynchVotes();
+  "click .do-lynch": function() {
+    Meteor.call("changeLynchVote", 1);
   },
-  "click .dont-lynch": function(event) {
-    Meteor.call("changeLynchVote", getPlayer()._id, 2);
-
-    //Players.update(getPlayer()._id, {$set: {voteChoice: 2}});
-    //checkLynchVotes();
+  "click .dont-lynch": function() {
+    Meteor.call("changeLynchVote", 2);
   },
-  "click .abstain": function(event) {
-    Meteor.call("changeLynchVote", getPlayer()._id, 0);
-
-    //Players.update(getPlayer()._id, {$set: {voteChoice: 0}});
-    //checkLynchVotes();
+  "click .abstain": function() {
+    Meteor.call("changeLynchVote", 0);
   }
 });
 
@@ -710,16 +700,20 @@ Template.endGameScreen.helpers({
     var tag = "panel-default";
     var text = "This is the text that possibly describes the way the game ended or whatnot...";
 
-    var villagersWon = GameVariables.findOne("lastGameResult").value;
-    var vWin = false;
+    var lastGame = GameVariables.findOne("lastGameResult");
 
-    if (villagersWon) {
-      tag = "green";
-      title = "The Villagers have won!!";
-      vWin = true;
-    } else {
-      tag = "red";
-      title = "The Werewolves have won!!";
+    if (lastGame) {
+      var villagersWon = lastGame.value;
+      var vWin = false;
+
+      if (villagersWon) {
+        tag = "green";
+        title = "The Villagers have won!!";
+        vWin = true;
+      } else {
+        tag = "red";
+        title = "The Werewolves have won!!";
+      }
     }
 
     var cycleNumber = GameVariables.findOne("cycleNumber").value - 1;

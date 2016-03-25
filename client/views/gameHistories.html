@@ -1,0 +1,48 @@
+<template name="gameHistories">
+  <div class="ui bottom fixed huge one item menu">
+    <div class="fitted item">
+      <button class="ui fluid huge blue button js-backToSplash">Go back</button>
+    </div>
+  </div>
+
+  <div class="ui centered page grid main menuBottom">
+    <div class="row">
+      <div class="column">
+        <h1 class="ui center aligned icon header">
+          <i class="book icon"></i>
+          Previous Games
+        </h1>
+      </div>
+    </div>
+
+    <div class="ui divider"></div>
+
+    {{#if anyPreviousGames}}
+      <div class="row">
+        <div class="column">
+          <div class="ui relaxed divided selection list">
+            {{#each previousGames}}
+              <div class="item js-gotoGameHistory">
+                <i class="large {{gameColour}} {{gameIcon}} middle aligned icon"></i>
+                <div class="content">
+                  <div class="header">{{gameName}}</div>
+                  <div class="description">{{gameMeta}}</div>
+                </div>
+              </div>
+            {{/each}}
+          </div>
+        </div>
+      </div>
+    {{else}}
+      <div class="row">
+        <div class="column">
+          <div class="ui raised inverted segment">
+            <h1 class="ui header">
+              No previous games to show!
+            </h1>
+          </div>
+        </div>
+      </div>
+    {{/if}}
+  </div>
+</template>

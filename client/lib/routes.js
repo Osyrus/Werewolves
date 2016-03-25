@@ -58,6 +58,7 @@ FlowRouter.route('/spectate', {
         // So they have a player entry, but they may not be joined...
         if (player.joined) {
           // Cheeky buggers are in the current game, no spectating for you!
+          console.log("You are already in the game, you can't spectate!");
           redirect('/'); // Should really send them to game, but not for now...
         }
       }
@@ -65,5 +66,17 @@ FlowRouter.route('/spectate', {
   }],
   action: function() {
     BlazeLayout.render("mainLayout", {content: "spectatorScreen"});
+  }
+});
+
+FlowRouter.route('/gameHistories', {
+  action: function() {
+    BlazeLayout.render("mainLayout", {content: "gameHistories"});
+  }
+});
+
+FlowRouter.route('/gameDetail/:id', {
+  action: function() {
+    BlazeLayout.render("mainLayout", {content: "gameDetail"});
   }
 });
