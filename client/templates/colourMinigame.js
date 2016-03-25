@@ -3,7 +3,7 @@ var timeout = null;
 
 Template.coloursGame.helpers({
   gameVars: function() {
-    var vars = Session.get("gameVars");
+    var vars = getPlayer().gameVars;
     Session.set("statusText", "Choose the colour as it is written.");
 
     return vars ? vars : [];

@@ -381,26 +381,10 @@ function moveToNextCycle(killedPlayer) {
     // This event was during day time
     gameEvent.day = true;
 
-    // Now let's check what happened with the lynch vote, if anything
-    var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
-    if (killedPlayer) {
-      // A lynch indeed occurred lets record that
-
-      var nominator = Players.findOne(GameVariables.findOne("lynchVote").value[1]);
-
-      gameEvent.lynchResult = {
-        targetId: target.userId,
-        targetName: target.name,
-        targetRole: target.role,
-        nominatorId: nominator.userId,
-        nominatorName: nominator.name,
-        nominatorRole: nominator.role
-      }
-    } else {
-      // Nobody was lynched when the day ended, nothing to record.
-
-      gameEvent.lynchResult = null;
-    }
+    // Now lets store the lynch votes for the day.
+    gameEvent.lynchResult = GameVariables.findOne("lynchHistory").value;
+    // Also we need to clear the daily storage for the next day.
+    GameVariables.update("lynchHistory", {$set: {value: []}});
 
     // The werewolves target needs to be reset after leaving the day cycle
     Roles.update(werewolfId, {$set: {target: 0}});
@@ -796,6 +780,17 @@ function executeVote() {
   voteText += voteDirection ? " has passed." : " has failed.";
   EventList.insert({type: "info", cycleNumber: cycleNumber, text: voteText, timeAdded: new Date()});
   var killedPlayer = null;
+
+  //// Insert this vote into the list of lynches
+  GameVariables.update("lynchHistory", {$push: {value: {
+    targetId: target.userId,
+    targetName: target.name,
+    targetRole: target.role,
+    nominatorId: nominator.userId,
+    nominatorName: nominator.name,
+    nominatorRole: nominator.role,
+    votePassed: voteDirection
+  }}});
 
   if (voteDirection) {
     // Lynch the target!!

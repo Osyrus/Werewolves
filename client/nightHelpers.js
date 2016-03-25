@@ -28,12 +28,14 @@ Template.nightTime.helpers({
 
 Template.nightTime.events({
   "click .js-doNightAction": function(event) {
-    // This is where perhaps the game that the passive player will play is chosen.
+    event.preventDefault();
 
-    if (getPlayer().role == Roles.findOne({name: "Villager"})._id) {
-      Session.set("gameVars", generateColourGameVars());
+    // If the player is passive, we need to generate the variables they need at night.
+    if (Roles.findOne(getPlayer().role).passive) {
+      Players.update(getPlayer()._id, {$set: {gameVars: generateColourGameVars()}});
     }
 
+    // In either case, switch the player to night action mode.
     Players.update(getPlayer()._id, {$set: {doingNightAction: true}});
   }
 });
@@ -190,7 +192,7 @@ Template.nightResults.events({
 });
 
 Template.nightResults.helpers({
-  "nightInfo": function() {
+  nightInfo: function() {
     seerDep.depend();
 
     var player = getPlayer();
@@ -214,6 +216,12 @@ Template.nightResults.helpers({
         info = getVillagerResults();
       } else if (name == "werewolf") {
         info = getWerewolfResults(role.target);
+      } else if (role.passive) {
+        info = {
+          title: "You slept",
+          body: "After playing some games before bed, you went to sleep",
+          tag: "blue"
+        }
       }
     }
 

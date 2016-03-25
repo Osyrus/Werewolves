@@ -56,6 +56,7 @@ resetGameVariables = function() {
   GameVariables.remove({});
 
   GameVariables.insert({_id: "historyId", name: "The ID of the history object for this game", value: 0, enabled: false});
+  GameVariables.insert({_id: "lynchHistory", name: "The list of all the lynching for one day", value: [], enabled: true});
   GameVariables.insert({_id: "timeToStart", name: "Seconds until game start", value: 0, enabled: false});
   GameVariables.insert({_id: "gameMode", name: "The current game mode", value: "lobby", enabled: true});
   GameVariables.insert({_id: "rolesAssigned", name: "Have the roles been assigned to players?", value: false, enabled: true});

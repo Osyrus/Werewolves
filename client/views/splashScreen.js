@@ -7,6 +7,10 @@ Template.splashScreen.helpers({
     if (Meteor.user()) {
       var currentGameMode = GameVariables.findOne("gameMode");
 
+      if (!currentGameMode) {
+        return;
+      }
+
       if (currentGameMode.value == "lobby") {
         tag = "js-goto-game";
         text = "Join Lobby";
@@ -51,6 +55,10 @@ Template.splashScreen.helpers({
 
     var currentGameMode = GameVariables.findOne("gameMode");
 
+    if (!currentGameMode) {
+      return;
+    }
+
     if (currentGameMode.value == "inGame") {
       text = "Spectate";
       tag = "js-goto-spectate";
@@ -70,6 +78,9 @@ Template.splashScreen.helpers({
     var colour = "";
 
     var currentGameMode = GameVariables.findOne("gameMode");
+
+    if (!currentGameMode)
+      return;
 
     if (currentGameMode.value == "inGame") {
       text = "Game in Progress";

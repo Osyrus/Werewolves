@@ -700,16 +700,20 @@ Template.endGameScreen.helpers({
     var tag = "panel-default";
     var text = "This is the text that possibly describes the way the game ended or whatnot...";
 
-    var villagersWon = GameVariables.findOne("lastGameResult").value;
-    var vWin = false;
+    var lastGame = GameVariables.findOne("lastGameResult");
 
-    if (villagersWon) {
-      tag = "green";
-      title = "The Villagers have won!!";
-      vWin = true;
-    } else {
-      tag = "red";
-      title = "The Werewolves have won!!";
+    if (lastGame) {
+      var villagersWon = lastGame.value;
+      var vWin = false;
+
+      if (villagersWon) {
+        tag = "green";
+        title = "The Villagers have won!!";
+        vWin = true;
+      } else {
+        tag = "red";
+        title = "The Werewolves have won!!";
+      }
     }
 
     var cycleNumber = GameVariables.findOne("cycleNumber").value - 1;
