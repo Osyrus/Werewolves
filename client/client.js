@@ -91,11 +91,17 @@ Template.lobbyScreen.helpers({
   counting: function() {
     startDep.depend();
 
-    if (TimeSync.serverTime() <= GameVariables.findOne("timeToStart").value) {
+    var timeToStart = GameVariables.findOne("timeToStart");
+
+    if (!timeToStart) {
+      return false;
+    }
+
+    if (TimeSync.serverTime() <= timeToStart.value) {
       return true;
     }
 
-    if (GameVariables.findOne("timeToStart").enabled) {
+    if (timeToStart.enabled) {
       console.log("Calling start game method from client.");
       //Meteor.call("startGame");
     }

@@ -6,25 +6,25 @@ FlowRouter.route('/', {
 
 FlowRouter.route('/game', {
   triggersEnter: [function(context, redirect) {
-    var allow = true;
+    var allow = false;
 
     // The player must be logged in
     if (Meteor.user()) {
       // If the game is running we must check that the player is in this game to allow them in
       var currentGameMode = GameVariables.findOne("gameMode");
+      var player = getPlayer();
       if (currentGameMode.value == "inGame") {
         // The user must have a player entry if they are playing, check that
-        var player = getPlayer();
         if (player) {
           // If they have an entry, they must be joined to be allowed into a running game
-          if (!player.joined)
-            allow = false;
-        } else {
-          allow = false;
+          if (player.joined)
+            allow = true;
         }
+      } else if (currentGameMode.value == "lobby") {
+        // If the game is in lobby mode, then let in any logged in player
+        if (player)
+          allow = true;
       }
-    } else {
-      allow = false;
     }
 
     if (!allow)
@@ -56,8 +56,8 @@ FlowRouter.route('/spectate', {
       var player = getPlayer();
       if (player) {
         // So they have a player entry, but they may not be joined...
-        if (player.joined) {
-          // Cheeky buggers are in the current game, no spectating for you!
+        if (player.joined && player.alive) {
+          // Cheeky buggers are in the current game and alive, no spectating for you!
           console.log("You are already in the game, you can't spectate!");
           redirect('/'); // Should really send them to game, but not for now...
         }
