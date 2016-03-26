@@ -2,10 +2,10 @@ Meteor.startup(function () {
   // Create the fake players for testing
   Players.remove({});
 
-  addTestPlayer("Fred", 1);
-  addTestPlayer("Steve", 1);
-  addTestPlayer("Bob", 2);
-  addTestPlayer("Gary", 0);
+  // addTestPlayer("Fred", 1);
+  // addTestPlayer("Steve", 1);
+  // addTestPlayer("Bob", 2);
+  // addTestPlayer("Gary", 0);
 
   // Create the roles
   Roles.remove({});
@@ -34,6 +34,9 @@ Meteor.startup(function () {
   }
   if (!GameSettings.findOne("timeDelays")) {
     GameSettings.insert({_id: "timeDelays", timeout: 60100, countdown: 7100, startgame: 5100});
+  }
+  if (!GameSettings.findOne("gameVersion")) {
+    GameSettings.insert({_id: "gameVersion", version: "v0.0", build: 0, name: "No version info"});
   }
 
   // This is where the Facebook stuff is set up (not hardcoded...)
