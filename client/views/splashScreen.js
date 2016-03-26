@@ -3,6 +3,7 @@ Template.splashScreen.helpers({
     var text = "";
     var colour = "";
     var tag = "";
+    var icon = "";
 
     if (Meteor.user()) {
       var currentGameMode = GameVariables.findOne("gameMode");
@@ -15,10 +16,12 @@ Template.splashScreen.helpers({
         tag = "js-goto-game";
         text = "Join Lobby";
         colour = "blue";
+        icon = "share";
       } else {
         text = "Game already running...";
         tag = "";
         colour = "";
+        icon = "setting";
       }
 
       var player = getPlayer();
@@ -29,10 +32,12 @@ Template.splashScreen.helpers({
             text = "Rejoin Game";
             colour = "green";
             tag = "js-goto-game";
+            icon = "share";
           } else {
             text = "You died... (join anyway)";
             colour = "red";
             tag = "js-goto-game";
+            icon = "share";
           }
         }
       }
@@ -45,13 +50,15 @@ Template.splashScreen.helpers({
     return {
       text: text,
       colour: colour,
-      tag: tag
+      tag: tag,
+      icon: icon
     }
   },
   btn2: function() {
     var text = "";
     var colour = "blue";
     var tag = "";
+    var icon = "";
 
     var currentGameMode = GameVariables.findOne("gameMode");
 
@@ -62,15 +69,18 @@ Template.splashScreen.helpers({
     if (currentGameMode.value == "inGame") {
       text = "Spectate";
       tag = "js-goto-spectate";
+      icon = "find";
     } else {
       text = "No game to spectate";
       colour = "grey";
+      icon = "hide";
     }
 
     return {
       text: text,
       colour: colour,
-      tag: tag
+      tag: tag,
+      icon: icon
     }
   },
   btnLabel: function() {

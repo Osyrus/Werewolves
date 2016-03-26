@@ -4,13 +4,16 @@
       <div class="row">
         <div class="column">
           <div class="three large ui buttons">
-            <button class="ui red button leave-game">Leave Game</button>
+            <button class="ui red button leave-game">
+              <i class="reply icon"></i>
+              Leave Lobby
+            </button>
 
             <button class="ui {{#if ready}}orange set-nready{{else}}green set-ready{{/if}} button">
               {{#if ready}}
-                Not Ready
+                Set Not Ready
               {{else}}
-                Ready
+                Set Ready
               {{/if}}
             </button>
 
