@@ -101,10 +101,10 @@ Template.lobbyScreen.helpers({
       return true;
     }
 
-    if (timeToStart.enabled) {
-      console.log("Calling start game method from client.");
-      //Meteor.call("startGame");
-    }
+    // if (timeToStart.enabled) {
+    //   console.log("Calling start game method from client.");
+    //   Meteor.call("startGame");
+    // }
 
     return false;
   },
