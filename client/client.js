@@ -507,45 +507,43 @@ Template.nominateTarget.events({
 
       // TODO is the Sessions reactivity causing this to fire multiple times?
       // Perhaps a "hide others" behaviour will patch this (not fix it though...)
-      if (!$('.ui.modal.nominateCheck').modal('is active')) {
-        $('.ui.modal.nominateCheck')
-          .modal({
-            closable: false,
-            onApprove: function () {
-              //console.log("Clicked sure in nominate");
-              // Kill the array holding the number of players looking at the nominate selection screen
-              GameVariables.update("playersNominating", {$set: {value: []}});
-              // Set all the players votes back to abstain for the impending vote
-              var players = getAlivePlayers();
-              players.forEach(function (player) {
-                // Don't do this if the player is a bot (otherwise the vote gets reset)
-                if (!player.bot)
-                  Players.update(player._id, {$set: {voteChoice: 0}});
-              });
-              // Get the nominator and nominee
-              var target = Session.get("nominationTarget");
-              Session.set("nominationTarget", null);
-              var nominator = getPlayer();
-              // Set the variable to move to the yes/no vote
-              GameVariables.update("lynchVote", {$set: {value: [target._id, nominator._id], enabled: true}});
-              // The nominator starts voting to lynch the target
-              Players.update(nominator._id, {$set: {voteChoice: 1}});
-              // The nominator also needs this nomination tracked, to make sure they can't nominate
-              // the same person again in the same day cycle (double jeopardy rule).
-              Players.update(nominator._id, {$push: {previousNominations: target._id}});
-              // Let the server know that the lynch vote has started
-              Meteor.call("beginLynchVote");
-            },
-            onDeny: function () {
-              Session.set("nominationTarget", null);
-            }
-          })
-          .modal("show")
-          //.modal('hide others', true)
-          .modal('refresh', true);
-      } else {
-        console.log("Duplicate modal blocked.");
-      }
+      $('.ui.modal.nominateCheck').modal('hide all');
+      
+      $('.ui.modal.nominateCheck')
+        .modal({
+          closable: false,
+          onApprove: function () {
+            //console.log("Clicked sure in nominate");
+            // Kill the array holding the number of players looking at the nominate selection screen
+            GameVariables.update("playersNominating", {$set: {value: []}});
+            // Set all the players votes back to abstain for the impending vote
+            var players = getAlivePlayers();
+            players.forEach(function (player) {
+              // Don't do this if the player is a bot (otherwise the vote gets reset)
+              if (!player.bot)
+                Players.update(player._id, {$set: {voteChoice: 0}});
+            });
+            // Get the nominator and nominee
+            var target = Session.get("nominationTarget");
+            Session.set("nominationTarget", null);
+            var nominator = getPlayer();
+            // Set the variable to move to the yes/no vote
+            GameVariables.update("lynchVote", {$set: {value: [target._id, nominator._id], enabled: true}});
+            // The nominator starts voting to lynch the target
+            Players.update(nominator._id, {$set: {voteChoice: 1}});
+            // The nominator also needs this nomination tracked, to make sure they can't nominate
+            // the same person again in the same day cycle (double jeopardy rule).
+            Players.update(nominator._id, {$push: {previousNominations: target._id}});
+            // Let the server know that the lynch vote has started
+            Meteor.call("beginLynchVote");
+          },
+          onDeny: function () {
+            Session.set("nominationTarget", null);
+          }
+        })
+        .modal("show")
+        //.modal('hide others', true)
+        .modal('refresh', true);
     }
   }
 });
