@@ -17,9 +17,7 @@ Template.nightTime.helpers({
     return isRoleType("seer");
   },
   "nightActionDone": function() {
-    var player = getPlayer();
-
-    return player.nightActionDone;
+    return getPlayer().nightActionDone;
   },
   "doingNightAction": function() {
     return Players.findOne(getPlayer()._id).doingNightAction;
@@ -30,18 +28,15 @@ Template.nightTime.events({
   "click .js-doNightAction": function(event) {
     event.preventDefault();
 
-    // If the player is passive, we need to generate the variables they need at night.
-    if (Roles.findOne(getPlayer().role).passive) {
-      Players.update(getPlayer()._id, {$set: {gameVars: generateColourGameVars()}});
-    }
+    console.log("Doing night action.");
 
-    // In either case, switch the player to night action mode.
-    Players.update(getPlayer()._id, {$set: {doingNightAction: true}});
+    // This is the shared method the player calls to say they want to do their night action
+    Meteor.call("doNightAction");
   }
 });
 
 Template.werewolvesTargetList.helpers({
-  "werewolfTargets": function(events) {
+  "werewolfTargets": function() {
     // Find all the players that aren't werewolves to make a list of targets
     var werewolfId = Roles.findOne({name: "Werewolf"})._id;
     var nonWerewolves = Players.find({role: {$ne: werewolfId}, alive: true});

@@ -184,7 +184,7 @@ Meteor.methods({
   checkWerewolfVote: function() {
     //// A werewolf has changed their vote and now we are going to check it.
 
-    // Lets get the werewolves in question (all of them...)
+    // Lets get the werewolves in question (all of the alive ones...)
     var werewolves = Players.find({role: "werewolf", alive: true, joined: true});
 
     // Lets make a list of all the targets id's
@@ -207,16 +207,25 @@ Meteor.methods({
     if (allAgree) {
       var countdownDelay = GameSettings.findOne("timeDelays").countdown;
 
-      GameVariables.update("timeToKill", {$set: {
-        value: (new Date()).valueOf() + countdownDelay,
-        enabled: true
-      }});
+      // Reset the countdown if necessary
+      // TODO don't reset it if the target hasn't changed
+      if (killCounter) {
+        Meteor.clearTimeout(killCounter);
+        killCounter = null;
+      }
 
       var agreedTarget = Players.findOne(potentialTargetId);
       console.log("Werewolves have all targeted: " + agreedTarget.name);
 
+      // If necessary, start up a new countdown.
       if (!killCounter) {
         console.log("Setting countdown to ending werewolves turn.");
+
+        GameVariables.update("timeToKill", {$set: {
+          value: (new Date()).valueOf() + countdownDelay,
+          enabled: true
+        }});
+
         killCounter = Meteor.setTimeout(function () {
           console.log("Werewolves turn end called");
           werewolves.forEach(function (werewolf) {
@@ -224,6 +233,11 @@ Meteor.methods({
           });
 
           Roles.update("werewolf", {$set: {target: potentialTargetId}});
+
+          GameVariables.update("timeToKill", {$set: {
+            value: 0,
+            enabled: false
+          }});
 
           killCounter = null;
           checkNightEnded();
@@ -770,6 +784,16 @@ function cancelVote() {
 }
 
 function executeVote() {
+  console.log("Executing lynch vote.");
+
+  // Ensure that the game hasn't already done this...
+  var votingValid = GameVariables.findOne("lynchVote").enabled;
+  if (!votingValid) {
+    // It seems that latency can cause the vote to be executed twice, so don't let it.
+    console.log("Vote has already been executed.");
+    return;
+  }
+
   // The countdown has elapsed, execute the vote decision!!
   var cycleNumber = GameVariables.findOne("cycleNumber").value;
   var voteDirection = GameVariables.findOne("voteDirection").value;

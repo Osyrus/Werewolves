@@ -278,13 +278,24 @@ Template.whoAmI.helpers({
 
 Template.whoAmI.events({
   "mousedown .revealRole": function() {
-    Session.set("revealPressed", true);
+    if (!(Meteor.Device.isPhone() || Meteor.Device.isTablet()))
+      Session.set("revealPressed", true);
   },
   "mouseup .revealRole": function() {
-    Session.set("revealPressed", false);
+    if (!(Meteor.Device.isPhone() || Meteor.Device.isTablet()))
+      Session.set("revealPressed", false);
   },
   "mouseout .revealRole": function() {
-    Session.set("revealPressed", false);
+    if (!(Meteor.Device.isPhone() || Meteor.Device.isTablet()))
+      Session.set("revealPressed", false);
+  },
+  "touchstart .revealRole": function() {
+    if (Meteor.Device.isPhone() || Meteor.Device.isTablet())
+      Session.set("revealPressed", true);
+  },
+  "touchend .revealRole": function() {
+    if (Meteor.Device.isPhone() || Meteor.Device.isTablet())
+      Session.set("revealPressed", false);
   },
   "click .seen-role": function() {
     Session.set("seenRole", true);
