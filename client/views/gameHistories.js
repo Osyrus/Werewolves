@@ -1,7 +1,8 @@
 Template.gameHistories.helpers({
   previousGames: function() {
     // Grab all the games that are complete (have been finished)
-    var finishedGames = GameHistory.find({gameEndedAt: {$exists: true}});
+    // Sort the games from newest to oldest
+    var finishedGames = GameHistory.find({gameEndedAt: {$exists: true}}, {sort: {gameEndedAt: -1}});
 
     // This will be our array of the games to make buttons out of
     var previousGames = [];
