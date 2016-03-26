@@ -159,22 +159,26 @@ Template.playerSelection.events({
     var target = Players.findOne(targetId);
 
     Session.set("currentTarget", target.name);
-    console.log("Clicked on " + target.name);
+    // console.log("Clicked on " + target.name);
 
     Meteor.call("setRoleTarget", getPlayer().role, targetId, function(error, params) {
       if (error) {
         console.log(error);
       } else {
-        $('.ui.modal.confirmCheck')
-          .modal({
-            closable: true, // If they aren't closable then they freeze the screen when multiple pop up...
-            onApprove: function() {
-              Meteor.call("finishedNightAction");
-            }
-          })
-          .modal("show")
-          //.modal('hide others', true) // This seems to cause more problems than it fixed.
-          .modal('refresh', true);
+        if (!$('.ui.modal.confirmCheck').modal('is active')) {
+          $('.ui.modal.confirmCheck')
+            .modal({
+              closable: false,
+              onApprove: function () {
+                Meteor.call("finishedNightAction");
+              }
+            })
+            .modal("show")
+            //.modal('hide others', true) // This seems to cause more problems than it fixed.
+            .modal('refresh', true);
+        } else {
+          console.log("Blocked duplicate modal.");
+        }
       }
     });
   }
