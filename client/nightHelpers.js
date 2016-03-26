@@ -167,7 +167,7 @@ Template.playerSelection.events({
       } else {
         $('.ui.modal.confirmCheck')
           .modal({
-            closable: false,
+            closable: true, // If they aren't closable then they freeze the screen when multiple pop up...
             onApprove: function() {
               Meteor.call("finishedNightAction");
             }

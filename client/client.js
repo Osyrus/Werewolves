@@ -509,7 +509,7 @@ Template.nominateTarget.events({
       // Perhaps a "hide others" behaviour will patch this (not fix it though...)
       $('.ui.modal.nominateCheck')
         .modal({
-          closable: false,
+          closable: true, // If they aren't closable then they freeze the screen when multiple pop up...
           onApprove: function() {
             //console.log("Clicked sure in nominate");
             // Kill the array holding the number of players looking at the nominate selection screen
