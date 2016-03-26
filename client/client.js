@@ -507,11 +507,13 @@ Template.nominateTarget.events({
 
       // TODO is the Sessions reactivity causing this to fire multiple times?
       // Perhaps a "hide others" behaviour will patch this (not fix it though...)
+
+      // This is an attempt at preventing multiple modals popping up
       $('.ui.modal.nominateCheck').modal('hide all');
-      
+
       $('.ui.modal.nominateCheck')
         .modal({
-          closable: false,
+          closable: true, // When the modals are actually fixed, make this false
           onApprove: function () {
             //console.log("Clicked sure in nominate");
             // Kill the array holding the number of players looking at the nominate selection screen

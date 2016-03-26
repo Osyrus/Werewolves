@@ -165,11 +165,12 @@ Template.playerSelection.events({
       if (error) {
         console.log(error);
       } else {
+        // This is an attempt at preventing multiple modals popping up
         $('.ui.modal.confirmCheck').modal('hide all');
 
         $('.ui.modal.confirmCheck')
           .modal({
-            closable: false, // This could cause problems if multiple modals pop up
+            closable: true, // When the modals are actually fixed, make this false
             onApprove: function () {
               Meteor.call("finishedNightAction");
             }
