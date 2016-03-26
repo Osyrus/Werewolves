@@ -20,7 +20,7 @@ Template.nightTime.helpers({
     return getPlayer().nightActionDone;
   },
   "doingNightAction": function() {
-    return Players.findOne(getPlayer()._id).doingNightAction;
+    return getPlayer().doingNightAction;
   }
 });
 
