@@ -770,6 +770,15 @@ function cancelVote() {
 }
 
 function executeVote() {
+  console.log("Executing lynch vote.");
+
+  // Ensure that the game hasn't already done this...
+  var voteTime = GameVariables.findOne("timeToVoteExecution").enabled;
+  if (!voteTime) {
+    console.log("Vote has already been executed.");
+    return;
+  }
+
   // The countdown has elapsed, execute the vote decision!!
   var cycleNumber = GameVariables.findOne("cycleNumber").value;
   var voteDirection = GameVariables.findOne("voteDirection").value;

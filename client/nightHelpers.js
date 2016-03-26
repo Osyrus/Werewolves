@@ -30,6 +30,8 @@ Template.nightTime.events({
   "click .js-doNightAction": function(event) {
     event.preventDefault();
 
+    console.log("Doing night action.");
+
     // If the player is passive, we need to generate the variables they need at night.
     if (Roles.findOne(getPlayer().role).passive) {
       Players.update(getPlayer()._id, {$set: {gameVars: generateColourGameVars()}});
@@ -41,7 +43,7 @@ Template.nightTime.events({
 });
 
 Template.werewolvesTargetList.helpers({
-  "werewolfTargets": function(events) {
+  "werewolfTargets": function() {
     // Find all the players that aren't werewolves to make a list of targets
     var werewolfId = Roles.findOne({name: "Werewolf"})._id;
     var nonWerewolves = Players.find({role: {$ne: werewolfId}, alive: true});
