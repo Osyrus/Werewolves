@@ -4,20 +4,6 @@ var startDep = new Tracker.Dependency;
 nightViewDep = new Tracker.Dependency;
 
 Template.lobbyScreen.events({
-  "click .join-game": function() {
-    if (GameVariables.findOne("gameMode").value == "lobby") {
-      var player = getPlayer();
-
-      Players.update(player._id, {$set: {joined: true, seenEndgame: true}});
-
-      // Reset the start game countdown
-      Meteor.call("stopStartCountdown");
-      Session.set("seenRole", false);
-
-      // As the enabled roles vote count is dependant on the number of people, we need to do a recount.
-      Meteor.call("recountRoleVotes");
-    }
-  },
   "click .leave-game": function() {
     var player = getPlayer();
     Players.update(player._id, {$set: {joined: false}});
@@ -28,6 +14,9 @@ Template.lobbyScreen.events({
 
     // Number of people in the game changed, so need a recount
     Meteor.call("recountRoleVotes");
+
+    // Now kick the player back to the splash screen
+    FlowRouter.go('/');
   },
 
   "click .set-ready": function() {
@@ -41,16 +30,12 @@ Template.lobbyScreen.events({
     // Reset the start game countdown
     Meteor.call("stopStartCountdown");
   },
-
   "click .start-game": function() {
     if (allReady()) {
       Meteor.call("startStopGame");
 
       startDep.changed();
     }
-  },
-  "click game-running": function() {
-    FlowRouter.go('/spectate');
   }
 });
 

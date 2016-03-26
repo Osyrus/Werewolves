@@ -3,36 +3,28 @@
     {{#if currentUser}}
       <div class="row">
         <div class="column">
-          {{#if joined}}
-            <div class="three large ui buttons">
-              <button class="ui red button leave-game">Leave Game</button>
+          <div class="three large ui buttons">
+            <button class="ui red button leave-game">Leave Game</button>
 
-              <button class="ui {{#if ready}}orange set-nready{{else}}green set-ready{{/if}} button">
-                {{#if ready}}
-                  Not Ready
-                {{else}}
-                  Ready
-                {{/if}}
-              </button>
+            <button class="ui {{#if ready}}orange set-nready{{else}}green set-ready{{/if}} button">
+              {{#if ready}}
+                Not Ready
+              {{else}}
+                Ready
+              {{/if}}
+            </button>
 
-              <button class="ui
-                {{#if allReady}}green{{/if}}
-                {{#if counting}}red{{/if}}
-                button start-game">
-                {{#if counting}}
-                  Cancel ({{countdown}})
-                {{else}}
-                  Start Game
-                {{/if}}
-              </button>
-            </div>
-          {{else}}
-            {{#if inGame}}
-              <button class="ui fluid massive button game-running">Game in Progress</button>
-            {{else}}
-              <button class="ui fluid massive button blue join-game">Join Game</button>
-            {{/if}}
-          {{/if}}
+            <button class="ui
+              {{#if allReady}}green{{/if}}
+              {{#if counting}}red{{/if}}
+              button start-game">
+              {{#if counting}}
+                Cancel ({{countdown}})
+              {{else}}
+                Start Game
+              {{/if}}
+            </button>
+          </div>
         </div>
       </div>
     {{/if}}
@@ -50,20 +42,18 @@
       </div>
     </div>
 
-    {{#if joined}}
-      <div class="row">
-        <div class="column">
-          <div class="ui segment">
-            <div class="ui top attached blue large label">Role List</div>
-            <div class="ui divided list">
-              {{#each roles}}
-                {{> role}}
-              {{/each}}
-            </div>
+    <div class="row">
+      <div class="column">
+        <div class="ui segment">
+          <div class="ui top attached blue large label">Role List</div>
+          <div class="ui divided list">
+            {{#each roles}}
+              {{> role}}
+            {{/each}}
           </div>
         </div>
       </div>
-    {{/if}}
+    </div>
   </div>
 </template>
 

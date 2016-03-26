@@ -11,18 +11,11 @@ FlowRouter.route('/game', {
     // The player must be logged in
     if (Meteor.user()) {
       // If the game is running we must check that the player is in this game to allow them in
-      var currentGameMode = GameVariables.findOne("gameMode");
       var player = getPlayer();
-      if (currentGameMode.value == "inGame") {
-        // The user must have a player entry if they are playing, check that
-        if (player) {
-          // If they have an entry, they must be joined to be allowed into a running game
-          if (player.joined)
-            allow = true;
-        }
-      } else if (currentGameMode.value == "lobby") {
-        // If the game is in lobby mode, then let in any logged in player
-        if (player)
+      // The user must have a player entry if they are playing, check that
+      if (player) {
+        // If they have an entry, they must be joined to be allowed into a running game
+        if (player.joined)
           allow = true;
       }
     }

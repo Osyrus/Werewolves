@@ -108,10 +108,17 @@ Template.splashScreen.events({
       var gameMode = GameVariables.findOne("gameMode").value;
       // Only change the players joined state if they are heading into the lobby
       if (gameMode == "lobby")
-        Players.update(player._id, {$set: {joined: false, seenEndgame: true}});
+        Players.update(player._id, {$set: {joined: true, seenEndgame: true}});
     } else {
       Meteor.call("addPlayer");
     }
+
+    // Reset the start game countdown
+    Meteor.call("stopStartCountdown");
+    Session.set("seenRole", false);
+
+    // As the enabled roles vote count is dependant on the number of people, we need to do a recount.
+    Meteor.call("recountRoleVotes");
 
     FlowRouter.go('/game');
   },
