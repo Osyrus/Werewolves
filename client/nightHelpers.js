@@ -26,16 +26,7 @@ Template.nightTime.helpers({
 
 Template.nightTime.events({
   "click .js-doNightAction": function(event) {
-    console.log("Do night action touched or clicked");
-
     event.preventDefault();
-    event.stopPropagation();
-
-    if(event.type == "touchstart") {
-      console.log("Do night action touched.");
-    } else if(event.type == "click") {
-      console.log("Do night action clicked.");
-    }
 
     console.log("Now calling doNightAction method.");
 
