@@ -24,6 +24,13 @@ Template.navbar.helpers({
     $('#countdown-range').range('set value', countdownTime);
     $('#timeout-range').range('set value', timeoutTime);
 
+    var version = GameSettings.findOne("gameVersion");
+    var versionNum = version.version;
+    var buildNum = version.build;
+    var versionName = version.name;
+
+    var versionText = "Version " + versionNum + ", build " + buildNum + ". " + versionName + " edition";
+
     return {
       doubleTag: doubleJeopardy ? enabledTag : disabledTag,
       doubleText: doubleJeopardy ? enabledText : disabledText,
@@ -32,7 +39,8 @@ Template.navbar.helpers({
       revealNTag: revealNight ? enabledTag : disabledTag,
       revealNText: revealNight ? enabledText : disabledText,
       countdown: countdownTime,
-      timeout: timeoutTime
+      timeout: timeoutTime,
+      versionText: versionText
     }
   },
   playerName: function() {
@@ -105,8 +113,8 @@ Template.navbar.events({
     });
 
     $('#timeout-range').range({
-      min: 30,
-      max: 90,
+      min: 45,
+      max: 120,
       start: Math.floor(GameSettings.findOne("timeDelays").timeout / 1000),
       onChange: function(val) {
         var currentTime = GameSettings.findOne("timeDelays").timeout;
