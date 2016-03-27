@@ -406,7 +406,15 @@ Template.dayNightCycle.helpers({
     // Get the list of people looking at the selection screen
     var playersNominating = GameVariables.findOne("playersNominating").value;
     // If the clients player is in the list, the index will be 0 onwards, else it will be -1
-    return playersNominating.indexOf(getPlayer()._id) >= 0;
+
+    if (playersNominating.indexOf(getPlayer()._id) >= 0) {
+      return true;
+    } else {
+      // If this player is currently looking at a modal, this makes sure it closes if someone
+      // beats them to starting a vote.
+      $('.ui.modal.nominateCheck').modal('hide all');
+      return false;
+    }
   },
   "voting": function() {
     return GameVariables.findOne("lynchVote").enabled;
@@ -445,6 +453,9 @@ Template.dayView.helpers({
 
 Template.dayView.events({
   "click .nominate": function(event) {
+    // TODO this didn't fire on my phone while testing, after a refresh it was fine.
+
+    event.preventDefault();
     // Get the list of people looking at the selection screen
     var playersNominating = GameVariables.findOne("playersNominating").value;
     // Add the current player (who pushed the button) to this list
@@ -497,6 +508,8 @@ Template.nominateTarget.helpers({
 
 Template.nominateTarget.events({
   "click .nominatePlayer": function(event) {
+    event.preventDefault();
+
     if (!Session.get("nominationTarget")) {
       // Get the lynch target player and the nominator
       var target = Players.findOne(this._id);
@@ -509,6 +522,7 @@ Template.nominateTarget.events({
       // Perhaps a "hide others" behaviour will patch this (not fix it though...)
 
       // This is an attempt at preventing multiple modals popping up
+      // I don't think it worked.
       $('.ui.modal.nominateCheck').modal('hide all');
 
       $('.ui.modal.nominateCheck')
@@ -529,15 +543,10 @@ Template.nominateTarget.events({
             var target = Session.get("nominationTarget");
             Session.set("nominationTarget", null);
             var nominator = getPlayer();
-            // Set the variable to move to the yes/no vote
-            GameVariables.update("lynchVote", {$set: {value: [target._id, nominator._id], enabled: true}});
-            // The nominator starts voting to lynch the target
-            Players.update(nominator._id, {$set: {voteChoice: 1}});
-            // The nominator also needs this nomination tracked, to make sure they can't nominate
-            // the same person again in the same day cycle (double jeopardy rule).
-            Players.update(nominator._id, {$push: {previousNominations: target._id}});
-            // Let the server know that the lynch vote has started
-            Meteor.call("beginLynchVote");
+            // Let the server know that this player wants to start a lynch vote
+            // Note: due to latency, this could come while one is already happening,
+            // the server will ignore it in that case.
+            Meteor.call("beginLynchVote", [target._id, nominator._id]);
           },
           onDeny: function () {
             Session.set("nominationTarget", null);

@@ -124,16 +124,40 @@ Meteor.methods({
       }
     }
   },
-  beginLynchVote: function() {
-    var cycleNumber = GameVariables.findOne("cycleNumber").value;
-    var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
-    var nominator = Players.findOne(GameVariables.findOne("lynchVote").value[1]);
+  beginLynchVote: function(voteDetails) {
+    var target = Players.findOne(voteDetails[0]);
+    var nominator = Players.findOne(voteDetails[1]);
 
-    var lynchNominationMadeText = nominator.name + " has nominated " + target.name + " to be lynched.";
+    console.log(nominator.name + " has requested to nominate " + target.name);
 
-    EventList.insert({type: "info", cycleNumber: cycleNumber, text: lynchNominationMadeText, timeAdded: new Date()});
+    // Because of latency, this could have been called by another player even though there
+    // is a lynch vote in progress (started just before this was called). So, we need to make sure
+    // we don't start a lynch vote twice!!
 
-    startLynchTimeout();
+    if (!GameVariables.findOne("lynchVote").enabled) {
+      // Set the variable to move to the yes/no vote
+      GameVariables.update("lynchVote", {$set: {value: [target._id, nominator._id], enabled: true}});
+      // The nominator starts voting to lynch the target
+      Players.update(nominator._id, {$set: {voteChoice: 1}});
+      // The nominator also needs this nomination tracked, to make sure they can't nominate
+      // the same person again in the same day cycle (double jeopardy rule).
+      Players.update(nominator._id, {$push: {previousNominations: target._id}});
+
+      var cycleNumber = GameVariables.findOne("cycleNumber").value;
+
+      var lynchNominationMadeText = nominator.name + " has nominated " + target.name + " to be lynched.";
+
+      EventList.insert({type: "info", cycleNumber: cycleNumber, text: lynchNominationMadeText, timeAdded: new Date()});
+
+      console.log(nominator.name + "'s nomination is proceeding to vote.");
+
+      startLynchTimeout();
+    } else {
+      var actualNominator = Players.findOne(GameVariables.findOne("lynchVote").value[1]);
+
+      console.log("Lynch vote already been started by " + actualNominator.name
+        + ". Ignoring " + nominator.name + "'s request.");
+    }
   },
   doingNothingToday: function() {
     //// This is called by the last player to say they aren't doing anything
