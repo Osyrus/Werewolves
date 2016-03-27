@@ -165,20 +165,19 @@ Template.playerSelection.events({
       if (error) {
         console.log(error);
       } else {
-        if (!$('.ui.modal.confirmCheck').modal('is active')) {
-          $('.ui.modal.confirmCheck')
-            .modal({
-              closable: false,
-              onApprove: function () {
-                Meteor.call("finishedNightAction");
-              }
-            })
-            .modal("show")
-            //.modal('hide others', true) // This seems to cause more problems than it fixed.
-            .modal('refresh', true);
-        } else {
-          console.log("Blocked duplicate modal.");
-        }
+        // This is an attempt at preventing multiple modals popping up
+        $('.ui.modal.confirmCheck').modal('hide all');
+
+        $('.ui.modal.confirmCheck')
+          .modal({
+            closable: true, // When the modals are actually fixed, make this false
+            onApprove: function () {
+              Meteor.call("finishedNightAction");
+            }
+          })
+          .modal("show")
+          //.modal('hide others', true) // This seems to cause more problems than it fixed.
+          .modal('refresh', true);
       }
     });
   }
