@@ -779,7 +779,13 @@ function endGame(villagersWin) {
 }
 
 function cancelVote() {
+  // Need to reset the lynch countdown in case the vote was not to lynch
+  stopLynchCountdown();
+  // Need to reset the timeout in the case a timeout occurred
+  stopLynchTimeout();
+
   GameVariables.update("voteDirection", {$set: {value: false, enabled: true}});
+
   executeVote();
 }
 
