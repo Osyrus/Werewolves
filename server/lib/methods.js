@@ -341,8 +341,11 @@ function countVotes() {
     //console.log(role.name + " got " + role.votes + " votes.");
   });
 
-  // This is the calculation that determines is the role is enabled or not.
-  var numVillagers = Players.find({joined: true}).count() - numWerewolves();
+  /// This is the calculation that determines is the role is enabled or not.
+  // The number of players that can take a role is the total number of players
+  // minus the number of werewolves (leaving only the villagers).
+  // Also minus one more as it's good to have at least one normal villager.
+  var numVillagers = Players.find({joined: true}).count() - numWerewolves() - 1;
 
   //console.log("Number of villagers that can take on a role = " + numVillagers);
 
