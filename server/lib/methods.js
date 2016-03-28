@@ -26,8 +26,17 @@ Meteor.methods({
   checkLynchVotes: function() {
     //// A players vote has been changed, and hence this function was called to check for any consequences
 
+    var lynchVote = GameVariables.findOne("lynchVote");
+
+    // It seems that the lynch vote can end, but someones vote could still be on the way due to,
+    // latency, so we should double check to make sure the vote is still happening.
+    if (!lynchVote.enabled) {
+      console.log("No lynch vote in progress, skipping vote count.");
+      return;
+    }
+
     // Now we need to get a hold of all the alive players excluding the target
-    var lynchTarget = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
+    var lynchTarget = Players.findOne(lynchVote.value[0]);
     var players = Players.find({alive: true, _id: {$ne: lynchTarget._id}});
     // The number of voters is all of these players
     var numVoters = players.count();
