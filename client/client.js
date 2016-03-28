@@ -288,12 +288,12 @@ Template.whoAmI.events({
 });
 
 Template.eventList.helpers({
-  "events": function() {
+  events: function() {
     var player = getPlayer();
 
     if (player) {
       var currentCycle = GameVariables.findOne("cycleNumber").value;
-      return EventList.find({cycleNumber: (currentCycle - 1)});
+      return EventList.find({cycleNumber: (currentCycle - 1)}, {sort: {timeAdded: -1}});
     } else {
       return [];
     }
@@ -307,7 +307,7 @@ Template.eventList.helpers({
     var cycles = [];
 
     for (i = numCycles; i > 0; i--) {
-      var cycleEvents = EventList.find({cycleNumber: i});
+      var cycleEvents = EventList.find({cycleNumber: i}, {sort: {timeAdded: -1}});
 
       if (cycleEvents) {
         if (cycleEvents.count() > 0) {
