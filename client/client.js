@@ -339,6 +339,14 @@ Template.eventList.helpers({
   }
 });
 
+Template.deathEvent.helpers({
+  // TODO write logic that pulls out which cycle we are talking about, and passes back
+  // all of the info for who died, how, and by who (if applicable)
+  // I.e. "Gary was lynched by Fred", "Gary was killed by the werewolves",
+  // "Fred was struck down by the heavens".
+  // Have icons and colours specific for each one.
+});
+
 Template.eventsDisplay.events({
   "click .ok": function(event) {
     // Update that the player has seen the events
