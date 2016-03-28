@@ -283,7 +283,7 @@ Template.whoAmI.events({
       Session.set("revealPressed", false);
   },
   "click .seen-role": function() {
-    Session.set("seenRole", true);
+    Meteor.call("seenRole", true);
   }
 });
 

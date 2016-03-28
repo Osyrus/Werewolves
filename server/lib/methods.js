@@ -694,6 +694,7 @@ function startGame() {
       Players.update(player._id, {
         $set: {
           seenEndgame: false,
+          seenRole: false,
           alive: true,
           doNothing: false,
           seenNewEvents: false,
