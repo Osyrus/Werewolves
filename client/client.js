@@ -345,6 +345,73 @@ Template.deathEvent.helpers({
   // I.e. "Gary was lynched by Fred", "Gary was killed by the werewolves",
   // "Fred was struck down by the heavens".
   // Have icons and colours specific for each one.
+
+  deathInfo: function() {
+    var cycleNumber = this.cycleNumber;
+
+    var targetName = ""; // The dead players name
+    var causeText = ""; // The bridging text between who dies and by whoms hand
+    var killerName = ""; // This could be the nominators name, or the saints name, or just "The werewolves".
+    var colourTag = "";
+
+    var deaths = [];
+
+    var historyId = GameVariables.findOne("historyId").value;
+    var gameEvent = GameHistory.findOne(historyId).gameEvents[cycleNumber - 1];
+
+    if (cycleWasDay(cycleNumber)) {
+      // In the day there is the possibility of more than one person dying, so we need to check that.
+      var cyclePlayers = gameEvent.playerList;
+
+      var killedPlayers = [];
+      for (i = 0; i < cyclePlayers.length; i++) {
+        if (cyclePlayers[i].justDied) {
+          killedPlayers.push(cyclePlayers[i]);
+        }
+      }
+
+      // If any players were killed, lets add them to the display array (deaths)
+      if (killedPlayers.length > 0) {
+        var lynchResult = gameEvent.lynchResult;
+
+        for (i = 0; i < killedPlayers.length; i++) {
+          if (killedPlayers[i].deathType == "lynch") {
+            targetName = lynchResult.targetName;
+            killerName = lynchResult.nominatorName;
+            causeText = "was lynched by";
+            colourTag = "red";
+          } else if (killedPlayers[i].deathType == "saint") {
+            targetName = lynchResult.nominatorName;
+            killerName = lynchResult.targetName;
+            causeText = "was struck down for lynching";
+            colourTag = "orange";
+          }
+
+          deaths.push({
+            targetName: targetName,
+            killerName: killerName,
+            causeText: causeText,
+            colourTag: colourTag
+          })
+        }
+      }
+    } else {
+      var werewolfAction = gameEvent.werewolfAction;
+
+      if (werewolfAction.succeeded) {
+        var target = Players.findOne(werewolfAction.target);
+
+        deaths.push({
+          targetName: target.name,
+          killerName: "the Werewolves",
+          causeText: "was killed by",
+          colourTag: "red"
+        });
+      }
+    }
+
+    return deaths;
+  }
 });
 
 Template.eventsDisplay.events({

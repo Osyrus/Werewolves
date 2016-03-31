@@ -187,7 +187,7 @@ Meteor.methods({
         Players.update(player._id, {$set: {nightActionDone: false}});
     });
 
-    moveToNextCycle();
+    moveToNextCycle([]); // Give an empty array as no-one died when nobody did anything...
   },
   checkRoleVote: function(roleId) {
     //// The client has changed their vote for one of the roles, let's check how that changes things.
@@ -364,7 +364,7 @@ function countVotes() {
   });
 }
 
-function moveToNextCycle(killedPlayer) {
+function moveToNextCycle(killedPlayers) {
   var players = Players.find({alive: true, joined: true});
 
   // Reset all the variables for the players, to be ready for the next day/night cycle
@@ -408,15 +408,17 @@ function moveToNextCycle(killedPlayer) {
       name: player.name,
       userId: player.userId,
       role: player.role,
+      deathType: "",
       justDied: false
     });
   });
   // Also add the player that just died, if there was one
-  if (killedPlayer) {
+  for (i = 0; i < killedPlayers.length; i++) {
     playerList.push({
-      name: killedPlayer.name,
-      userId: killedPlayer.userId,
-      role: killedPlayer.role,
+      name: killedPlayers[i].name,
+      userId: killedPlayers[i].userId,
+      role: killedPlayers[i].role,
+      deathType: killedPlayers[i].deathDetails.type,
       justDied: true
     });
   }
@@ -425,7 +427,7 @@ function moveToNextCycle(killedPlayer) {
   // Do a check to see what cycle we are moving from, just in case there is anything cycle specific
   var werewolfId = Roles.findOne({name: "Werewolf"})._id;
   var lastCycle = GameVariables.findOne("cycleNumber").value;
-  if (!(lastCycle % 2 == 0)) {
+  if (cycleWasDay(lastCycle)) {
     // It was just day
     console.log("End day cycle has been called.");
 
@@ -454,7 +456,7 @@ function moveToNextCycle(killedPlayer) {
     var werewolfRole = Roles.findOne(werewolfId);
     gameEvent.werewolfAction = {
       target: werewolfRole.target,
-      succeeded: killedPlayer != null
+      succeeded: killedPlayers[0] != null // During the night only one person can die, should be safe to do this.
     };
 
     // Now I would like to generate a list of the actions performed this night, for the game history entry.
@@ -545,7 +547,7 @@ function moveToNextCycle(killedPlayer) {
 
 function endNightCycle() {
   var cycleNumber = GameVariables.findOne("cycleNumber").value;
-  var killedPlayer = null;
+  var killedPlayers = [];
 
   var nightEndText = "The night has ended...";
   EventList.insert({type: "info", cycleNumber: cycleNumber, text: nightEndText, timeAdded: new Date()});
@@ -573,7 +575,7 @@ function endNightCycle() {
     Players.update(werewolfTargetId, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "werewolf"}}});
 
     var target = Players.findOne(werewolfTargetId);
-    killedPlayer = target;
+    killedPlayers.push(target);
 
     // Now lets inform everyone
     var wwKillText = target.name + " has been killed during the night!";
@@ -607,7 +609,7 @@ function endNightCycle() {
     EventList.insert({type: "warning", cycleNumber: cycleNumber, text: witchesText, timeAdded: new Date()});
   }
 
-  moveToNextCycle(killedPlayer);
+  moveToNextCycle(killedPlayers);
 }
 
 function startLynchCountdown() {
@@ -849,7 +851,7 @@ function executeVote() {
   // Fill in the rest of the vote text depending on outcome of vote
   voteText += voteDirection ? " has passed." : " has failed.";
   EventList.insert({type: "info", cycleNumber: cycleNumber, text: voteText, timeAdded: new Date()});
-  var killedPlayer = null;
+  var killedPlayers = [];
 
   //// Insert this vote into the list of lynches
   GameVariables.update("lynchHistory", {$push: {value: {
@@ -865,7 +867,7 @@ function executeVote() {
   if (voteDirection) {
     // Lynch the target!!
     Players.update(target._id, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "lynch"}}});
-    killedPlayer = Players.findOne(target._id);
+    killedPlayers.push(Players.findOne(target._id));
 
     var targetsRole = Roles.findOne(target.role);
 
@@ -890,6 +892,7 @@ function executeVote() {
       var nominatorsRole = Roles.findOne(nominator.role);
 
       Players.update(nominator._id, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "saint"}}});
+      killedPlayers.push(Players.findOne(nominator._id));
 
       var nominatorDiedText = nominator.name + " has been struck down by the heavens because ";
       nominatorDiedText += target.name + " was a Saint!";
@@ -909,7 +912,7 @@ function executeVote() {
       EventList.insert({type: deathType, cycleNumber: cycleNumber, text: nominatorDiedText, timeAdded: new Date()});
     }
 
-    moveToNextCycle(killedPlayer);
+    moveToNextCycle(killedPlayers);
   }
 
   // Reset the related global variables

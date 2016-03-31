@@ -90,7 +90,9 @@
       {{/each}}
     </div>
   {{else}}
-    {{> deathEvent}}
+    <div class="item">
+      {{> deathEvent}}
+    </div>
 
     <div class="ui segments">
       <div class="ui top attached blue label">
@@ -130,5 +132,8 @@
 </template>
 
 <template name="deathEvent">
+  <div class="ui segment">
+
+  </div>
   <!-- TODO make a segment that shows that someone died, and how it happened. -->
 </template>
