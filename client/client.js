@@ -353,12 +353,12 @@ Template.deathList.helpers({
   // Have icons and colours specific for each one.
 
   deathInfo: function() {
-    // To avoid a bunch of client errors on game start...
-    if (GameVariables.findOne("gameMode").value == "inGame") {
-      var cycleNumber = this.cycleNumber;
+    var cycleNumber = this.cycleNumber;
 
-      if (!cycleNumber)
-        cycleNumber = GameVariables.findOne("cycleNumber").value - 1;
+    if (!cycleNumber)
+      cycleNumber = GameVariables.findOne("cycleNumber").value - 1;
+
+    if (cycleNumber > 0) {
 
       var targetName = ""; // The dead players name
       var causeText = ""; // The bridging text between who dies and by whoms hand
