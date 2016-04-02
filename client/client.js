@@ -353,123 +353,126 @@ Template.deathList.helpers({
   // Have icons and colours specific for each one.
 
   deathInfo: function() {
-    var cycleNumber = this.cycleNumber;
+    // To avoid a bunch of client errors on game start...
+    if (GameVariables.findOne("gameMode").value == "inGame") {
+      var cycleNumber = this.cycleNumber;
 
-    if (!cycleNumber)
-      cycleNumber = GameVariables.findOne("cycleNumber").value - 1;
+      if (!cycleNumber)
+        cycleNumber = GameVariables.findOne("cycleNumber").value - 1;
 
-    var targetName = ""; // The dead players name
-    var causeText = ""; // The bridging text between who dies and by whoms hand
-    var killerName = ""; // This could be the nominators name, or the saints name, or just "The werewolves".
-    var colourTag = "";
+      var targetName = ""; // The dead players name
+      var causeText = ""; // The bridging text between who dies and by whoms hand
+      var killerName = ""; // This could be the nominators name, or the saints name, or just "The werewolves".
+      var colourTag = "";
 
-    var targetAvatar = null;
-    var targetIcon = null;
-    var killerAvatar = null;
-    var killerIcon = null;
-    var causeIcon = "cross";
+      var targetAvatar = null;
+      var targetIcon = null;
+      var killerAvatar = null;
+      var killerIcon = null;
+      var causeIcon = "cross";
 
-    var deaths = [];
+      var deaths = [];
 
-    var historyId = GameVariables.findOne("historyId").value;
-    var gameEvent = GameHistory.findOne(historyId).gameEvents[cycleNumber - 1];
+      var historyId = GameVariables.findOne("historyId").value;
+      var gameEvent = GameHistory.findOne(historyId).gameEvents[cycleNumber - 1];
 
-    if (gameEvent.day) {
-      // In the day there is the possibility of more than one person dying, so we need to check that.
-      var cyclePlayers = gameEvent.playerList;
+      if (gameEvent.day) {
+        // In the day there is the possibility of more than one person dying, so we need to check that.
+        var cyclePlayers = gameEvent.playerList;
 
-      var killedPlayers = [];
-      for (i = 0; i < cyclePlayers.length; i++) {
-        if (cyclePlayers[i].justDied) {
-          killedPlayers.push(cyclePlayers[i]);
-        }
-      }
-
-      var targetUser;
-      var killerUser;
-
-      // If any players were killed, lets add them to the display array (deaths)
-      if (killedPlayers.length > 0) {
-        var lynchResult = gameEvent.lynchResult;
-
-        for (i = 0; i < killedPlayers.length; i++) {
-          if (killedPlayers[i].deathType == "lynch") {
-            targetName = lynchResult.targetName;
-            targetUser = Players.findOne({userId: lynchResult.targetId});
-            if (targetUser.facebookLogin)
-              targetAvatar = targetUser.avatar;
-            else
-              targetIcon = "user";
-
-            killerName = lynchResult.nominatorName;
-            killerUser = Players.findOne({userId: lynchResult.nominatorId});
-            if (killerUser.facebookLogin)
-              killerAvatar = killerUser.avatar;
-            else
-              killerIcon = "user";
-
-            causeText = "was lynched by";
-            causeIcon = "red remove";
-            colourTag = "red";
-          } else if (killedPlayers[i].deathType == "saint") {
-            targetName = lynchResult.nominatorName;
-            targetUser = Players.findOne({userId: lynchResult.nominatorId});
-            if (targetUser.facebookLogin)
-              targetAvatar = targetUser.avatar;
-            else
-              targetIcon = "user";
-
-            killerName = lynchResult.targetName;
-            killerName = lynchResult.nominatorName;
-            killerUser = Players.findOne({userId: lynchResult.targetId});
-            if (killerUser.facebookLogin)
-              killerAvatar = killerUser.avatar;
-            else
-              killerIcon = "user";
-
-            causeText = "was struck down for lynching";
-            causeIcon = "yellow lightning";
-            colourTag = "orange";
+        var killedPlayers = [];
+        for (i = 0; i < cyclePlayers.length; i++) {
+          if (cyclePlayers[i].justDied) {
+            killedPlayers.push(cyclePlayers[i]);
           }
+        }
+
+        var targetUser;
+        var killerUser;
+
+        // If any players were killed, lets add them to the display array (deaths)
+        if (killedPlayers.length > 0) {
+          var lynchResult = gameEvent.lynchResult;
+
+          for (i = 0; i < killedPlayers.length; i++) {
+            if (killedPlayers[i].deathType == "lynch") {
+              targetName = lynchResult.targetName;
+              targetUser = Players.findOne({userId: lynchResult.targetId});
+              if (targetUser.facebookLogin)
+                targetAvatar = targetUser.avatar;
+              else
+                targetIcon = "user";
+
+              killerName = lynchResult.nominatorName;
+              killerUser = Players.findOne({userId: lynchResult.nominatorId});
+              if (killerUser.facebookLogin)
+                killerAvatar = killerUser.avatar;
+              else
+                killerIcon = "user";
+
+              causeText = "was lynched by";
+              causeIcon = "red remove";
+              colourTag = "red";
+            } else if (killedPlayers[i].deathType == "saint") {
+              targetName = lynchResult.nominatorName;
+              targetUser = Players.findOne({userId: lynchResult.nominatorId});
+              if (targetUser.facebookLogin)
+                targetAvatar = targetUser.avatar;
+              else
+                targetIcon = "user";
+
+              killerName = lynchResult.targetName;
+              killerName = lynchResult.nominatorName;
+              killerUser = Players.findOne({userId: lynchResult.targetId});
+              if (killerUser.facebookLogin)
+                killerAvatar = killerUser.avatar;
+              else
+                killerIcon = "user";
+
+              causeText = "was struck down for lynching";
+              causeIcon = "yellow lightning";
+              colourTag = "orange";
+            }
+
+            deaths.push({
+              targetName: targetName,
+              targetAvatar: targetAvatar,
+              targetIcon: targetIcon,
+              killerName: killerName,
+              killerAvatar: killerAvatar,
+              killerIcon: killerIcon,
+              causeText: causeText,
+              causeIcon: causeIcon,
+              colourTag: colourTag
+            })
+          }
+        }
+      } else {
+        var werewolfAction = gameEvent.werewolfAction;
+
+        if (werewolfAction.succeeded) {
+          var target = Players.findOne(werewolfAction.target);
+          if (target.facebookLogin)
+            targetAvatar = target.avatar;
+          else
+            targetIcon = "user";
 
           deaths.push({
-            targetName: targetName,
+            targetName: target.name,
             targetAvatar: targetAvatar,
             targetIcon: targetIcon,
-            killerName: killerName,
+            killerName: "the Werewolves",
             killerAvatar: killerAvatar,
-            killerIcon: killerIcon,
-            causeText: causeText,
-            causeIcon: causeIcon,
-            colourTag: colourTag
-          })
+            killerIcon: "red paw",
+            causeText: "was killed by",
+            causeIcon: "red remove",
+            colourTag: "red"
+          });
         }
       }
-    } else {
-      var werewolfAction = gameEvent.werewolfAction;
 
-      if (werewolfAction.succeeded) {
-        var target = Players.findOne(werewolfAction.target);
-        if (target.facebookLogin)
-          targetAvatar = target.avatar;
-        else
-          targetIcon = "user";
-
-        deaths.push({
-          targetName: target.name,
-          targetAvatar: targetAvatar,
-          targetIcon: targetIcon,
-          killerName: "the Werewolves",
-          killerAvatar: killerAvatar,
-          killerIcon: "red paw",
-          causeText: "was killed by",
-          causeIcon: "red remove",
-          colourTag: "red"
-        });
-      }
+      return deaths;
     }
-
-    return deaths;
   }
 });
 
