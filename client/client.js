@@ -6,14 +6,19 @@ nightViewDep = new Tracker.Dependency;
 Template.lobbyScreen.events({
   "click .leave-game": function() {
     var player = getPlayer();
-    Players.update(player._id, {$set: {joined: false}});
-    Players.update(player._id, {$set: {ready: false}});
 
-    // Reset the start game countdown
-    Meteor.call("stopStartCountdown");
+    // They may have gotten here somehow on accident, with no player object
+    // If that's the case, skip this stuff and just send them back to the splash.
+    if (player) {
+      Players.update(player._id, {$set: {joined: false}});
+      Players.update(player._id, {$set: {ready: false}});
 
-    // Number of people in the game changed, so need a recount
-    Meteor.call("recountRoleVotes");
+      // Reset the start game countdown
+      Meteor.call("stopStartCountdown");
+
+      // Number of people in the game changed, so need a recount
+      Meteor.call("recountRoleVotes");
+    }
 
     // Now kick the player back to the splash screen
     FlowRouter.go('/');
@@ -451,15 +456,15 @@ Template.deathList.helpers({
           targetIcon = "user";
 
         deaths.push({
-          targetName: targetName,
+          targetName: target.name,
           targetAvatar: targetAvatar,
           targetIcon: targetIcon,
-          killerName: killerName,
+          killerName: "the Werewolves",
           killerAvatar: killerAvatar,
-          killerIcon: killerIcon,
-          causeText: causeText,
-          causeIcon: causeIcon,
-          colourTag: colourTag
+          killerIcon: "red paw",
+          causeText: "was killed by",
+          causeIcon: "red remove",
+          colourTag: "red"
         });
       }
     }
