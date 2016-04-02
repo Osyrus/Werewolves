@@ -439,7 +439,7 @@ function moveToNextCycle(killedPlayers) {
     // Now lets store the lynch votes for the day.
     gameEvent.lynchResult = GameVariables.findOne("lynchHistory").value;
     // Also we need to clear the daily storage for the next day.
-    GameVariables.update("lynchHistory", {$set: {value: []}});
+    GameVariables.update("lynchHistory", {$set: {value: null}});
 
     // The werewolves target needs to be reset after leaving the day cycle
     Roles.update(werewolfId, {$set: {target: 0}});
@@ -854,7 +854,7 @@ function executeVote() {
   var killedPlayers = [];
 
   //// Insert this vote into the list of lynches
-  GameVariables.update("lynchHistory", {$push: {value: {
+  GameVariables.update("lynchHistory", {$set: {value: {
     targetId: target.userId,
     targetName: target.name,
     targetRole: target.role,

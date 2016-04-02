@@ -90,13 +90,11 @@
       {{/each}}
     </div>
   {{else}}
-    <div class="item">
-      {{> deathEvent}}
-    </div>
+    {{> deathList}}
 
     <div class="ui segments">
       <div class="ui top attached blue label">
-        The events from the last cycle
+        The event list
       </div>
 
       {{#each events}}
@@ -113,9 +111,7 @@
 </template>
 
 <template name="spectatorEventDisplay">
-  <div class="item">
-    {{> deathEvent}}
-  </div>
+  {{> deathList}}
 
   <div class="item">
     <div class="ui segments">
@@ -131,9 +127,26 @@
   </div>
 </template>
 
-<template name="deathEvent">
-  <div class="ui segment">
+<template name="deathList">
+  {{#if deathInfo}}
+    <div class="item">
+      {{#each deathInfo}}
+        {{> deathEvent}}
+      {{/each}}
+    </div>
+  {{/if}}
+</template>
 
+<template name="deathEvent">
+  <div class="ui horizontal segments">
+    <div class="ui center aligned inverted black segment">
+      <h3>{{targetName}}</h3>
+    </div>
+    <div class="ui center aligned inverted {{colourTag}} segment">
+      <h3>{{causeText}}</h3>
+    </div>
+    <div class="ui center aligned inverted black segment">
+      <h3>{{killerName}}</h3>
+    </div>
   </div>
-  <!-- TODO make a segment that shows that someone died, and how it happened. -->
 </template>

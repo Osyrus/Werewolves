@@ -172,7 +172,15 @@
 
     <div class="row">
       <div class="column">
-        <button class="ui fluid massive blue button ok">OK</button>
+        <button class="ui fluid massive
+        {{#if dismissDelayed}}grey{{else}}blue{{/if}}
+        button js-dismiss">
+          {{#if dismissDelayed}}
+            Wait ({{dismissCountdown}})
+          {{else}}
+            OK
+          {{/if}}
+        </button>
       </div>
     </div>
   </div>

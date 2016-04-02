@@ -329,7 +329,8 @@ Template.eventList.helpers({
             cycleEvents: cycleEvents,
             cycle: cycleName,
             cycleTag: cycleTag,
-            cycleIcon: cycleIcon
+            cycleIcon: cycleIcon,
+            cycleNumber: i
           });
         }
       }
@@ -339,7 +340,7 @@ Template.eventList.helpers({
   }
 });
 
-Template.deathEvent.helpers({
+Template.deathList.helpers({
   // TODO write logic that pulls out which cycle we are talking about, and passes back
   // all of the info for who died, how, and by who (if applicable)
   // I.e. "Gary was lynched by Fred", "Gary was killed by the werewolves",
@@ -348,6 +349,9 @@ Template.deathEvent.helpers({
 
   deathInfo: function() {
     var cycleNumber = this.cycleNumber;
+
+    if (!cycleNumber)
+      cycleNumber = GameVariables.findOne("cycleNumber").value - 1;
 
     var targetName = ""; // The dead players name
     var causeText = ""; // The bridging text between who dies and by whoms hand
@@ -359,7 +363,7 @@ Template.deathEvent.helpers({
     var historyId = GameVariables.findOne("historyId").value;
     var gameEvent = GameHistory.findOne(historyId).gameEvents[cycleNumber - 1];
 
-    if (cycleWasDay(cycleNumber)) {
+    if (gameEvent.day) {
       // In the day there is the possibility of more than one person dying, so we need to check that.
       var cyclePlayers = gameEvent.playerList;
 
@@ -414,10 +418,40 @@ Template.deathEvent.helpers({
   }
 });
 
+var countdownTimer = null;
+
+Template.eventsDisplay.onRendered(function() {
+  if (countdownTimer)
+    Meteor.clearInterval(countdownTimer);
+
+  Session.set("dismissDelay", 5);
+  countdownTimer = Meteor.setInterval(function() {
+    var current = Session.get("dismissDelay");
+
+    if (current <= 0) {
+      Meteor.clearInterval(countdownTimer);
+      countdownTimer = null;
+    } else {
+      Session.set("dismissDelay", current - 1);
+    }
+  }, 1000);
+});
+
+Template.eventsDisplay.helpers({
+  dismissDelayed: function() {
+    return Session.get("dismissDelay") > 0;
+  },
+  dismissCountdown: function() {
+    return Session.get("dismissDelay");
+  }
+});
+
 Template.eventsDisplay.events({
-  "click .ok": function(event) {
+  "click .js-dismiss": function(event) {
+    event.preventDefault();
     // Update that the player has seen the events
-    Players.update(getPlayer()._id, {$set: {seenNewEvents: true}});
+    if (Session.get("dismissDelay") <= 0)
+      Meteor.call("seenEvents");
   }
 });
 
@@ -792,6 +826,13 @@ Template.endGameScreen.helpers({
 
     var lastGame = GameVariables.findOne("lastGameResult");
 
+    var historyId = GameVariables.findOne("historyId").value;
+    var gameEvent = GameHistory.findOne(historyId);
+    var timeStarted = gameEvent.gameStartedAt;
+    var timeEnded = gameEvent.gameEndedAt;
+    var gameDuration = moment(timeStarted).twix(timeEnded);
+    var durationText = gameDuration.humanizeLength();
+
     if (lastGame) {
       var villagersWon = lastGame.value;
       var vWin = false;
@@ -808,7 +849,7 @@ Template.endGameScreen.helpers({
 
     var cycleNumber = GameVariables.findOne("cycleNumber").value - 1;
 
-    text = "The game took " + cycleNumber + " cycles to complete.";
+    text = "The game lasted " + durationText + " and took " + cycleNumber + " cycles to complete.";
     // TODO Think of more info to include here?
 
     return {
