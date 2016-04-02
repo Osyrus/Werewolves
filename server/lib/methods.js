@@ -688,7 +688,8 @@ function startGame() {
 
   // Create a new game history entry for this game and record it's ID
   var historyId = GameHistory.insert({
-    gameStartedAt: new Date()
+    gameStartedAt: new Date(),
+    gameVersion: GameSettings.findOne("gameVersion")
   });
   GameVariables.update("historyId", {$set: {enabled: true, value: historyId}});
 
