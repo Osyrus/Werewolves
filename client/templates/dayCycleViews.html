@@ -46,10 +46,16 @@
 
     <div class="row">
       <div class="column">
-        <div class="ui middle aligned relaxed divided selection list">
-          {{#each targets}}
-            {{> nominateTarget}}
-          {{/each}}
+        <div class="ui segment">
+          <div class="ui top attached label">
+            Select a player to nominate
+          </div>
+
+          <div class="ui middle aligned relaxed divided huge selection list">
+            {{#each targets}}
+              {{> nominateTarget}}
+            {{/each}}
+          </div>
         </div>
       </div>
     </div>

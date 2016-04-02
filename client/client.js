@@ -620,23 +620,12 @@ Template.dayView.helpers({
 
 Template.dayView.events({
   "click .nominate": function(event) {
-    // TODO this didn't fire on my phone while testing, after a refresh it was fine.
-
     event.preventDefault();
-    // Get the list of people looking at the selection screen
-    var playersNominating = GameVariables.findOne("playersNominating").value;
-    // Add the current player (who pushed the button) to this list
-    playersNominating.push(getPlayer()._id);
-    // Update the list back to global space
-    GameVariables.update("playersNominating", {$set: {value: playersNominating}});
-    Players.update(getPlayer()._id, {$set: {doNothing: false}});
+    Meteor.call("doNominate");
   },
   "click .do-nothing": function(event) {
-    Players.update(getPlayer()._id, {$set: {doNothing: true}});
-
-    if (allPlayersDoingNothing()) {
-      Meteor.call("doingNothingToday");
-    }
+    event.preventDefault();
+    Meteor.call("doNothing");
   }
 });
 
@@ -969,19 +958,6 @@ Template.endGameScreen.events({
     Players.update(player._id, {$set: {seenEndgame: true}});
   }
 });
-
-function allPlayersDoingNothing() {
-  var players = getAlivePlayers();
-
-  var doingNothingToday = true;
-
-  players.forEach(function(player) {
-    if (!player.doNothing)
-      doingNothingToday = false;
-  });
-
-  return doingNothingToday;
-}
 
 function generateVoteString(voteType) {
   var lynchTarget = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
