@@ -172,6 +172,8 @@ Template.playerSelection.events({
           .modal({
             closable: true, // When the modals are actually fixed, make this false
             onApprove: function () {
+              // Hopefully this can get rid of any that popped up in the background
+              $('.ui.modal.confirmCheck').modal('hide all');
               Meteor.call("finishedNightAction");
             }
           })

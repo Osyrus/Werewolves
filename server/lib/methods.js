@@ -26,8 +26,17 @@ Meteor.methods({
   checkLynchVotes: function() {
     //// A players vote has been changed, and hence this function was called to check for any consequences
 
+    var lynchVote = GameVariables.findOne("lynchVote");
+
+    // It seems that the lynch vote can end, but someones vote could still be on the way due to,
+    // latency, so we should double check to make sure the vote is still happening.
+    if (!lynchVote.enabled) {
+      console.log("No lynch vote in progress, skipping vote count.");
+      return;
+    }
+
     // Now we need to get a hold of all the alive players excluding the target
-    var lynchTarget = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
+    var lynchTarget = Players.findOne(lynchVote.value[0]);
     var players = Players.find({alive: true, _id: {$ne: lynchTarget._id}});
     // The number of voters is all of these players
     var numVoters = players.count();
@@ -124,16 +133,40 @@ Meteor.methods({
       }
     }
   },
-  beginLynchVote: function() {
-    var cycleNumber = GameVariables.findOne("cycleNumber").value;
-    var target = Players.findOne(GameVariables.findOne("lynchVote").value[0]);
-    var nominator = Players.findOne(GameVariables.findOne("lynchVote").value[1]);
+  beginLynchVote: function(voteDetails) {
+    var target = Players.findOne(voteDetails[0]);
+    var nominator = Players.findOne(voteDetails[1]);
 
-    var lynchNominationMadeText = nominator.name + " has nominated " + target.name + " to be lynched.";
+    console.log(nominator.name + " has requested to nominate " + target.name);
 
-    EventList.insert({type: "info", cycleNumber: cycleNumber, text: lynchNominationMadeText, timeAdded: new Date()});
+    // Because of latency, this could have been called by another player even though there
+    // is a lynch vote in progress (started just before this was called). So, we need to make sure
+    // we don't start a lynch vote twice!!
 
-    startLynchTimeout();
+    if (!GameVariables.findOne("lynchVote").enabled) {
+      // Set the variable to move to the yes/no vote
+      GameVariables.update("lynchVote", {$set: {value: [target._id, nominator._id], enabled: true}});
+      // The nominator starts voting to lynch the target
+      Players.update(nominator._id, {$set: {voteChoice: 1}});
+      // The nominator also needs this nomination tracked, to make sure they can't nominate
+      // the same person again in the same day cycle (double jeopardy rule).
+      Players.update(nominator._id, {$push: {previousNominations: target._id}});
+
+      var cycleNumber = GameVariables.findOne("cycleNumber").value;
+
+      var lynchNominationMadeText = nominator.name + " has nominated " + target.name + " to be lynched.";
+
+      EventList.insert({type: "info", cycleNumber: cycleNumber, text: lynchNominationMadeText, timeAdded: new Date()});
+
+      console.log(nominator.name + "'s nomination is proceeding to vote.");
+
+      startLynchTimeout();
+    } else {
+      var actualNominator = Players.findOne(GameVariables.findOne("lynchVote").value[1]);
+
+      console.log("Lynch vote already been started by " + actualNominator.name
+        + ". Ignoring " + nominator.name + "'s request.");
+    }
   },
   doingNothingToday: function() {
     //// This is called by the last player to say they aren't doing anything
@@ -154,7 +187,7 @@ Meteor.methods({
         Players.update(player._id, {$set: {nightActionDone: false}});
     });
 
-    moveToNextCycle();
+    moveToNextCycle([]); // Give an empty array as no-one died when nobody did anything...
   },
   checkRoleVote: function(roleId) {
     //// The client has changed their vote for one of the roles, let's check how that changes things.
@@ -308,8 +341,11 @@ function countVotes() {
     //console.log(role.name + " got " + role.votes + " votes.");
   });
 
-  // This is the calculation that determines is the role is enabled or not.
-  var numVillagers = Players.find({joined: true}).count() - numWerewolves();
+  /// This is the calculation that determines is the role is enabled or not.
+  // The number of players that can take a role is the total number of players
+  // minus the number of werewolves (leaving only the villagers).
+  // Also minus one more as it's good to have at least one normal villager.
+  var numVillagers = Players.find({joined: true}).count() - numWerewolves() - 1;
 
   //console.log("Number of villagers that can take on a role = " + numVillagers);
 
@@ -328,7 +364,7 @@ function countVotes() {
   });
 }
 
-function moveToNextCycle(killedPlayer) {
+function moveToNextCycle(killedPlayers) {
   var players = Players.find({alive: true, joined: true});
 
   // Reset all the variables for the players, to be ready for the next day/night cycle
@@ -372,15 +408,17 @@ function moveToNextCycle(killedPlayer) {
       name: player.name,
       userId: player.userId,
       role: player.role,
+      deathType: "",
       justDied: false
     });
   });
   // Also add the player that just died, if there was one
-  if (killedPlayer) {
+  for (i = 0; i < killedPlayers.length; i++) {
     playerList.push({
-      name: killedPlayer.name,
-      userId: killedPlayer.userId,
-      role: killedPlayer.role,
+      name: killedPlayers[i].name,
+      userId: killedPlayers[i].userId,
+      role: killedPlayers[i].role,
+      deathType: killedPlayers[i].deathDetails.type,
       justDied: true
     });
   }
@@ -389,7 +427,7 @@ function moveToNextCycle(killedPlayer) {
   // Do a check to see what cycle we are moving from, just in case there is anything cycle specific
   var werewolfId = Roles.findOne({name: "Werewolf"})._id;
   var lastCycle = GameVariables.findOne("cycleNumber").value;
-  if (!(lastCycle % 2 == 0)) {
+  if (cycleWasDay(lastCycle)) {
     // It was just day
     console.log("End day cycle has been called.");
 
@@ -401,7 +439,7 @@ function moveToNextCycle(killedPlayer) {
     // Now lets store the lynch votes for the day.
     gameEvent.lynchResult = GameVariables.findOne("lynchHistory").value;
     // Also we need to clear the daily storage for the next day.
-    GameVariables.update("lynchHistory", {$set: {value: []}});
+    GameVariables.update("lynchHistory", {$set: {value: null}});
 
     // The werewolves target needs to be reset after leaving the day cycle
     Roles.update(werewolfId, {$set: {target: 0}});
@@ -418,7 +456,7 @@ function moveToNextCycle(killedPlayer) {
     var werewolfRole = Roles.findOne(werewolfId);
     gameEvent.werewolfAction = {
       target: werewolfRole.target,
-      succeeded: killedPlayer != null
+      succeeded: killedPlayers[0] != null // During the night only one person can die, should be safe to do this.
     };
 
     // Now I would like to generate a list of the actions performed this night, for the game history entry.
@@ -509,7 +547,7 @@ function moveToNextCycle(killedPlayer) {
 
 function endNightCycle() {
   var cycleNumber = GameVariables.findOne("cycleNumber").value;
-  var killedPlayer = null;
+  var killedPlayers = [];
 
   var nightEndText = "The night has ended...";
   EventList.insert({type: "info", cycleNumber: cycleNumber, text: nightEndText, timeAdded: new Date()});
@@ -537,7 +575,7 @@ function endNightCycle() {
     Players.update(werewolfTargetId, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "werewolf"}}});
 
     var target = Players.findOne(werewolfTargetId);
-    killedPlayer = target;
+    killedPlayers.push(target);
 
     // Now lets inform everyone
     var wwKillText = target.name + " has been killed during the night!";
@@ -571,7 +609,7 @@ function endNightCycle() {
     EventList.insert({type: "warning", cycleNumber: cycleNumber, text: witchesText, timeAdded: new Date()});
   }
 
-  moveToNextCycle(killedPlayer);
+  moveToNextCycle(killedPlayers);
 }
 
 function startLynchCountdown() {
@@ -650,7 +688,8 @@ function startGame() {
 
   // Create a new game history entry for this game and record it's ID
   var historyId = GameHistory.insert({
-    gameStartedAt: new Date()
+    gameStartedAt: new Date(),
+    gameVersion: GameSettings.findOne("gameVersion")
   });
   GameVariables.update("historyId", {$set: {enabled: true, value: historyId}});
 
@@ -670,6 +709,7 @@ function startGame() {
       Players.update(player._id, {
         $set: {
           seenEndgame: false,
+          seenRole: false,
           alive: true,
           doNothing: false,
           seenNewEvents: false,
@@ -779,7 +819,13 @@ function endGame(villagersWin) {
 }
 
 function cancelVote() {
+  // Need to reset the lynch countdown in case the vote was not to lynch
+  stopLynchCountdown();
+  // Need to reset the timeout in the case a timeout occurred
+  stopLynchTimeout();
+
   GameVariables.update("voteDirection", {$set: {value: false, enabled: true}});
+
   executeVote();
 }
 
@@ -806,10 +852,10 @@ function executeVote() {
   // Fill in the rest of the vote text depending on outcome of vote
   voteText += voteDirection ? " has passed." : " has failed.";
   EventList.insert({type: "info", cycleNumber: cycleNumber, text: voteText, timeAdded: new Date()});
-  var killedPlayer = null;
+  var killedPlayers = [];
 
   //// Insert this vote into the list of lynches
-  GameVariables.update("lynchHistory", {$push: {value: {
+  GameVariables.update("lynchHistory", {$set: {value: {
     targetId: target.userId,
     targetName: target.name,
     targetRole: target.role,
@@ -822,7 +868,7 @@ function executeVote() {
   if (voteDirection) {
     // Lynch the target!!
     Players.update(target._id, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "lynch"}}});
-    killedPlayer = Players.findOne(target._id);
+    killedPlayers.push(Players.findOne(target._id));
 
     var targetsRole = Roles.findOne(target.role);
 
@@ -847,6 +893,7 @@ function executeVote() {
       var nominatorsRole = Roles.findOne(nominator.role);
 
       Players.update(nominator._id, {$set: {alive: false, deathDetails: {cycle: cycleNumber, type: "saint"}}});
+      killedPlayers.push(Players.findOne(nominator._id));
 
       var nominatorDiedText = nominator.name + " has been struck down by the heavens because ";
       nominatorDiedText += target.name + " was a Saint!";
@@ -866,7 +913,7 @@ function executeVote() {
       EventList.insert({type: deathType, cycleNumber: cycleNumber, text: nominatorDiedText, timeAdded: new Date()});
     }
 
-    moveToNextCycle(killedPlayer);
+    moveToNextCycle(killedPlayers);
   }
 
   // Reset the related global variables

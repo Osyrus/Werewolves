@@ -31,7 +31,7 @@ Template.gameScreen.helpers({
     var currentGameMode = GameVariables.findOne("gameMode").value;
 
     if (currentGameMode == "inGame") {
-      return !Session.get("seenRole");
+      return !getPlayer().seenRole;
     }
 
     return false;

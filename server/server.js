@@ -13,10 +13,10 @@ Meteor.startup(function () {
   addRole("Villager");
   addRole("Werewolf");
   addRole("Doctor");
-  addRole("Witch");
   addRole("Seer");
   addRole("Knight");
   addRole("Saint");
+  addRole("Witch");
 
   // Clear the votes upon server restart
   RoleVotes.remove({});

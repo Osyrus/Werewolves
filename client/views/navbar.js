@@ -62,7 +62,7 @@ Template.navbar.events({
     Meteor.call("restartServer");
   },
   "click .whoami": function() {
-    Session.set("seenRole", false);
+    Meteor.call("seenRole", false);
   },
   "click .doubleJeopardy": function() {
     console.log("Clicked double jeopardy button");
