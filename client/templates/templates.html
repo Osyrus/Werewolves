@@ -1,14 +1,12 @@
 <template name="player">
   <div class="item">
-    {{#if facebookLogin}}
-      <div class="ui middle aligned image">
+    <div class="ui middle aligned image">
+      {{#if facebookLogin}}
         <img class="ui avatar image" src="{{avatar}}">
-      </div>
-    {{else}}
-      <div class="ui middle aligned image">
+      {{else}}
         <i class="circular user icon"></i>
-      </div>
-    {{/if}}
+      {{/if}}
+    </div>
 
     <div class="content">
       <div class="ui {{#if ready}}green{{else}}orange{{/if}} header">
@@ -64,21 +62,22 @@
 </template>
 
 <template name="nominateTarget">
-  <div class="ui {{enabled.tag}} segment {{#if enabled.enabled}}nominatePlayer{{/if}}">
-    {{#if enabled.disabled}}
-      <div class="ui right ribbon label">
+  <div class="item {{#if enabled.enabled}}nominatePlayer{{/if}}">
+    <div class="ui image">
+      {{#if facebookLogin}}
+        <img class="ui avatar image" src="{{avatar}}">
+      {{else}}
+        <i class="circular user icon"></i>
+      {{/if}}
+    </div>
+
+    <div class="content">
+      <div class="ui {{enabled.tag}} header">{{name}}</div>
+
+      {{#if enabled.disabled}}
         <p>Already nominated today</p>
-      </div>
-    {{/if}}
-
-    <!-- This is where the players avatar could go (in a "ui avatar image")-->
-
-    {{#if facebookLogin}}
-      <img class="ui avatar image" src="{{avatar}}">
-    {{else}}
-      <i class="circular user icon"></i>
-    {{/if}}
-    <span>{{name}}</span>
+      {{/if}}
+    </div>
   </div>
 </template>
 
