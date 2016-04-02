@@ -358,6 +358,12 @@ Template.deathList.helpers({
     var killerName = ""; // This could be the nominators name, or the saints name, or just "The werewolves".
     var colourTag = "";
 
+    var targetAvatar = null;
+    var targetIcon = null;
+    var killerAvatar = null;
+    var killerIcon = null;
+    var causeIcon = "cross";
+
     var deaths = [];
 
     var historyId = GameVariables.findOne("historyId").value;
@@ -374,6 +380,9 @@ Template.deathList.helpers({
         }
       }
 
+      var targetUser;
+      var killerUser;
+
       // If any players were killed, lets add them to the display array (deaths)
       if (killedPlayers.length > 0) {
         var lynchResult = gameEvent.lynchResult;
@@ -381,20 +390,52 @@ Template.deathList.helpers({
         for (i = 0; i < killedPlayers.length; i++) {
           if (killedPlayers[i].deathType == "lynch") {
             targetName = lynchResult.targetName;
+            targetUser = Players.findOne({userId: lynchResult.targetId});
+            if (targetUser.facebookLogin)
+              targetAvatar = targetUser.avatar;
+            else
+              targetIcon = "user";
+
             killerName = lynchResult.nominatorName;
+            killerUser = Players.findOne({userId: lynchResult.nominatorId});
+            if (killerUser.facebookLogin)
+              killerAvatar = killerUser.avatar;
+            else
+              killerIcon = "user";
+
             causeText = "was lynched by";
+            causeIcon = "red remove";
             colourTag = "red";
           } else if (killedPlayers[i].deathType == "saint") {
             targetName = lynchResult.nominatorName;
+            targetUser = Players.findOne({userId: lynchResult.nominatorId});
+            if (targetUser.facebookLogin)
+              targetAvatar = targetUser.avatar;
+            else
+              targetIcon = "user";
+
             killerName = lynchResult.targetName;
+            killerName = lynchResult.nominatorName;
+            killerUser = Players.findOne({userId: lynchResult.targetId});
+            if (killerUser.facebookLogin)
+              killerAvatar = killerUser.avatar;
+            else
+              killerIcon = "user";
+
             causeText = "was struck down for lynching";
+            causeIcon = "yellow lightning";
             colourTag = "orange";
           }
 
           deaths.push({
             targetName: targetName,
+            targetAvatar: targetAvatar,
+            targetIcon: targetIcon,
             killerName: killerName,
+            killerAvatar: killerAvatar,
+            killerIcon: killerIcon,
             causeText: causeText,
+            causeIcon: causeIcon,
             colourTag: colourTag
           })
         }
@@ -404,12 +445,21 @@ Template.deathList.helpers({
 
       if (werewolfAction.succeeded) {
         var target = Players.findOne(werewolfAction.target);
+        if (target.facebookLogin)
+          targetAvatar = target.avatar;
+        else
+          targetIcon = "user";
 
         deaths.push({
-          targetName: target.name,
-          killerName: "the Werewolves",
-          causeText: "was killed by",
-          colourTag: "red"
+          targetName: targetName,
+          targetAvatar: targetAvatar,
+          targetIcon: targetIcon,
+          killerName: killerName,
+          killerAvatar: killerAvatar,
+          killerIcon: killerIcon,
+          causeText: causeText,
+          causeIcon: causeIcon,
+          colourTag: colourTag
         });
       }
     }

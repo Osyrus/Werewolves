@@ -142,15 +142,36 @@
 </template>
 
 <template name="deathEvent">
-  <div class="ui horizontal segments">
-    <div class="ui middle center aligned inverted black segment">
-      <h3>{{targetName}}</h3>
+  <div class="ui three steps">
+    <div class="step">
+      <div class="ui image">
+        {{#if targetAvatar}}
+          <img class="ui avatar image" src="{{targetAvatar}}">
+        {{else}}
+          <i class="circular {{targetIcon}} icon"></i>
+        {{/if}}
+      </div>
+      <div class="content">
+        <div class="title">{{targetName}}</div>
+      </div>
     </div>
-    <div class="ui middle center aligned inverted {{colourTag}} segment">
-      <h3>{{causeText}}</h3>
+    <div class="active step">
+      <i class="{{causeIcon}} icon"></i>
+      <div class="content">
+        <div class="title">{{causeText}}</div>
+      </div>
     </div>
-    <div class="ui middle center aligned inverted black segment">
-      <h3>{{killerName}}</h3>
+    <div class="step">
+      <div class="ui image">
+        {{#if killerAvatar}}
+          <img class="ui avatar image" src="{{killerAvatar}}">
+        {{else}}
+          <i class="circular {{killerIcon}} icon"></i>
+        {{/if}}
+      </div>
+      <div class="content">
+        <div class="title">{{killerName}}</div>
+      </div>
     </div>
   </div>
 </template>
