@@ -2,4 +2,4 @@
 
 A Meteor powered Werewolves and Villagers multiplayer game.
 
-[![Join the chat at https://gitter.im/Osyrus/Werewolves](https://badges.gitter.im/Osyrus/Werewolves.svg)](https://gitter.im/Osyrus/Werewolves?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/10448ef7fcc84a63a679232d5c2099b9)](https://www.codacy.com/app/blokart11/Werewolves)
