@@ -15,7 +15,7 @@ $.fn.range = function(parameters) {
 		offset         = 10,
 		
 		query          = arguments[0],
-    methodInvoked  = (typeof query == 'string'),
+    methodInvoked  = (typeof query == "string"),
     queryArguments = [].slice.call(arguments, 1)
 	;
 	
@@ -34,8 +34,8 @@ $.fn.range = function(parameters) {
 				start           = settings.start,
 				input           = settings.input,
 
-				eventNamespace  = '.' + namespace,
-				moduleNamespace = 'module-' + namespace,
+				eventNamespace  = "." + namespace,
+				moduleNamespace = "module-" + namespace,
 
 				$module         = $(this),
 
@@ -62,28 +62,28 @@ $.fn.range = function(parameters) {
 						.data(moduleNamespace, module)
 					;
 					$(element).html("<div class='inner'><div class='track'></div><div class='track-fill'></div><div class='thumb'></div></div>");
-					inner = $(element).children('.inner')[0];
-					thumb = $(element).find('.thumb')[0];
-					trackLeft = $(element).find('.track-fill')[0];
+					inner = $(element).children(".inner")[0];
+					thumb = $(element).find(".thumb")[0];
+					trackLeft = $(element).find(".track-fill")[0];
 					// find precision of step, used in calculating the value
 					module.determinePrecision();
 					// set start location
 					module.setValuePosition(settings.start);
 					// event listeners
-					$(element).find('.track, .thumb, .inner').on('mousedown', function(event) {
+					$(element).find(".track, .thumb, .inner").on("mousedown", function(event) {
 						event.stopImmediatePropagation();
 						event.preventDefault();
-						$(this).closest(".range").trigger('mousedown', event);
+						$(this).closest(".range").trigger("mousedown", event);
 					});
-					$(element).find('.track, .thumb, .inner').on('touchstart', function(event) {
+					$(element).find(".track, .thumb, .inner").on("touchstart", function(event) {
 						event.stopImmediatePropagation();
 						event.preventDefault();
-						$(this).closest(".range").trigger('touchstart', event);
+						$(this).closest(".range").trigger("touchstart", event);
 					});
-					$(element).on('mousedown', function(event, originalEvent) {
+					$(element).on("mousedown", function(event, originalEvent) {
 						module.rangeMousedown(event, false, originalEvent);
 					});
-					$(element).on('touchstart', function(event, originalEvent) {
+					$(element).on("touchstart", function(event, originalEvent) {
 						module.rangeMousedown(event, true, originalEvent);
 					});
 				},
@@ -124,12 +124,13 @@ $.fn.range = function(parameters) {
 				},
 
 				setPosition: function(value) {
-					$(thumb).css({left: String(value) + 'px'});
-					$(trackLeft).css({width: String(value + offset) + 'px'});
+					$(thumb).css({left: String(value) + "px"});
+					$(trackLeft).css({width: String(value + offset) + "px"});
 				},
 
 				rangeMousedown: function(mdEvent, isTouch, originalEvent) {
-					if( !$(element).hasClass('disabled') ) {
+					var rangeMouseup;
+					if( !$(element).hasClass("disabled") ) {
 						mdEvent.preventDefault();
 						var left = $(inner).offset().left;
 						var right = left + $(inner).width();
@@ -137,7 +138,7 @@ $.fn.range = function(parameters) {
 						if(isTouch) {
 							pageX = originalEvent.originalEvent.touches[0].pageX;
 						} else {
-							pageX = (typeof mdEvent.pageX != 'undefined') ? mdEvent.pageX : originalEvent.pageX;
+							pageX = (typeof mdEvent.pageX != "undefined") ? mdEvent.pageX : originalEvent.pageX;
 						}
 						var value = module.determineValue(left, right, pageX);
 						if(pageX >= left && pageX <= right) {
@@ -159,22 +160,22 @@ $.fn.range = function(parameters) {
 								}
 							}
 						}
-						var rangeMouseup = function(muEvent) {
-							if(isTouch) {
-								$(document).off('touchmove', rangeMousemove);
+						rangeMouseup       = function (muEvent) {
+							if (isTouch) {
+								$(document).off("touchmove", rangeMousemove);
 								$(document).off('touchend', rangeMouseup);
 							} else {
-								$(document).off('mousemove', rangeMousemove);
-								$(document).off('mouseup', rangeMouseup);
+								$(document).off("mousemove", rangeMousemove);
+								$(document).off("mouseup", rangeMouseup);
 							}
-						}
+						};
 						if(isTouch) {
-							$(document).on('touchmove', rangeMousemove);
-							$(document).on('touchend', rangeMouseup);
+							$(document).on("touchmove", rangeMousemove);
+							$(document).on("touchend", rangeMouseup);
 						}
 						else {
-							$(document).on('mousemove', rangeMousemove);
-							$(document).on('mouseup', rangeMouseup);
+							$(document).on("mousemove", rangeMousemove);
+							$(document).on("mouseup", rangeMouseup);
 						}
 					}
 				},
@@ -187,14 +188,13 @@ $.fn.range = function(parameters) {
 				
 				invoke: function(query) {
 					switch(query) {
-						case 'set value':
+						case "set value":
 							if(queryArguments.length > 0) {
 								instance.setValuePosition(queryArguments[0]);
 							}
 							break;
 					}
-				},
-			
+				}
 			};
 			
       if(methodInvoked) {
@@ -216,8 +216,8 @@ $.fn.range = function(parameters) {
 
 $.fn.range.settings = {
 
-  name         : 'Range',
-  namespace    : 'range',
+  name         : "Range",
+  namespace    : "range",
 
 	min          : 0,
 	max          : false,
@@ -225,7 +225,7 @@ $.fn.range.settings = {
 	start        : 0,
 	input        : false,
 	
-	onChange     : function(value){},
+	onChange     : function(value){}
 
 };
 
