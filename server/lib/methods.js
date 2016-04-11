@@ -369,10 +369,11 @@ function moveToNextCycle(killedPlayers) {
 
   // Reset all the variables for the players, to be ready for the next day/night cycle
   players.forEach(function(player) {
-    Players.update(player._id, {$set: {seenNewEvents: false, target: 0}});
-
-    // Reset the double jeopardy rule
-    Players.update(player._id, {$set: {previousNominations: []}});
+    Players.update(player._id, {$set: {
+      seenNewEvents: false,
+      target: 0,
+      previousNominations: []
+    }});
 
     if (!player.bot) {
       //Players.update(player._id, {$set: {nightActionDone: false}});
@@ -479,6 +480,8 @@ function moveToNextCycle(killedPlayers) {
           targetRole: target.role
         });
       }
+      // Also make sure that the roles are cleared for the next night
+      Roles.update(role._id, {set: {target: null}});
     });
     gameEvent.nightActions = actions;
   }
