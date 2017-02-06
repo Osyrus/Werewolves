@@ -46,14 +46,16 @@
 
     <div class="row">
       <div class="column">
-        <div class="ui segments">
-          <div class="ui top attached red label">
-            Make your nomination
+        <div class="ui segment">
+          <div class="ui top attached label">
+            Select a player to nominate
           </div>
 
-          {{#each targets}}
-            {{> nominateTarget}}
-          {{/each}}
+          <div class="ui middle aligned relaxed divided huge selection list">
+            {{#each targets}}
+              {{> nominateTarget}}
+            {{/each}}
+          </div>
         </div>
       </div>
     </div>
@@ -172,7 +174,15 @@
 
     <div class="row">
       <div class="column">
-        <button class="ui fluid massive blue button ok">OK</button>
+        <button class="ui fluid massive
+        {{#if dismissDelayed}}grey{{else}}blue{{/if}}
+        button js-dismiss">
+          {{#if dismissDelayed}}
+            Wait ({{dismissCountdown}})
+          {{else}}
+            OK
+          {{/if}}
+        </button>
       </div>
     </div>
   </div>

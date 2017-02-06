@@ -22,6 +22,14 @@ accounts-password
 deps
 mizzao:timesync
 peppelg:bootstrap-3-modal
-semantic:ui
 flemay:less-autoprefixer
-accounts-ui
+accounts-facebook
+kadira:flow-router
+kadira:blaze-layout
+useraccounts:semantic-ui
+useraccounts:flow-routing
+service-configuration
+semantic:ui-css
+momentjs:moment
+momentjs:twix
+mystor:device-detection

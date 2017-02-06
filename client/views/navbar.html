@@ -1,0 +1,154 @@
+<template name="navbar">
+  <div class="ui top fixed menu">
+    {{#if playerName}}
+      <div class="header item">
+        <i class="user icon"></i>
+        {{playerName}}
+      </div>
+    {{/if}}
+
+    <div class="right menu">
+      {{#if inGame}}
+        <!-- During the game we want to allow the player to double check their role -->
+        <a class="item whoami">
+          <i class="help icon"></i>
+          My Role
+        </a>
+      {{else}}
+        <!-- In the lobby this position is for the game settings (which shouldn't be changed in game anyway!) -->
+        <a class="item settings">
+          <i class="wrench icon"></i>
+          Settings
+        </a>
+      {{/if}}
+
+      <a class="item logout">
+        <i class="sign out icon"></i>
+        Logout
+      </a>
+    </div>
+
+    <div class="ui modal settingsModal">
+      <i class="close icon"></i>
+      <div class="header">
+        <i class="wrench icon"></i>
+        Settings
+      </div>
+
+      <div class="content">
+        <div class="ui center aligned header">
+          Game Rules
+          <div class="sub header">
+            Turn these on or off by pressing the button.
+          </div>
+        </div>
+
+        <div class="ui divided list">
+          <div class="item">
+            <div class="right floated content">
+              <button class="ui {{settingStates.doubleTag}} button doubleJeopardy">{{settingStates.doubleText}}</button>
+            </div>
+            <div class="content">
+              <div class="header">
+                Double Jeopardy
+              </div>
+              Players can't nominate the same person twice in one day.
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="right floated content">
+              <button class="ui {{settingStates.revealDTag}} button revealDay">{{settingStates.revealDText}}</button>
+            </div>
+            <div content="content">
+              <div class="header">
+                Reveal Role (<i class="sun icon"></i> Day)
+              </div>
+              Players roles are revealed upon death during the day.
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="right floated content">
+              <button class="ui {{settingStates.revealNTag}} button revealNight">{{settingStates.revealNText}}</button>
+            </div>
+            <div content="content">
+              <div class="header">
+                Reveal Role (<i class="moon icon"></i> Night)
+              </div>
+              Players roles are revealed upon death at night.
+            </div>
+          </div>
+        </div>
+
+        <div class="ui center aligned header">
+          Game Timings
+          <div class="sub header">
+            Slide to change the delay times.
+          </div>
+        </div>
+
+        <div class="ui divided list">
+          <div class="item">
+            <div class="content">
+              <div class="header">
+                Countdown Time
+              </div>
+              This is countdown time until lynching, etc.
+            </div>
+            <div class="ui range" id="countdown-range"></div>
+            Current setting: {{settingStates.countdown}} seconds.
+          </div>
+
+          <div class="item">
+            <div class="content">
+              <div class="header">
+                Lynch Timout Delay
+              </div>
+              This is the amount of time the lynching vote can go without a majority.
+            </div>
+            <div class="ui range" id="timeout-range"></div>
+            Current setting: {{settingStates.timeout}} seconds.
+          </div>
+        </div>
+
+        <div class="ui center aligned header">
+          System
+          <div class="sub header">
+            System settings and actions
+          </div>
+        </div>
+
+        <div class="ui divided list">
+          <div class="item">
+            <div class="right floated content">
+              <button class="ui red button js-restart">Restart</button>
+            </div>
+
+            <div class="content">
+              <div class="header">
+                Restart Server
+              </div>
+              <!--Warning!! Actually restarts the server and resets all variables!!-->
+              This doesn't currently work...
+            </div>
+          </div>
+        </div>
+
+        <div class="ui center aligned header">
+          Game Version
+          <div class="sub header">
+            {{settingStates.versionText}}
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <div class="ui ok blue button">
+          <i class="checkmark icon"></i>
+          Done
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

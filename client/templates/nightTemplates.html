@@ -31,15 +31,13 @@
               Night action completed, waiting for others.
             </div>
           {{else}}
-            <div class="ui segment">
-              <div class="ui top attached black label">
-                Make sure no-one can see your screen!
-              </div>
-
-              <button class="ui fluid massive blue button js-doNightAction">
-                Do night action
-              </button>
+            <div class="ui inverted segment">
+              <p>Make sure no-one can see your screen!</p>
             </div>
+
+            <button class="ui fluid massive blue button js-doNightAction">
+              Do night action
+            </button>
           {{/if}}
         </div>
       </div>
@@ -216,8 +214,17 @@
 
 <template name="playerSelection">
   <div class="item select-player">
-    <!-- Possibly put a little avatar here for the player? -->
-    <div class="content">
+    {{#if facebookLogin}}
+      <div class="ui middle aligned image">
+        <img class="ui avatar image" src="{{avatar}}">
+      </div>
+    {{else}}
+      <div class="ui middle aligned image">
+        <i class="circular user icon"></i>
+      </div>
+    {{/if}}
+
+    <div class="middle aligned content">
       <div class="header">{{name}}</div>
     </div>
   </div>
@@ -228,7 +235,6 @@
     <div class="ui top attached red label">
       Make your choice
     </div>
-
 
     {{#each werewolfTargets}}
       {{> werewolfTarget}}

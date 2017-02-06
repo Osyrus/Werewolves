@@ -1,10 +1,17 @@
 <template name="player">
   <div class="item">
-    <!-- This is where the eventual user avatar will go as a "ui avatar image" -->
+    <div class="ui middle aligned image">
+      {{#if facebookLogin}}
+        <img class="ui avatar image" src="{{avatar}}">
+      {{else}}
+        <i class="circular user icon"></i>
+      {{/if}}
+    </div>
+
     <div class="content">
-      <h3 class="ui {{#if ready}}green{{else}}orange{{/if}} header">
+      <div class="ui {{#if ready}}green{{else}}orange{{/if}} header">
         {{name}}
-      </h3>
+      </div>
       <div class="description">
         <!-- This could possibly have some of the players stats? -->
         {{#if ready}}
@@ -55,16 +62,22 @@
 </template>
 
 <template name="nominateTarget">
-  <div class="ui {{enabled.tag}} segment {{#if enabled.enabled}}nominatePlayer{{/if}}">
-    {{#if enabled.disabled}}
-      <div class="ui right ribbon label">
+  <div class="item {{#if enabled.enabled}}nominatePlayer{{/if}}">
+    <div class="ui image">
+      {{#if facebookLogin}}
+        <img class="ui avatar image" src="{{avatar}}">
+      {{else}}
+        <i class="circular user icon"></i>
+      {{/if}}
+    </div>
+
+    <div class="content">
+      <div class="ui {{enabled.tag}} header">{{name}}</div>
+
+      {{#if enabled.disabled}}
         <p>Already nominated today</p>
-      </div>
-    {{/if}}
-
-    <!-- This is where the players avatar could go (in a "ui avatar image")-->
-
-    <p>{{name}}</p>
+      {{/if}}
+    </div>
   </div>
 </template>
 
@@ -76,15 +89,17 @@
       {{/each}}
     </div>
   {{else}}
-    <ul class="ui segments">
+    {{> deathList}}
+
+    <div class="ui segments">
       <div class="ui top attached blue label">
-        The events from the last cycle
+        The event list
       </div>
 
       {{#each events}}
         {{> eventDisplay}}
       {{/each}}
-    </ul>
+    </div>
   {{/if}}
 </template>
 
@@ -95,16 +110,67 @@
 </template>
 
 <template name="spectatorEventDisplay">
+  <div class="ui horizontal divider">
+    <i class="{{cycleIcon}} icon"></i>
+    Events during {{cycle}}
+  </div>
+
+  {{> deathList}}
+
   <div class="item">
     <div class="ui segments">
       <div class="ui top attached {{cycleTag}} label">
-        <i class="{{cycleIcon}} icon"></i>
-        Events during {{cycle}}
+        Event list
       </div>
 
       {{#each cycleEvents}}
         {{> eventDisplay}}
       {{/each}}
+    </div>
+  </div>
+</template>
+
+<template name="deathList">
+  {{#if deathInfo}}
+    <div class="item">
+      {{#each deathInfo}}
+        {{> deathEvent}}
+      {{/each}}
+    </div>
+  {{/if}}
+</template>
+
+<template name="deathEvent">
+  <div class="ui three steps">
+    <div class="step">
+      <div class="ui image">
+        {{#if targetAvatar}}
+          <img class="ui avatar image" src="{{targetAvatar}}">
+        {{else}}
+          <i class="circular {{targetIcon}} icon"></i>
+        {{/if}}
+      </div>
+      <div class="content">
+        <div class="title">{{targetName}}</div>
+      </div>
+    </div>
+    <div class="active step">
+      <i class="{{causeIcon}} icon"></i>
+      <div class="content">
+        <div class="title">{{causeText}}</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="ui image">
+        {{#if killerAvatar}}
+          <img class="ui avatar image" src="{{killerAvatar}}">
+        {{else}}
+          <i class="circular {{killerIcon}} icon"></i>
+        {{/if}}
+      </div>
+      <div class="content">
+        <div class="title">{{killerName}}</div>
+      </div>
     </div>
   </div>
 </template>
